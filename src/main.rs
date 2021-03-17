@@ -9,15 +9,24 @@ mod dmiopt;
 use crate::dmiopt::opt_string_keyword;
 use smbioslib::*;
 
+
+fn print_usage(program: &str, opts: getopts::Options) {
+    let brief = format!("Usage: {} [options]", program);
+    print!("{}", opts.usage(&brief));
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let help_option = "h";
     let file_option = "f";
     let output_option = "o";
     let string_option = "s";
 
     let args: Vec<String> = std::env::args().collect();
+    let program = args[0].clone();
     let mut opts = getopts::Options::new();
-    opts.optopt(file_option, "", "read smbios table from file", "FILE");
-    opts.optopt(output_option, "", "dump smbios table to a file", "FILE");
+    opts.optflag(help_option, "", "Print help menu");
+    opts.optopt(file_option, "", "Read smbios table from file", "FILE");
+    opts.optopt(output_option, "", "Dump smbios table to a file", "FILE");
     opts.optopt(
         string_option,
         "",
@@ -26,7 +35,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     );
 
     let matches = opts.parse(&args[1..])?;
-
+    if matches.opt_present(help_option) {
+        print_usage(&program, opts);
+        return Ok(());
+    }
     if !matches.opt_present(file_option)
         && !matches.opt_present(output_option)
         && !matches.opt_present(string_option)
