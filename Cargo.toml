@@ -1,0 +1,15 @@
+[package]
+name = "dmidecode-rs"
+version = "0.1.0"
+authors = ["Jeff Gerber <jeffger@microsoft.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "dmidecode"
+path = "src/main.rs"
+
+[dependencies]
+getopts = "0.2.21"
+smbios = { git = "https://github.com/jrgerber/smbios-lib", branch = "main" }
