@@ -1,7 +1,7 @@
 [package]
 name = "dmidecode-rs"
 version = "0.1.0"
-authors = ["Jeffrey R. Gerber <jeffreygerber@gmail.com>"]
+authors = ["Jeffrey R. Gerber <jeffreygerber@gmail.com>", "Juan Zuluaga <juzuluag@hotmail.com>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
