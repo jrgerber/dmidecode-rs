@@ -10,7 +10,6 @@ edition = "2018"
 name = "dmidecode"
 path = "src/main.rs"
 
-
 [dependencies]
 structopt = { version = "0.3", default-features = true }
 smbios = { git = "https://github.com/jrgerber/smbios-lib", branch = "main" }

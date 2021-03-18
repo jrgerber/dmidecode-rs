@@ -36,7 +36,6 @@ pub enum Keyword {
     ProcessorFrequency,
 }
 
-
 impl FromStr for Keyword {
     type Err = std::io::Error;
 
@@ -246,11 +245,19 @@ pub fn opt_string_keyword(keyword: Keyword, data: &SMBiosData) -> Result<String,
 }
 
 #[test]
-fn enum_display_exist_in_opt_string_keyword() -> Result<(), Box<dyn std::error::Error>> {
-    let data = table_load_from_device()?;
+fn test_enum_display_exist_in_opt_string_keyword() -> Result<(), Box<dyn std::error::Error>> {
     for keyword in Keyword::into_enum_iter() {
         let kstr = format!("{}", &keyword);
-        opt_string_keyword(Keyword::from_str(&kstr)?, &data)?;
+        Keyword::from_str(&kstr)?;
     }
     Ok(())
+}
+
+#[test]
+fn test_keyword_invalid_error_expected() {
+    let result = Keyword::from_str("invalid");
+    assert!(result.is_err());
+    let got = result.unwrap_err();
+    let want = std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid");
+    assert_eq!(want.to_string(), got.to_string());
 }
