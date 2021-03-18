@@ -244,9 +244,3 @@ pub fn opt_string_keyword(keyword: Keyword, data: &SMBiosData) -> Result<String,
         }
     }
 }
-
-pub fn list_keywords() {
-    for k in Keyword::into_enum_iter() {
-        println!("{}", &k);
-    }
-}

@@ -7,10 +7,12 @@ mod dmiopt;
 mod error;
 
 use crate::dmiopt::opt_string_keyword;
-use dmiopt::{Keyword, list_keywords};
+use dmiopt::{Keyword};
 use smbioslib::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use enum_iterator::IntoEnumIterator;
+
 
 /* The original DMI decode command line:
 
@@ -106,7 +108,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if opt.list {
-        list_keywords()
+        for i in Keyword::into_enum_iter() {
+            println!("{}", &i);
+        }
     }
 
     Ok(())
