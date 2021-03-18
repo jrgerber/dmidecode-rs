@@ -1,16 +1,18 @@
+use std::{fmt::{self, Display, Formatter}};
 use std::str::FromStr;
+use enum_iterator::IntoEnumIterator;
 
 use crate::error::BiosParseError;
 use smbioslib::*;
 use structopt::StructOpt;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, StructOpt, IntoEnumIterator)]
 pub enum Keyword {
     BiosVendor,
     BiosVersion,
     BiosReleaseDate,
     BiosRevision,
-    FirmewareRevision,
+    FirmwareRevision,
     SystemManufacturer,
     SystemProductName,
     SystemVersion,
@@ -34,6 +36,7 @@ pub enum Keyword {
     ProcessorFrequency,
 }
 
+
 impl FromStr for Keyword {
     type Err = std::io::Error;
 
@@ -43,7 +46,7 @@ impl FromStr for Keyword {
             "bios-version" => Ok(Keyword::BiosVersion),
             "bios-release-date" => Ok(Keyword::BiosReleaseDate),
             "bios-revision" => Ok(Keyword::BiosRevision),
-            "firmware-revision" => Ok(Keyword::FirmewareRevision),
+            "firmware-revision" => Ok(Keyword::FirmwareRevision),
             "system-manufacturer" => Ok(Keyword::SystemManufacturer),
             "system-product-name" => Ok(Keyword::SystemProductName),
             "system-version" => Ok(Keyword::SystemVersion),
@@ -70,6 +73,39 @@ impl FromStr for Keyword {
     }
 }
 
+impl Display for Keyword {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Keyword::BiosVendor => write!(f, "bios-vendor"),
+            Keyword::BiosVersion => write!(f, "bios-version"),
+            Keyword::BiosReleaseDate => write!(f, "bios-release-date"),
+            Keyword::BiosRevision => write!(f, "bios-revision"),
+            Keyword::FirmwareRevision => write!(f, "firmware-revision"),
+            Keyword::SystemManufacturer => write!(f, "system-manufacturer"),
+            Keyword::SystemProductName => write!(f, "system-product-name"),
+            Keyword::SystemVersion => write!(f, "system-version"),
+            Keyword::SystemSerialNumber => write!(f, "system-serial-number"),
+            Keyword::SystemUuid => write!(f, "system-uuid"),
+            Keyword::SystemSkuNumber => write!(f, "system-sku-number"),
+            Keyword::SystemFamily => write!(f, "system-family"),
+            Keyword::BaseboardManufacturer => write!(f, "baseboard-manufacturer"),
+            Keyword::BaseboardProductName => write!(f, "baseboard-product-name"),
+            Keyword::BaseboardVersion => write!(f, "baseboard-version"),
+            Keyword::BaseboardSerialNumber => write!(f, "baseboard-serial-number"),
+            Keyword::BaseboardAssetTag => write!(f, "baseboard-asset-tag"),
+            Keyword::ChassisManufacturer => write!(f, "chassis-manufacturer"),
+            Keyword::ChassisType => write!(f, "chassis-type"),
+            Keyword::ChassisVersion => write!(f, "chassis-version"),
+            Keyword::ChassisSerialNumber => write!(f, "chassis-serial-number"),
+            Keyword::ChassisAssetTag => write!(f, "chassis-asset-tag"),
+            Keyword::ProcessorFamily => write!(f, "processor-family"),
+            Keyword::ProcessorManufacturer => write!(f, "processor-manufacturer"),
+            Keyword::ProcessorVersion => write!(f, "processor-version"),
+            Keyword::ProcessorFrequency => write!(f, "processor-frequency"),
+        }
+    }
+}
+
 pub fn opt_string_keyword(keyword: Keyword, data: &SMBiosData) -> Result<String, BiosParseError> {
     match keyword {
         Keyword::BiosVendor => data
@@ -92,7 +128,7 @@ pub fn opt_string_keyword(keyword: Keyword, data: &SMBiosData) -> Result<String,
                 }
             })
             .ok_or(BiosParseError::BiosRevisionNotFound),
-        Keyword::FirmewareRevision => data
+        Keyword::FirmwareRevision => data
             .find_map(|bios_info: SMBiosInformation<'_>| {
                 match (
                     bios_info.e_c_firmware_major_release(),
@@ -102,7 +138,7 @@ pub fn opt_string_keyword(keyword: Keyword, data: &SMBiosData) -> Result<String,
                     _ => None,
                 }
             })
-            .ok_or(BiosParseError::FirmewareRevisionNotFound),
+            .ok_or(BiosParseError::FirmwareRevisionNotFound),
         Keyword::SystemManufacturer => data
             .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.manufacturer())
             .ok_or(BiosParseError::SystemManufacturerNotFound),
@@ -206,5 +242,11 @@ pub fn opt_string_keyword(keyword: Keyword, data: &SMBiosData) -> Result<String,
                 None => Err(BiosParseError::ProcessorFrequencyNotFound),
             }
         }
+    }
+}
+
+pub fn list_keywords() {
+    for k in Keyword::into_enum_iter() {
+        println!("{}", &k);
     }
 }

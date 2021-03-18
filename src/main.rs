@@ -7,7 +7,7 @@ mod dmiopt;
 mod error;
 
 use crate::dmiopt::opt_string_keyword;
-use dmiopt::Keyword;
+use dmiopt::{Keyword, list_keywords};
 use smbioslib::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -53,11 +53,16 @@ struct Opt {
     /// Dump the DMI data to a binary file
     #[structopt(long = "dump-bin", parse(from_os_str))]
     output: Option<PathBuf>,
+
+    /// List supported DMI string
+    #[structopt(short, long)]
+    list: bool,
 }
 
 impl Opt {
     fn has_no_args(&self) -> bool {
-        self.keyword.is_none() && self.input.is_none() && self.output.is_none()
+        self.keyword.is_none() && self.input.is_none() && self.output.is_none() &&
+            !self.list
     }
 }
 
@@ -98,6 +103,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             dump_raw(raw_smbios_from_device()?, filename)?
         }
         None => (),
+    }
+
+    if opt.list {
+        list_keywords()
     }
 
     Ok(())
