@@ -244,3 +244,13 @@ pub fn opt_string_keyword(keyword: Keyword, data: &SMBiosData) -> Result<String,
         }
     }
 }
+
+#[test]
+fn enum_display_exist_in_opt_string_keyword() -> Result<(), Box<dyn std::error::Error>> {
+    let data = table_load_from_device()?;
+    for keyword in Keyword::into_enum_iter() {
+        let kstr = format!("{}", &keyword);
+        opt_string_keyword(Keyword::from_str(&kstr)?, &data)?;
+    }
+    Ok(())
+}
