@@ -6,8 +6,7 @@
 mod dmiopt;
 mod error;
 
-use crate::dmiopt::opt_string_keyword;
-use dmiopt::Keyword;
+use dmiopt::{BiosType, Keyword};
 use smbioslib::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -35,7 +34,11 @@ use structopt::StructOpt;
 */
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "dmidecode", about = "DMI table decoder.")]
+#[structopt(
+    name = "dmidecode-rs",
+    about = "DMI Table Decoder, Rust Edition ⛭",
+    author = "Jeffrey R. Gerber, Juan Zuluaga"
+)]
 struct Opt {
     /// Less verbose output
     // short and long flags (-q, --quiet) will be deduced from the field's name
@@ -53,6 +56,10 @@ struct Opt {
     /// Dump the DMI data to a binary file
     #[structopt(long = "dump-bin", parse(from_os_str))]
     output: Option<PathBuf>,
+
+    /// Only display the entries of given type
+    #[structopt(short = "t", long = "type")]
+    bios_type: Vec<BiosType>,
 }
 
 impl Opt {
@@ -63,7 +70,7 @@ impl Opt {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
-
+    println!("{:?}", opt);
     if opt.has_no_args() {
         println!("{:#X?}", table_load_from_device()?);
         return Ok(());
@@ -72,7 +79,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match opt.keyword {
         Some(keyword) => {
             let smbios_data = table_load_from_device()?;
-            let output = opt_string_keyword(keyword, &smbios_data)?;
+            let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
         None => (),
