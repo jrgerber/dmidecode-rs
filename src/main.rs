@@ -7,7 +7,7 @@ mod dmiopt;
 mod error;
 
 use crate::dmiopt::opt_string_keyword;
-use dmiopt::{Keyword};
+use dmiopt::Keyword;
 use smbioslib::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
