@@ -11,5 +11,5 @@ name = "dmidecode"
 path = "src/main.rs"
 
 [dependencies]
-getopts = "0.2.21"
+structopt = { version = "0.3", default-features = true }
 smbios = { git = "https://github.com/jrgerber/smbios-lib", branch = "main" }

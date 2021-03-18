@@ -28,7 +28,6 @@ pub enum BiosParseError {
     ProcessorManufacturerNotFound,
     ProcessorVersionNotFound,
     ProcessorFrequencyNotFound,
-    InvalidKeywordOnCommandLine,
 }
 
 impl Error for BiosParseError {
