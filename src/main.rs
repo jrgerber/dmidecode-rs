@@ -55,8 +55,19 @@ struct Opt {
     output: Option<PathBuf>,
 }
 
+impl Opt {
+    fn has_no_args(&self) -> bool {
+        self.keyword.is_none() && self.input.is_none() && self.output.is_none()
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
+
+    if opt.has_no_args() {
+        println!("{:#X?}", table_load_from_device()?);
+        return Ok(());
+    }
 
     match opt.keyword {
         Some(keyword) => {
