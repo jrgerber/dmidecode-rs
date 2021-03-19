@@ -52,3 +52,26 @@ fn test_dump_bin_read_bin() -> Result<(), Box<dyn std::error::Error>> {
     dir.close()?;
     Ok(())
 }
+
+#[test]
+fn test_dmi_str_no_value() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd = Command::cargo_bin(CLI_COMMAND)?;
+    cmd.arg("-s");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("requires a value"));
+    Ok(())
+}
+
+#[test]
+fn test_dmi_str_known_unknown_keyword() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd1.arg("-s").arg("bios-version");
+    cmd1.assert().success();
+
+    let mut cmd2 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd2.arg("-s").arg("invalid");
+    cmd2.assert().failure().stderr(predicate::str::contains("Invalid value"));
+
+    Ok(())
+}
