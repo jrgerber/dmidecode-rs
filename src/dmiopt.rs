@@ -4,20 +4,6 @@ use crate::error::BiosParseError;
 use smbioslib::*;
 use structopt::StructOpt;
 
-/*
-       Keyword     Types
-       ------------------------------
-       bios        0, 13
-       system      1, 12, 15, 23, 32
-       baseboard   2, 10, 41
-       chassis     3
-       processor   4
-       memory      5, 6, 16, 17
-       cache       7
-       connector   8
-       slot        9
-*/
-
 #[derive(Debug)]
 pub enum BiosType {
     Bios,
@@ -47,6 +33,40 @@ impl FromStr for BiosType {
             "connector" => Ok(BiosType::Connector),
             "slot" => Ok(BiosType::Slot),
             _ => Ok(BiosType::Numeric(u8::from_str(s)?)),
+        }
+    }
+}
+
+/*
+       Keyword     Types
+       ------------------------------
+       bios        0, 13
+       system      1, 12, 15, 23, 32
+       baseboard   2, 10, 41
+       chassis     3
+       processor   4
+       memory      5, 6, 16, 17
+       cache       7
+       connector   8
+       slot        9
+*/
+
+impl IntoIterator for BiosType {
+    type Item = u8;
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            BiosType::Bios => vec![0, 13].into_iter(),
+            BiosType::System => vec![1, 12, 15, 23, 32].into_iter(),
+            BiosType::Baseboard => vec![2, 10, 41].into_iter(),
+            BiosType::Chassis => vec![3].into_iter(),
+            BiosType::Processor => vec![4].into_iter(),
+            BiosType::Memory => vec![5, 6, 16, 17].into_iter(),
+            BiosType::Cache => vec![7].into_iter(),
+            BiosType::Connector => vec![8].into_iter(),
+            BiosType::Slot => vec![9].into_iter(),
+            BiosType::Numeric(number) => vec![number].into_iter(),
         }
     }
 }
