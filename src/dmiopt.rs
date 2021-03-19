@@ -1,10 +1,10 @@
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 
 use crate::error::BiosParseError;
 use smbioslib::*;
 use structopt::StructOpt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum BiosType {
     Bios,
     System,
@@ -71,13 +71,31 @@ impl IntoIterator for BiosType {
     }
 }
 
+impl BiosType {
+    // We could make this return something, or, could create a type as a collection containing Vec<BiosType> and
+    // then implement methods for that type to perform more advanced I/O via state.
+    // More than likely the style of output will be desirable to change (verbose, debug, JSON, etc).
+    pub fn parse_and_display(types: Vec<BiosType>, data: &SMBiosData) {
+        let unique_types: HashSet<u8> = types
+            .iter()
+            .flat_map(|bios_type| bios_type.into_iter())
+            .collect();
+
+        for undefined_struct in data.iter().filter(|undefined_struct| {
+            unique_types.contains(&undefined_struct.header.struct_type())
+        }) {
+            println!("{:#X?}", undefined_struct.defined_struct());
+        }
+    }
+}
+
 #[derive(Debug, StructOpt)]
 pub enum Keyword {
     BiosVendor,
     BiosVersion,
     BiosReleaseDate,
     BiosRevision,
-    FirmewareRevision,
+    FirmwareRevision,
     SystemManufacturer,
     SystemProductName,
     SystemVersion,
@@ -110,7 +128,7 @@ impl FromStr for Keyword {
             "bios-version" => Ok(Keyword::BiosVersion),
             "bios-release-date" => Ok(Keyword::BiosReleaseDate),
             "bios-revision" => Ok(Keyword::BiosRevision),
-            "firmware-revision" => Ok(Keyword::FirmewareRevision),
+            "firmware-revision" => Ok(Keyword::FirmwareRevision),
             "system-manufacturer" => Ok(Keyword::SystemManufacturer),
             "system-product-name" => Ok(Keyword::SystemProductName),
             "system-version" => Ok(Keyword::SystemVersion),
@@ -160,7 +178,7 @@ impl Keyword {
                     }
                 })
                 .ok_or(BiosParseError::BiosRevisionNotFound),
-            Keyword::FirmewareRevision => data
+            Keyword::FirmwareRevision => data
                 .find_map(|bios_info: SMBiosInformation<'_>| {
                     match (
                         bios_info.e_c_firmware_major_release(),
@@ -170,7 +188,7 @@ impl Keyword {
                         _ => None,
                     }
                 })
-                .ok_or(BiosParseError::FirmewareRevisionNotFound),
+                .ok_or(BiosParseError::FirmwareRevisionNotFound),
             Keyword::SystemManufacturer => data
                 .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.manufacturer())
                 .ok_or(BiosParseError::SystemManufacturerNotFound),

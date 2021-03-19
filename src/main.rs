@@ -59,12 +59,15 @@ struct Opt {
 
     /// Only display the entries of given type
     #[structopt(short = "t", long = "type")]
-    bios_type: Vec<BiosType>,
+    bios_types: Option<Vec<BiosType>>,
 }
 
 impl Opt {
     fn has_no_args(&self) -> bool {
-        self.keyword.is_none() && self.input.is_none() && self.output.is_none()
+        self.keyword.is_none()
+            && self.input.is_none()
+            && self.output.is_none()
+            && self.bios_types.is_none()
     }
 }
 
@@ -76,15 +79,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    match opt.keyword {
-        Some(keyword) => {
-            let smbios_data = table_load_from_device()?;
-            let output = keyword.parse(&smbios_data)?;
-            println!("{}", output);
-        }
-        None => (),
-    }
-
+    // TODO: this should return an SMBiosData structure either from file or from device.
+    // Use it as input to the output routines.
     match opt.input {
         Some(input) => {
             let filename = input.to_str().ok_or(std::io::Error::new(
@@ -96,15 +92,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => (),
     }
 
-    match opt.output {
-        Some(output) => {
+    // Mutually exclusive output options (only one tuple element is Some())
+    match (opt.keyword, opt.output, opt.bios_types) {
+        (Some(keyword), None, None) => {
+            let smbios_data = table_load_from_device()?;
+            let output = keyword.parse(&smbios_data)?;
+            println!("{}", output);
+        }
+        (None, Some(output), None) => {
             let filename = output.to_str().ok_or(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!("Invalid filename {:?}", output),
             ))?;
             dump_raw(raw_smbios_from_device()?, filename)?
         }
-        None => (),
+        (None, None, Some(bios_types)) => {
+            let smbios_data = table_load_from_device()?;
+            BiosType::parse_and_display(bios_types, &smbios_data);
+        }
+        // TODO: this will dump everything to standard output
+        _ => (),
     }
 
     Ok(())

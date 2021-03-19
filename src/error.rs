@@ -6,7 +6,7 @@ pub enum BiosParseError {
     BiosVersionNotFound,
     BiosReleaseDateNotFound,
     BiosRevisionNotFound,
-    FirmewareRevisionNotFound,
+    FirmwareRevisionNotFound,
     SystemManufacturerNotFound,
     SystemProductNameNotFound,
     SystemVersionNotFound,
