@@ -46,7 +46,28 @@ struct Opt {
     #[structopt(short, long)]
     quiet: bool,
 
-    /// Only display the value of the given DMI string
+    /// Only display the value of the DMI string identified by `keyword`.
+    ///
+    /// KEYWORD must be a keyword from the following list: bios-vendor,
+    /// bios-version, bios-release-date, system-manufacturer, system-
+    /// product-name, system-version, system-serial-number, system-uuid,
+    /// system-family, baseboard-manufacturer, baseboard-product-name,
+    /// baseboard-version, baseboard-serial-number, baseboard-asset-tag,
+    /// chassis-manufacturer, chassis-type, chassis-version, chassis-
+    /// serial-number, chassis-asset-tag, processor-family, processor-
+    /// manufacturer, processor-version, processor-frequency.  Each
+    /// keyword corresponds to a given DMI type and a given offset
+    /// within this entry type.  Not all strings may be meaningful or
+    /// even defined on all systems. Some keywords may return more than
+    /// one result on some systems (e.g.  processor-version on a multi-
+    /// processor system).  If KEYWORD is not provided or not valid, a
+    /// list of all valid keywords is printed and dmidecode exits with
+    /// an error.  This option cannot be used more than once.
+    ///
+    /// Note: on Linux, most of these strings can alternatively be read
+    /// directly from sysfs, typically from files under
+    /// /sys/devices/virtual/dmi/id.  Most of these files are even
+    /// readable by regular users.    
     #[structopt(short = "s", long = "string")]
     keyword: Option<Keyword>,
 
