@@ -1,4 +1,4 @@
-name: dmidecode-rs
+name: dmidecode-rs-linux
 
 on:
   push:
