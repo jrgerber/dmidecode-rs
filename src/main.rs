@@ -73,29 +73,26 @@ impl Opt {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
-    println!("{:?}", opt);
+
     if opt.has_no_args() {
         println!("{:#X?}", table_load_from_device()?);
         return Ok(());
     }
 
-    // TODO: this should return an SMBiosData structure either from file or from device.
-    // Use it as input to the output routines.
-    match opt.input {
-        Some(input) => {
-            let filename = input.to_str().ok_or(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                format!("Invalid filename {:?}", input),
-            ))?;
-            println!("{:#X?}", load_smbios_data_from_file(filename)?)
-        }
-        None => (),
-    }
+    // Select an input source, file or device.
+    let smbios_data = if let Some(input) = opt.input {
+        let filename = input.to_str().ok_or(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("Invalid filename {:?}", input),
+        ))?;
+        load_smbios_data_from_file(filename)?
+    } else {
+        table_load_from_device()?
+    };
 
-    // Mutually exclusive output options (only one tuple element is Some())
+    // Mutually exclusive output options (only one tuple element is Some()).
     match (opt.keyword, opt.output, opt.bios_types) {
         (Some(keyword), None, None) => {
-            let smbios_data = table_load_from_device()?;
             let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
@@ -107,11 +104,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             dump_raw(raw_smbios_from_device()?, filename)?
         }
         (None, None, Some(bios_types)) => {
-            let smbios_data = table_load_from_device()?;
             BiosType::parse_and_display(bios_types, &smbios_data);
         }
-        // TODO: this will dump everything to standard output
-        _ => (),
+        _ => println!("{:#X?}", smbios_data),
     }
 
     Ok(())
