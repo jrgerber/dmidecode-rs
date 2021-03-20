@@ -48,7 +48,7 @@ struct Opt {
 
     /// Only display the value of the DMI string identified by `keyword`.
     ///
-    /// KEYWORD must be a keyword from the following list: bios-vendor,
+    /// `keyword` must be a keyword from the following list: bios-vendor,
     /// bios-version, bios-release-date, system-manufacturer, system-
     /// product-name, system-version, system-serial-number, system-uuid,
     /// system-family, baseboard-manufacturer, baseboard-product-name,
@@ -98,6 +98,11 @@ struct Opt {
     #[structopt(short = "t", long = "type", verbatim_doc_comment)]
     bios_types: Option<Vec<BiosType>>,
 
+    /// Only display the entry whose handle matches `handle`. `handle` is a
+    /// 16-bit integer in either a decimal or a hex (0xN) radix.
+    #[structopt(short = "H", long = "handle")]
+    handle: Option<Handle>,
+
     /// List supported DMI string
     #[structopt(short, long)]
     list: bool,
@@ -109,6 +114,7 @@ impl Opt {
             && self.input.is_none()
             && self.output.is_none()
             && self.bios_types.is_none()
+            && self.handle.is_none()
             && !self.list
     }
 }
@@ -133,20 +139,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Mutually exclusive output options (only one tuple element is Some()).
-    match (opt.keyword, opt.output, opt.bios_types) {
-        (Some(keyword), None, None) => {
+    match (opt.keyword, opt.output, opt.bios_types, opt.handle) {
+        (Some(keyword), None, None, None) => {
             let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
-        (None, Some(output), None) => {
+        (None, Some(output), None, None) => {
             let filename = output.to_str().ok_or(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!("Invalid filename {:?}", output),
             ))?;
             dump_raw(raw_smbios_from_device()?, filename)?
         }
-        (None, None, Some(bios_types)) => {
+        (None, None, Some(bios_types), None) => {
             BiosType::parse_and_display(bios_types, &smbios_data);
+        }
+        (None, None, None, Some(handle)) => {
+            let found_struct = smbios_data
+                .find_by_handle(&handle)
+                .ok_or(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Handle not found: {}", *handle),
+                ))?;
+            println!("{:#X?}", &found_struct.defined_struct())
         }
         _ => println!("{:#X?}", smbios_data),
     }
