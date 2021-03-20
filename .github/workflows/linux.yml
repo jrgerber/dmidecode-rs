@@ -2,9 +2,9 @@ name: dmidecode-rs
 
 on:
   push:
-    branches: [ main ]
+    branches: [ jczuluag/integ_tests ]
   pull_request:
-    branches: [ main ]
+    branches: [ jczuluag/integ_tests ]
 
 env:
   CARGO_TERM_COLOR: always
