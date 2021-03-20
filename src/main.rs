@@ -99,7 +99,7 @@ struct Opt {
     bios_types: Option<Vec<BiosType>>,
 
     /// Only display the entry whose handle matches `handle`. `handle` is a
-    /// 16-bit integer.
+    /// 16-bit integer in either a decimal or a hex (0xN) radix.
     #[structopt(short = "H", long = "handle")]
     handle: Option<Handle>,
 
