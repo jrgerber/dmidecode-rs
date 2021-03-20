@@ -1,4 +1,9 @@
-use std::{collections::HashSet, str::FromStr};
+use enum_iterator::IntoEnumIterator;
+use std::{
+    collections::HashSet,
+    fmt::{self, Display, Formatter},
+    str::FromStr,
+};
 
 use crate::error::BiosParseError;
 use smbioslib::*;
@@ -89,7 +94,7 @@ impl BiosType {
     }
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, StructOpt, IntoEnumIterator)]
 pub enum Keyword {
     BiosVendor,
     BiosVersion,
@@ -151,6 +156,39 @@ impl FromStr for Keyword {
             "processor-version" => Ok(Keyword::ProcessorVersion),
             "processor-frequency" => Ok(Keyword::ProcessorFrequency),
             _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, s)),
+        }
+    }
+}
+
+impl Display for Keyword {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Keyword::BiosVendor => write!(f, "bios-vendor"),
+            Keyword::BiosVersion => write!(f, "bios-version"),
+            Keyword::BiosReleaseDate => write!(f, "bios-release-date"),
+            Keyword::BiosRevision => write!(f, "bios-revision"),
+            Keyword::FirmwareRevision => write!(f, "firmware-revision"),
+            Keyword::SystemManufacturer => write!(f, "system-manufacturer"),
+            Keyword::SystemProductName => write!(f, "system-product-name"),
+            Keyword::SystemVersion => write!(f, "system-version"),
+            Keyword::SystemSerialNumber => write!(f, "system-serial-number"),
+            Keyword::SystemUuid => write!(f, "system-uuid"),
+            Keyword::SystemSkuNumber => write!(f, "system-sku-number"),
+            Keyword::SystemFamily => write!(f, "system-family"),
+            Keyword::BaseboardManufacturer => write!(f, "baseboard-manufacturer"),
+            Keyword::BaseboardProductName => write!(f, "baseboard-product-name"),
+            Keyword::BaseboardVersion => write!(f, "baseboard-version"),
+            Keyword::BaseboardSerialNumber => write!(f, "baseboard-serial-number"),
+            Keyword::BaseboardAssetTag => write!(f, "baseboard-asset-tag"),
+            Keyword::ChassisManufacturer => write!(f, "chassis-manufacturer"),
+            Keyword::ChassisType => write!(f, "chassis-type"),
+            Keyword::ChassisVersion => write!(f, "chassis-version"),
+            Keyword::ChassisSerialNumber => write!(f, "chassis-serial-number"),
+            Keyword::ChassisAssetTag => write!(f, "chassis-asset-tag"),
+            Keyword::ProcessorFamily => write!(f, "processor-family"),
+            Keyword::ProcessorManufacturer => write!(f, "processor-manufacturer"),
+            Keyword::ProcessorVersion => write!(f, "processor-version"),
+            Keyword::ProcessorFrequency => write!(f, "processor-frequency"),
         }
     }
 }
@@ -296,4 +334,22 @@ impl Keyword {
             }
         }
     }
+}
+
+#[test]
+fn test_enum_display_exist_in_opt_string_keyword() -> Result<(), Box<dyn std::error::Error>> {
+    for keyword in Keyword::into_enum_iter() {
+        let kstr = format!("{}", &keyword);
+        Keyword::from_str(&kstr)?;
+    }
+    Ok(())
+}
+
+#[test]
+fn test_keyword_invalid_error_expected() {
+    let result = Keyword::from_str("invalid");
+    assert!(result.is_err());
+    let got = result.unwrap_err();
+    let want = std::io::Error::new(std::io::ErrorKind::InvalidData, "invalid");
+    assert_eq!(want.to_string(), got.to_string());
 }

@@ -7,6 +7,7 @@ mod dmiopt;
 mod error;
 
 use dmiopt::{BiosType, Keyword};
+use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -60,6 +61,10 @@ struct Opt {
     /// Only display the entries of given type
     #[structopt(short = "t", long = "type")]
     bios_types: Option<Vec<BiosType>>,
+
+    /// List supported DMI string
+    #[structopt(short, long)]
+    list: bool,
 }
 
 impl Opt {
@@ -68,6 +73,7 @@ impl Opt {
             && self.input.is_none()
             && self.output.is_none()
             && self.bios_types.is_none()
+            && !self.list
     }
 }
 
@@ -107,6 +113,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             BiosType::parse_and_display(bios_types, &smbios_data);
         }
         _ => println!("{:#X?}", smbios_data),
+    }
+
+    if opt.list {
+        for i in Keyword::into_enum_iter() {
+            println!("{}", &i);
+        }
     }
 
     Ok(())
