@@ -139,22 +139,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Mutually exclusive output options (only one tuple element is Some()).
-    match (opt.keyword, opt.output, opt.bios_types, opt.handle) {
-        (Some(keyword), None, None, None) => {
+    match (opt.keyword, opt.output, opt.bios_types, opt.handle, opt.list) {
+        (Some(keyword), None, None, None, false) => {
             let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
-        (None, Some(output), None, None) => {
+        (None, Some(output), None, None, false) => {
             let filename = output.to_str().ok_or(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!("Invalid filename {:?}", output),
             ))?;
             dump_raw(raw_smbios_from_device()?, filename)?
         }
-        (None, None, Some(bios_types), None) => {
+        (None, None, Some(bios_types), None, false) => {
             BiosType::parse_and_display(bios_types, &smbios_data);
         }
-        (None, None, None, Some(handle)) => {
+        (None, None, None, Some(handle), false) => {
             let found_struct = smbios_data
                 .find_by_handle(&handle)
                 .ok_or(std::io::Error::new(
@@ -163,13 +163,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ))?;
             println!("{:#X?}", &found_struct.defined_struct())
         }
-        _ => println!("{:#X?}", smbios_data),
-    }
-
-    if opt.list {
-        for i in Keyword::into_enum_iter() {
-            println!("{}", &i);
+        (None, None, None, None, true) => {
+            for i in Keyword::into_enum_iter() {
+                println!("{}", &i);
+            }
         }
+        _ => println!("{:#X?}", smbios_data),
     }
 
     Ok(())
