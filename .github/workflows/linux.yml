@@ -3,11 +3,9 @@ name: dmidecode-rs-temp
 on:
   push:
     branches:
-      - main
       - 'jczuluag/integ_tests'
   pull_request:
     branches:
-      - main
       - 'jczuluag/integ_tests'
 
 env:
