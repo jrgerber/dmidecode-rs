@@ -59,7 +59,22 @@ struct Opt {
     output: Option<PathBuf>,
 
     /// Only display the entries of given type
-    #[structopt(short = "t", long = "type")]
+    ///
+    /// Supply one or more keywords, one or more type values,
+    /// or a combination of the two.
+    ///
+    ///    Keyword     Types
+    ///    ------------------------------
+    ///    bios        0, 13
+    ///    system      1, 12, 15, 23, 32
+    ///    baseboard   2, 10, 41
+    ///    chassis     3
+    ///    processor   4
+    ///    memory      5, 6, 16, 17
+    ///    cache       7
+    ///    connector   8
+    ///    slot        9
+    #[structopt(short = "t", long = "type", verbatim_doc_comment)]
     bios_types: Option<Vec<BiosType>>,
 
     /// List supported DMI string
