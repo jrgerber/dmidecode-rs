@@ -1,12 +1,11 @@
-name: dmidecode-rs-temp
+name: dmidecode-rs
 
 on:
   push:
-    branches:
-      - 'jczuluag/integ_tests'
+    branches: [ main ]
+
   pull_request:
-    branches:
-      - 'jczuluag/integ_tests'
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always
