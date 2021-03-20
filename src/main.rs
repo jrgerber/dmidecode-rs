@@ -6,13 +6,11 @@
 mod dmiopt;
 mod error;
 
-use crate::dmiopt::opt_string_keyword;
-use dmiopt::Keyword;
+use dmiopt::{BiosType, Keyword};
+use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
 use std::path::PathBuf;
 use structopt::StructOpt;
-use enum_iterator::IntoEnumIterator;
-
 
 /* The original DMI decode command line:
 
@@ -37,14 +35,39 @@ use enum_iterator::IntoEnumIterator;
 */
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "dmidecode", about = "DMI table decoder.")]
+#[structopt(
+    name = "dmidecode-rs",
+    about = "DMI Table Decoder, Rust Edition ⛭",
+    author = "Jeffrey R. Gerber, Juan Zuluaga"
+)]
 struct Opt {
     /// Less verbose output
     // short and long flags (-q, --quiet) will be deduced from the field's name
     #[structopt(short, long)]
     quiet: bool,
 
-    /// Only display the value of the given DMI string
+    /// Only display the value of the DMI string identified by `keyword`.
+    ///
+    /// KEYWORD must be a keyword from the following list: bios-vendor,
+    /// bios-version, bios-release-date, system-manufacturer, system-
+    /// product-name, system-version, system-serial-number, system-uuid,
+    /// system-family, baseboard-manufacturer, baseboard-product-name,
+    /// baseboard-version, baseboard-serial-number, baseboard-asset-tag,
+    /// chassis-manufacturer, chassis-type, chassis-version, chassis-
+    /// serial-number, chassis-asset-tag, processor-family, processor-
+    /// manufacturer, processor-version, processor-frequency.  Each
+    /// keyword corresponds to a given DMI type and a given offset
+    /// within this entry type.  Not all strings may be meaningful or
+    /// even defined on all systems. Some keywords may return more than
+    /// one result on some systems (e.g.  processor-version on a multi-
+    /// processor system).  If KEYWORD is not provided or not valid, a
+    /// list of all valid keywords is printed and dmidecode exits with
+    /// an error.  This option cannot be used more than once.
+    ///
+    /// Note: on Linux, most of these strings can alternatively be read
+    /// directly from sysfs, typically from files under
+    /// /sys/devices/virtual/dmi/id.  Most of these files are even
+    /// readable by regular users.    
     #[structopt(short = "s", long = "string")]
     keyword: Option<Keyword>,
 
@@ -56,6 +79,25 @@ struct Opt {
     #[structopt(long = "dump-bin", parse(from_os_str))]
     output: Option<PathBuf>,
 
+    /// Only display the entries of given type
+    ///
+    /// Supply one or more keywords, one or more type values,
+    /// or a combination of the two.
+    ///
+    ///    Keyword     Types
+    ///    ------------------------------
+    ///    bios        0, 13
+    ///    system      1, 12, 15, 23, 32
+    ///    baseboard   2, 10, 41
+    ///    chassis     3
+    ///    processor   4
+    ///    memory      5, 6, 16, 17
+    ///    cache       7
+    ///    connector   8
+    ///    slot        9
+    #[structopt(short = "t", long = "type", verbatim_doc_comment)]
+    bios_types: Option<Vec<BiosType>>,
+
     /// List supported DMI string
     #[structopt(short, long)]
     list: bool,
@@ -63,8 +105,11 @@ struct Opt {
 
 impl Opt {
     fn has_no_args(&self) -> bool {
-        self.keyword.is_none() && self.input.is_none() && self.output.is_none() &&
-            !self.list
+        self.keyword.is_none()
+            && self.input.is_none()
+            && self.output.is_none()
+            && self.bios_types.is_none()
+            && !self.list
     }
 }
 
@@ -76,35 +121,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
-    match opt.keyword {
-        Some(keyword) => {
-            let smbios_data = table_load_from_device()?;
-            let output = opt_string_keyword(keyword, &smbios_data)?;
+    // Select an input source, file or device.
+    let smbios_data = if let Some(input) = opt.input {
+        let filename = input.to_str().ok_or(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("Invalid filename {:?}", input),
+        ))?;
+        load_smbios_data_from_file(filename)?
+    } else {
+        table_load_from_device()?
+    };
+
+    // Mutually exclusive output options (only one tuple element is Some()).
+    match (opt.keyword, opt.output, opt.bios_types) {
+        (Some(keyword), None, None) => {
+            let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
-        None => (),
-    }
-
-    match opt.input {
-        Some(input) => {
-            let filename = input.to_str().ok_or(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                format!("Invalid filename {:?}", input),
-            ))?;
-            println!("{:#X?}", load_smbios_data_from_file(filename)?)
-        }
-        None => (),
-    }
-
-    match opt.output {
-        Some(output) => {
+        (None, Some(output), None) => {
             let filename = output.to_str().ok_or(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!("Invalid filename {:?}", output),
             ))?;
             dump_raw(raw_smbios_from_device()?, filename)?
         }
-        None => (),
+        (None, None, Some(bios_types)) => {
+            BiosType::parse_and_display(bios_types, &smbios_data);
+        }
+        _ => println!("{:#X?}", smbios_data),
     }
 
     if opt.list {
