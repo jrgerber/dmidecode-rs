@@ -99,9 +99,19 @@ struct Opt {
     bios_types: Option<Vec<BiosType>>,
 
     /// Only display the entry whose handle matches `handle`. `handle` is a
-    /// 16-bit integer in either a decimal or a hex (0xN) radix.
+    /// 16-bit integer in either a decimal or a hexadecimal (0xN) form.
     #[structopt(short = "H", long = "handle")]
     handle: Option<Handle>,
+
+    /// Do not decode the entries, dump their contents as hexadecimal
+    /// instead.
+    ///
+    /// Note that this is still a text output, no binary data
+    /// will be thrown upon you. The strings attached to each entry are
+    /// displayed as both hexadecimal and ASCII. This option is mainly
+    /// useful for debugging.
+    #[structopt(short = "u", long = "dump")]
+    undefined_dump: bool,
 
     /// List supported DMI string
     #[structopt(short, long)]
@@ -115,6 +125,7 @@ impl Opt {
             && self.output.is_none()
             && self.bios_types.is_none()
             && self.handle.is_none()
+            && !self.undefined_dump
             && !self.list
     }
 }
@@ -139,22 +150,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
 
     // Mutually exclusive output options (only one tuple element is Some()).
-    match (opt.keyword, opt.output, opt.bios_types, opt.handle, opt.list) {
-        (Some(keyword), None, None, None, false) => {
+    match (
+        opt.keyword,
+        opt.output,
+        opt.bios_types,
+        opt.handle,
+        opt.undefined_dump,
+        opt.list,
+    ) {
+        (Some(keyword), None, None, None, false, false) => {
             let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
-        (None, Some(output), None, None, false) => {
+        (None, Some(output), None, None, false, false) => {
             let filename = output.to_str().ok_or(std::io::Error::new(
                 std::io::ErrorKind::InvalidInput,
                 format!("Invalid filename {:?}", output),
             ))?;
             dump_raw(raw_smbios_from_device()?, filename)?
         }
-        (None, None, Some(bios_types), None, false) => {
+        (None, None, Some(bios_types), None, false, false) => {
             BiosType::parse_and_display(bios_types, &smbios_data);
         }
-        (None, None, None, Some(handle), false) => {
+        (None, None, None, Some(handle), false, false) => {
             let found_struct = smbios_data
                 .find_by_handle(&handle)
                 .ok_or(std::io::Error::new(
@@ -163,7 +181,56 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ))?;
             println!("{:#X?}", &found_struct.defined_struct())
         }
-        (None, None, None, None, true) => {
+        (None, None, None, None, true, false) => {
+            for undefined_struct in smbios_data {
+                /*
+                    Handle 0x0000, DMI type 0, 20 bytes
+                        Header and Data:
+                                00 14 00 00 01 02 00 F0 03 03 90 DA CB 7F 00 00
+                                00 00 34 01
+                        Strings:
+                                41 6D 65 72 69 63 61 6E 20 4D 65 67 61 74 72 65
+                                6E 64 73 20 49 6E 63 2E 00
+                                "American Megatrends Inc."
+                                30 39 30 30 30 38 20 00
+                                "090008 "
+                                31 32 2F 30 37 2F 32 30 31 38 00
+                                "12/07/2018"
+                */
+                println!(
+                    "Handle {:#06X}, DMI type {}, {} bytes",
+                    *undefined_struct.header.handle(),
+                    undefined_struct.header.struct_type(),
+                    undefined_struct.fields.len()
+                );
+                print!("\tHeader and Data:");
+                for item in undefined_struct.fields.iter().enumerate() {
+                    if item.0 % 16 == 0 {
+                        println!();
+                        print!("\t\t");
+                    }
+                    print!("{:02X} ", item.1);
+                }
+                println!();
+                print!("\tStrings:");
+                for string_item in undefined_struct.strings.iter() {
+                    for item in string_item.iter().enumerate() {
+                        if item.0 % 16 == 0 {
+                            println!();
+                            print!("\t\t");
+                        }
+                        print!("{:02X} ", item.1);
+                    }
+                    println!();
+                    let as_string: String = string_item.iter()
+                        .map(|x| *x as char)
+                        .collect();
+                    print!("\t\t\"{}\"", as_string);
+                }
+                println!();
+            }
+        }
+        (None, None, None, None, false, true) => {
             for i in Keyword::into_enum_iter() {
                 println!("{}", &i);
             }
