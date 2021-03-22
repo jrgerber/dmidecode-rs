@@ -212,9 +212,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     print!("{:02X} ", item.1);
                 }
                 println!();
-                println!("\tStrings:");
+                print!("\tStrings:");
                 for string_item in undefined_struct.strings.iter() {
-                    // TODO
+                    for item in string_item.iter().enumerate() {
+                        if item.0 % 16 == 0 {
+                            println!();
+                            print!("\t\t");
+                        }
+                        print!("{:02X} ", item.1);
+                    }
+                    println!();
+                    let as_string: String = string_item.iter()
+                        .map(|x| *x as char)
+                        .collect();
+                    print!("\t\t\"{}\"", as_string);
                 }
                 println!();
             }
