@@ -12,7 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 structopt = { version = "0.3", default-features = true }
-smbios = { git = "https://github.com/jrgerber/smbios-lib", branch = "main" }
+smbios-lib = "0.7.*"
 enum-iterator = "0.6.0"
 
 [dev-dependencies]
