@@ -140,11 +140,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Select an input source, file or device.
     let smbios_data = if let Some(input) = opt.input {
-        let filename = input.to_str().ok_or(std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            format!("Invalid filename {:?}", input),
-        ))?;
-        load_smbios_data_from_file(filename)?
+        load_smbios_data_from_file(&input.as_path())?
     } else {
         table_load_from_device()?
     };
@@ -163,11 +159,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("{}", output);
         }
         (None, Some(output), None, None, false, false) => {
-            let filename = output.to_str().ok_or(std::io::Error::new(
-                std::io::ErrorKind::InvalidInput,
-                format!("Invalid filename {:?}", output),
-            ))?;
-            dump_raw(raw_smbios_from_device()?, filename)?
+            dump_raw(raw_smbios_from_device()?, &output.as_path())?
         }
         (None, None, Some(bios_types), None, false, false) => {
             BiosType::parse_and_display(bios_types, &smbios_data);
