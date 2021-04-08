@@ -3,6 +3,11 @@
 #![warn(missing_docs)]
 #![deny(rust_2018_idioms)]
 
+// #[cfg_attr(unix, path = "linux.rs")]
+// #[cfg_attr(windows, path = "windows.rs")]
+// #[cfg_attr(macos, path = "macos.rs")]
+// mod platform;
+
 mod dmiopt;
 mod error;
 
@@ -116,10 +121,24 @@ struct Opt {
     /// List supported DMI string
     #[structopt(short, long)]
     list: bool,
+
+    /// Do not attempt to read DMI data from sysfs files.
+    ///
+    /// This is mainly useful for debugging.
+    #[cfg(target_os = "linux")]
+    #[structopt(long = "no-sysfs")]
+    no_sysfs: bool,
 }
 
 impl Opt {
     fn has_no_args(&self) -> bool {
+        #[cfg(target_os = "linux")]
+        {
+            if self.no_sysfs {
+                return false;
+            }
+        }
+
         self.keyword.is_none()
             && self.input.is_none()
             && self.output.is_none()
@@ -142,6 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let smbios_data = if let Some(input) = opt.input {
         load_smbios_data_from_file(&input.as_path())?
     } else {
+        //table_load(opt)?
         table_load_from_device()?
     };
 
@@ -214,9 +234,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         print!("{:02X} ", item.1);
                     }
                     println!();
-                    let as_string: String = string_item.iter()
-                        .map(|x| *x as char)
-                        .collect();
+                    let as_string: String = string_item.iter().map(|x| *x as char).collect();
                     print!("\t\t\"{}\"", as_string);
                 }
                 println!();
