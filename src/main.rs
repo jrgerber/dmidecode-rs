@@ -113,6 +113,13 @@ struct Opt {
     #[structopt(short = "u", long = "dump")]
     undefined_dump: bool,
 
+
+    /// Only display the value of the OEM string number N. The first OEM string
+    /// has number 1. With special value "count", return the number of OEM
+    /// strings instead.
+    #[structopt(long = "oem-string")]
+    oem_string: Option<String>,
+
     /// List supported DMI string
     #[structopt(short, long)]
     list: bool,
@@ -125,6 +132,7 @@ impl Opt {
             && self.output.is_none()
             && self.bios_types.is_none()
             && self.handle.is_none()
+            && self.oem_string.is_none()
             && !self.undefined_dump
             && !self.list
     }
@@ -151,20 +159,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         opt.output,
         opt.bios_types,
         opt.handle,
+        opt.oem_string,
         opt.undefined_dump,
         opt.list,
     ) {
-        (Some(keyword), None, None, None, false, false) => {
+        (Some(keyword), None, None, None, None, false, false) => {
             let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
-        (None, Some(output), None, None, false, false) => {
+        (None, Some(output), None, None, None, false, false) => {
             dump_raw(raw_smbios_from_device()?, &output.as_path())?
         }
-        (None, None, Some(bios_types), None, false, false) => {
+        (None, None, Some(bios_types), None, None, false, false) => {
             BiosType::parse_and_display(bios_types, &smbios_data);
         }
-        (None, None, None, Some(handle), false, false) => {
+        (None, None, None, Some(handle), None, false, false) => {
             let found_struct = smbios_data
                 .find_by_handle(&handle)
                 .ok_or(std::io::Error::new(
@@ -173,7 +182,43 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ))?;
             println!("{:#X?}", &found_struct.defined_struct())
         }
-        (None, None, None, None, true, false) => {
+        (None, None, None, None, Some(oem), false, false) => {
+            fn invalid_num(s: &str) -> Result<(), Box<dyn std::error::Error>> {
+                Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Invalid OEM string number {}", s))))
+            }
+            let oem_val = oem.trim().parse::<u8>();
+            let mut index = 0;
+            match oem_val {
+                Ok(n) => {
+                    if n == 0 {
+                        invalid_num(oem.as_str())?
+                    }
+                    index = n
+                },
+                Err(_) => {
+                    if oem != "count" {
+                        invalid_num(oem.as_str())?
+                    }
+                }
+            }
+            match smbios_data.first::<SMBiosOemStrings<'_>>() {
+                Some(v) => {
+                    match v.oem_strings().get_string(index) {
+                        Some(s) => println!("{}", s),
+                        None => {
+                            if index != 0 { // count
+                                invalid_num(oem.as_str())?
+                            }
+                            println!("{}", v.count().unwrap());
+                        }
+                    }
+                },
+                None => invalid_num(oem.as_str())?
+            }
+        }
+        (None, None, None, None, None, true, false) => {
             for undefined_struct in smbios_data {
                 /*
                     Handle 0x0000, DMI type 0, 20 bytes
@@ -222,7 +267,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!();
             }
         }
-        (None, None, None, None, false, true) => {
+        (None, None, None, None, None, false, true) => {
             for i in Keyword::into_enum_iter() {
                 println!("{}", &i);
             }
