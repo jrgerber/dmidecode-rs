@@ -71,7 +71,9 @@ fn test_dmi_str_known_unknown_keyword() -> Result<(), Box<dyn std::error::Error>
 
     let mut cmd2 = Command::cargo_bin(CLI_COMMAND)?;
     cmd2.arg("-s").arg("invalid");
-    cmd2.assert().failure().stderr(predicate::str::contains("Invalid value"));
+    cmd2.assert()
+        .failure()
+        .stderr(predicate::str::contains("Invalid value"));
 
     Ok(())
 }
@@ -80,11 +82,15 @@ fn test_dmi_str_known_unknown_keyword() -> Result<(), Box<dyn std::error::Error>
 fn test_oem_string_invalid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
     cmd1.arg("--oem-string").arg("0");
-    cmd1.assert().failure().stderr(predicate::str::contains("Invalid OEM string number 0"));
+    cmd1.assert()
+        .failure()
+        .stderr(predicate::str::contains("string number 0"));
 
     let mut cmd2 = Command::cargo_bin(CLI_COMMAND)?;
     cmd2.arg("--oem-string").arg("foo");
-    cmd2.assert().failure().stderr(predicate::str::contains("Invalid OEM string number foo"));
+    cmd2.assert()
+        .failure()
+        .stderr(predicate::str::contains("string number foo"));
 
     Ok(())
 }
