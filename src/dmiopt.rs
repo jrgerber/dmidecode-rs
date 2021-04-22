@@ -242,7 +242,7 @@ impl Keyword {
             Keyword::SystemUuid => {
                 match data.find_map(|system_info: SMBiosSystemInformation<'_>| system_info.uuid()) {
                     // SystemUuidData is an enum that can be broken down further if desired
-                    Some(uuid) => Ok(format!("{:?}", uuid)),
+                    Some(uuid) => Ok(format!("{}", uuid)),
                     None => Err(BiosParseError::SystemUuidNotFound),
                 }
             }
@@ -282,7 +282,7 @@ impl Keyword {
                 match data.find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
                     chassis_info.chassis_type()
                 }) {
-                    Some(chassis_type) => Ok(format!("{:?}", chassis_type)),
+                    Some(chassis_type) => Ok(format!("{}", chassis_type)),
                     None => Err(BiosParseError::ChassisTypeNotFound),
                 }
             }
