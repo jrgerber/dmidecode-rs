@@ -42,7 +42,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
 
     if opt.has_no_args() {
-        println!("{:#X?}", table_load_from_device()?);
+        println!("{:#X?}", platform::table_load(&opt)?);
         return Ok(());
     }
 
@@ -51,7 +51,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         load_smbios_data_from_file(&input.as_path())?
     } else {
         platform::table_load(&opt)?
-        //table_load_from_device()?
     };
 
     // Mutually exclusive output options (only one tuple element is Some()).
