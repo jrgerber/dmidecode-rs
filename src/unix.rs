@@ -4,12 +4,21 @@ use smbioslib::*;
 
 mod dmiopt;
 
+#[cfg(target_os = "linux")]
 pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
     if opt.no_sysfs {
+        // read from /dev/mem
         return table_load_from_dev_mem();
     }
 
+    // read from /sys/firmware/dmi/tables/DMI
     table_load_from_device()
+}
+
+#[cfg(target_os = "freebsd")]
+pub fn table_load(_opt: &Opt) -> Result<SMBiosData, Error> {
+    // FreeBSD only has /dev/mem and does not have sysfs (/sys/firmware/dmi/tables/DMI)
+    table_load_from_dev_mem()
 }
 
 /// Load from /dev/mem
