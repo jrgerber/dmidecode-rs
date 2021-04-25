@@ -1,5 +1,19 @@
+use crate::Opt;
+use smbioslib::*;
+use std::io::Error;
+
+mod dmiopt;
+
+pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
+    if opt.no_sysfs {
+        return table_load_from_dev_mem();
+    }
+
+    table_load_from_device()
+}
+
 /// Load from /dev/mem
-pub fn table_load(opt: Opt) -> Result<SMBiosData, Error> {
+fn table_load_from_dev_mem() -> Result<SMBiosData, Error> {
     use io::{Error, ErrorKind};
     const RANGE_START: u64 = 0x000F0000u64;
     const RANGE_END: u64 = 0x000FFFFFu64;
