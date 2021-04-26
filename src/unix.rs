@@ -12,6 +12,7 @@ pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
     }
 
     // read from /sys/firmware/dmi/tables/DMI
+    println!("Getting SMBIOS data from sysfs.");
     table_load_from_device()
 }
 
@@ -40,6 +41,7 @@ fn table_load_from_dev_mem() -> Result<SMBiosData, Error> {
                 revision: 0,
             };
 
+            println!("Scanning /dev/mem for entry point.");
             println!(
                 "SMBIOS {}.{} present.",
                 entry_point.major_version(),

@@ -3,7 +3,6 @@ use predicates::prelude::*;
 use std::process::Command;
 use tempfile::tempdir;
 
-
 static CLI_COMMAND: &str = "dmidecode";
 
 #[test]
@@ -104,6 +103,16 @@ fn test_oem_string_valid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd2 = Command::cargo_bin(CLI_COMMAND)?;
     cmd2.arg("--oem-string").arg("count");
     cmd2.assert().success();
+
+    Ok(())
+}
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[test]
+fn test_no_sysfs() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd1.arg("--no-sysfs");
+    cmd1.assert().success();
 
     Ok(())
 }
