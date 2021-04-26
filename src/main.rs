@@ -3,7 +3,7 @@
 #![warn(missing_docs)]
 #![deny(rust_2018_idioms)]
 
-#[cfg_attr(unix, path = "unix.rs")]
+#[cfg_attr(any(target_os = "linux", target_os = "freebsd"), path = "unix.rs")]
 #[cfg_attr(windows, path = "windows.rs")]
 #[cfg_attr(macos, path = "macos.rs")]
 mod platform;
