@@ -3,13 +3,17 @@
 #![warn(missing_docs)]
 #![deny(rust_2018_idioms)]
 
+#[cfg_attr(any(target_os = "linux", target_os = "freebsd"), path = "unix.rs")]
+#[cfg_attr(windows, path = "windows.rs")]
+#[cfg_attr(target_os = "macos", path = "macos.rs")]
+mod platform;
+
 mod dmiopt;
 mod error;
 
-use dmiopt::{BiosType, Keyword};
+use dmiopt::{BiosType, Keyword, Opt};
 use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
-use std::path::PathBuf;
 use structopt::StructOpt;
 
 /* The original DMI decode command line:
@@ -34,115 +38,11 @@ use structopt::StructOpt;
     output format and are mutually exclusive.
 */
 
-#[derive(Debug, StructOpt)]
-#[structopt(
-    name = "dmidecode-rs",
-    about = "DMI Table Decoder, Rust Edition ⛭",
-    author = "Jeffrey R. Gerber, Juan Zuluaga"
-)]
-struct Opt {
-    /// Less verbose output
-    // short and long flags (-q, --quiet) will be deduced from the field's name
-    #[structopt(short, long)]
-    quiet: bool,
-
-    /// Only display the value of the DMI string identified by `keyword`.
-    ///
-    /// `keyword` must be a keyword from the following list: bios-vendor,
-    /// bios-version, bios-release-date, system-manufacturer, system-
-    /// product-name, system-version, system-serial-number, system-uuid,
-    /// system-family, baseboard-manufacturer, baseboard-product-name,
-    /// baseboard-version, baseboard-serial-number, baseboard-asset-tag,
-    /// chassis-manufacturer, chassis-type, chassis-version, chassis-
-    /// serial-number, chassis-asset-tag, processor-family, processor-
-    /// manufacturer, processor-version, processor-frequency.  Each
-    /// keyword corresponds to a given DMI type and a given offset
-    /// within this entry type.  Not all strings may be meaningful or
-    /// even defined on all systems. Some keywords may return more than
-    /// one result on some systems (e.g.  processor-version on a multi-
-    /// processor system).  If KEYWORD is not provided or not valid, a
-    /// list of all valid keywords is printed and dmidecode exits with
-    /// an error.  This option cannot be used more than once.
-    ///
-    /// Note: on Linux, most of these strings can alternatively be read
-    /// directly from sysfs, typically from files under
-    /// /sys/devices/virtual/dmi/id.  Most of these files are even
-    /// readable by regular users.    
-    #[structopt(short = "s", long = "string")]
-    keyword: Option<Keyword>,
-
-    /// Read the DMI data from a binary file
-    #[structopt(long = "from-dump", parse(from_os_str))]
-    input: Option<PathBuf>,
-
-    /// Dump the DMI data to a binary file
-    #[structopt(long = "dump-bin", parse(from_os_str))]
-    output: Option<PathBuf>,
-
-    /// Only display the entries of given type
-    ///
-    /// Supply one or more keywords, one or more type values,
-    /// or a combination of the two.
-    ///
-    ///    Keyword     Types
-    ///    ------------------------------
-    ///    bios        0, 13
-    ///    system      1, 12, 15, 23, 32
-    ///    baseboard   2, 10, 41
-    ///    chassis     3
-    ///    processor   4
-    ///    memory      5, 6, 16, 17
-    ///    cache       7
-    ///    connector   8
-    ///    slot        9
-    #[structopt(short = "t", long = "type", verbatim_doc_comment)]
-    bios_types: Option<Vec<BiosType>>,
-
-    /// Only display the entry whose handle matches `handle`. `handle` is a
-    /// 16-bit integer in either a decimal or a hexadecimal (0xN) form.
-    #[structopt(short = "H", long = "handle")]
-    handle: Option<Handle>,
-
-    /// Do not decode the entries, dump their contents as hexadecimal
-    /// instead.
-    ///
-    /// Note that this is still a text output, no binary data
-    /// will be thrown upon you. The strings attached to each entry are
-    /// displayed as both hexadecimal and ASCII. This option is mainly
-    /// useful for debugging.
-    #[structopt(short = "u", long = "dump")]
-    undefined_dump: bool,
-
-
-    /// Only display the value of the OEM string number N. The first OEM string
-    /// has number 1. With special value "count", return the number of OEM
-    /// strings instead.
-    #[structopt(long = "oem-string")]
-    oem_string: Option<String>,
-
-    /// List supported DMI string
-    #[structopt(short, long)]
-    list: bool,
-}
-
-impl Opt {
-    fn has_no_args(&self) -> bool {
-        self.keyword.is_none()
-            && self.input.is_none()
-            && self.output.is_none()
-            && self.bios_types.is_none()
-            && self.handle.is_none()
-            && self.oem_string.is_none()
-            && !self.undefined_dump
-            && !self.list
-    }
-}
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
 
     if opt.has_no_args() {
-        println!("{:#X?}", table_load_from_device()?);
+        println!("{:#X?}", platform::table_load(&opt)?);
         return Ok(());
     }
 
@@ -150,7 +50,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let smbios_data = if let Some(input) = opt.input {
         load_smbios_data_from_file(&input.as_path())?
     } else {
-        table_load_from_device()?
+        platform::table_load(&opt)?
     };
 
     // Mutually exclusive output options (only one tuple element is Some()).
@@ -186,7 +86,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             fn invalid_num(s: &str) -> Result<(), Box<dyn std::error::Error>> {
                 Err(Box::new(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
-                    format!("Invalid OEM string number {}", s))))
+                    format!("Invalid OEM string number {}", s),
+                )))
             }
             let oem_val = oem.trim().parse::<u8>();
             let mut index = 0;
@@ -196,7 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         invalid_num(oem.as_str())?
                     }
                     index = n
-                },
+                }
                 Err(_) => {
                     if oem != "count" {
                         invalid_num(oem.as_str())?
@@ -208,14 +109,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     match v.oem_strings().get_string(index) {
                         Some(s) => println!("{}", s),
                         None => {
-                            if index != 0 { // count
+                            if index != 0 {
+                                // count
                                 invalid_num(oem.as_str())?
                             }
                             println!("{}", v.count().unwrap());
                         }
                     }
-                },
-                None => invalid_num(oem.as_str())?
+                }
+                None => invalid_num(oem.as_str())?,
             }
         }
         (None, None, None, None, None, true, false) => {
@@ -259,9 +161,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         print!("{:02X} ", item.1);
                     }
                     println!();
-                    let as_string: String = string_item.iter()
-                        .map(|x| *x as char)
-                        .collect();
+                    let as_string: String = string_item.iter().map(|x| *x as char).collect();
                     print!("\t\t\"{}\"", as_string);
                 }
                 println!();

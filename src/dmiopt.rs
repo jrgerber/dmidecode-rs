@@ -2,12 +2,123 @@ use enum_iterator::IntoEnumIterator;
 use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter},
+    path::PathBuf,
     str::FromStr,
 };
 
 use crate::error::BiosParseError;
 use smbioslib::*;
 use structopt::StructOpt;
+
+#[derive(Debug, StructOpt)]
+#[structopt(
+    name = "dmidecode-rs",
+    about = "DMI Table Decoder, Rust Edition ⛭",
+    author = "Jeffrey R. Gerber, Juan Zuluaga"
+)]
+pub struct Opt {
+    /// Less verbose output
+    // short and long flags (-q, --quiet) will be deduced from the field's name
+    #[structopt(short, long)]
+    pub quiet: bool,
+
+    /// Only display the value of the DMI string identified by `keyword`.
+    ///
+    /// `keyword` must be a keyword from the following list: bios-vendor,
+    /// bios-version, bios-release-date, system-manufacturer, system-
+    /// product-name, system-version, system-serial-number, system-uuid,
+    /// system-family, baseboard-manufacturer, baseboard-product-name,
+    /// baseboard-version, baseboard-serial-number, baseboard-asset-tag,
+    /// chassis-manufacturer, chassis-type, chassis-version, chassis-
+    /// serial-number, chassis-asset-tag, processor-family, processor-
+    /// manufacturer, processor-version, processor-frequency.  Each
+    /// keyword corresponds to a given DMI type and a given offset
+    /// within this entry type.  Not all strings may be meaningful or
+    /// even defined on all systems. Some keywords may return more than
+    /// one result on some systems (e.g.  processor-version on a multi-
+    /// processor system).  If KEYWORD is not provided or not valid, a
+    /// list of all valid keywords is printed and dmidecode exits with
+    /// an error.  This option cannot be used more than once.
+    ///
+    /// Note: on Linux, most of these strings can alternatively be read
+    /// directly from sysfs, typically from files under
+    /// /sys/devices/virtual/dmi/id.  Most of these files are even
+    /// readable by regular users.    
+    #[structopt(short = "s", long = "string")]
+    pub keyword: Option<Keyword>,
+
+    /// Read the DMI data from a binary file
+    #[structopt(long = "from-dump", parse(from_os_str))]
+    pub input: Option<PathBuf>,
+
+    /// Dump the DMI data to a binary file
+    #[structopt(long = "dump-bin", parse(from_os_str))]
+    pub output: Option<PathBuf>,
+
+    /// Only display the entries of given type
+    ///
+    /// Supply one or more keywords, one or more type values,
+    /// or a combination of the two.
+    ///
+    ///    Keyword     Types
+    ///    ------------------------------
+    ///    bios        0, 13
+    ///    system      1, 12, 15, 23, 32
+    ///    baseboard   2, 10, 41
+    ///    chassis     3
+    ///    processor   4
+    ///    memory      5, 6, 16, 17
+    ///    cache       7
+    ///    connector   8
+    ///    slot        9
+    #[structopt(short = "t", long = "type", verbatim_doc_comment)]
+    pub bios_types: Option<Vec<BiosType>>,
+
+    /// Only display the entry whose handle matches `handle`. `handle` is a
+    /// 16-bit integer in either a decimal or a hexadecimal (0xN) form.
+    #[structopt(short = "H", long = "handle")]
+    pub handle: Option<Handle>,
+
+    /// Do not decode the entries, dump their contents as hexadecimal
+    /// instead.
+    ///
+    /// Note that this is still a text output, no binary data
+    /// will be thrown upon you. The strings attached to each entry are
+    /// displayed as both hexadecimal and ASCII. This option is mainly
+    /// useful for debugging.
+    #[structopt(short = "u", long = "dump")]
+    pub undefined_dump: bool,
+
+    /// Only display the value of the OEM string number N. The first OEM string
+    /// has number 1. With special value "count", return the number of OEM
+    /// strings instead.
+    #[structopt(long = "oem-string")]
+    pub oem_string: Option<String>,
+
+    /// List supported DMI string
+    #[structopt(short, long)]
+    pub list: bool,
+
+    /// Do not attempt to read DMI data from sysfs files.
+    ///
+    /// This is mainly useful for debugging.
+    #[structopt(long = "no-sysfs")]
+    pub no_sysfs: bool,
+}
+
+impl Opt {
+    pub fn has_no_args(&self) -> bool {
+        self.keyword.is_none()
+            && self.input.is_none()
+            && self.output.is_none()
+            && self.bios_types.is_none()
+            && self.handle.is_none()
+            && self.oem_string.is_none()
+            && !self.no_sysfs
+            && !self.undefined_dump
+            && !self.list
+    }
+}
 
 #[derive(Debug, Clone, Copy)]
 pub enum BiosType {
