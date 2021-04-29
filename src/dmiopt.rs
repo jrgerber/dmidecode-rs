@@ -43,7 +43,7 @@ pub struct Opt {
     /// Note: on Linux, most of these strings can alternatively be read
     /// directly from sysfs, typically from files under
     /// /sys/devices/virtual/dmi/id.  Most of these files are even
-    /// readable by regular users.    
+    /// readable by regular users.
     #[structopt(short = "s", long = "string")]
     pub keyword: Option<Keyword>,
 

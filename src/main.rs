@@ -63,16 +63,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         opt.undefined_dump,
         opt.list,
     ) {
+        // opt.keyword, -s, --string KEYWORD   Only display the value of the given DMI string
         (Some(keyword), None, None, None, None, false, false) => {
             let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
+        // opt.output, --dump-bin FILE    Dump the DMI data to a binary file
         (None, Some(output), None, None, None, false, false) => {
             dump_raw(raw_smbios_from_device()?, &output.as_path())?
         }
+        // opt.bios_types, -t, --type TYPE        Only display the entries of given type
         (None, None, Some(bios_types), None, None, false, false) => {
             BiosType::parse_and_display(bios_types, &smbios_data);
         }
+        // opt.handle, -H, --handle HANDLE    Only display the entry of given handle
         (None, None, None, Some(handle), None, false, false) => {
             let found_struct = smbios_data
                 .find_by_handle(&handle)
@@ -82,6 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ))?;
             println!("{:#X?}", &found_struct.defined_struct())
         }
+        // opt.oem_string, --oem-string N     Only display the value of the given OEM string
         (None, None, None, None, Some(oem), false, false) => {
             fn invalid_num(s: &str) -> Result<(), Box<dyn std::error::Error>> {
                 Err(Box::new(std::io::Error::new(
@@ -120,6 +125,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 None => invalid_num(oem.as_str())?,
             }
         }
+        // opt.undefined_dump, -u, --dump             Do not decode the entries
         (None, None, None, None, None, true, false) => {
             for undefined_struct in smbios_data {
                 /*
@@ -167,6 +173,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!();
             }
         }
+        // opt.list, -l, --list        List supported DMI string
         (None, None, None, None, None, false, true) => {
             for i in Keyword::into_enum_iter() {
                 println!("{}", &i);
