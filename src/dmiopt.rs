@@ -120,6 +120,11 @@ impl Opt {
     }
 }
 
+/// Prints the dmidecode version to stdout
+pub fn print_dmidecode_version() {
+    println!("# {} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum BiosType {
     Bios,

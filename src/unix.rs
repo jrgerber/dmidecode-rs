@@ -55,7 +55,14 @@ fn table_load_from_sysfs() -> Result<SMBiosData, Error> {
                 "Occupying {} bytes maximum.",
                 entry_point.structure_table_maximum_size()
             )
-            .unwrap()
+            .unwrap();
+
+            writeln!(
+                &mut output,
+                "Table at: {:#010X}.",
+                entry_point.structure_table_address()
+            )
+            .unwrap();
         }
         Err(err) => match err.kind() {
             ErrorKind::InvalidData => match SMBiosEntryPoint32::try_load_from_file(entry_path) {
@@ -80,7 +87,14 @@ fn table_load_from_sysfs() -> Result<SMBiosData, Error> {
                         entry_point.number_of_smbios_structures(),
                         entry_point.structure_table_length()
                     )
-                    .unwrap()
+                    .unwrap();
+
+                    writeln!(
+                        &mut output,
+                        "Table at: {:#010X}.",
+                        entry_point.structure_table_address()
+                    )
+                    .unwrap();
                 }
                 Err(err) => return Err(err),
             },

@@ -11,7 +11,7 @@ mod platform;
 mod dmiopt;
 mod error;
 
-use dmiopt::{BiosType, Keyword, Opt};
+use dmiopt::{print_dmidecode_version, BiosType, Keyword, Opt};
 use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
 use structopt::StructOpt;
@@ -40,6 +40,8 @@ use structopt::StructOpt;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
+
+    print_dmidecode_version();
 
     if opt.has_no_args() {
         println!("{:#X?}", platform::table_load(&opt)?);
@@ -142,6 +144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 31 32 2F 30 37 2F 32 30 31 38 00
                                 "12/07/2018"
                 */
+                println!();
                 println!(
                     "Handle {:#06X}, DMI type {}, {} bytes",
                     *undefined_struct.header.handle(),
@@ -159,7 +162,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!();
                 print!("\tStrings:");
                 for string_item in undefined_struct.strings.iter() {
-                    for item in string_item.iter().enumerate() {
+                    // chain() adds a terminating \0 for parity with the original dmidecode
+                    for item in string_item.iter().chain([0].iter()).enumerate() {
                         if item.0 % 16 == 0 {
                             println!();
                             print!("\t\t");
