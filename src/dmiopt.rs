@@ -22,6 +22,10 @@ pub struct Opt {
     #[structopt(short, long)]
     pub quiet: bool,
 
+    /// Read memory from device FILE (default: /dev/mem)
+    #[structopt(short, long, parse(from_os_str))]
+    pub dev_mem: Option<PathBuf>,
+
     /// Only display the value of the DMI string identified by `keyword`.
     ///
     /// `keyword` must be a keyword from the following list: bios-vendor,
