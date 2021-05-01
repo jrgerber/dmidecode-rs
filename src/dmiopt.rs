@@ -43,7 +43,7 @@ pub struct Opt {
     /// Note: on Linux, most of these strings can alternatively be read
     /// directly from sysfs, typically from files under
     /// /sys/devices/virtual/dmi/id.  Most of these files are even
-    /// readable by regular users.    
+    /// readable by regular users.
     #[structopt(short = "s", long = "string")]
     pub keyword: Option<Keyword>,
 
@@ -118,6 +118,11 @@ impl Opt {
             && !self.undefined_dump
             && !self.list
     }
+}
+
+/// Prints the dmidecode version to stdout
+pub fn print_dmidecode_version() {
+    println!("# {} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 }
 
 #[derive(Debug, Clone, Copy)]

@@ -11,7 +11,7 @@ mod platform;
 mod dmiopt;
 mod error;
 
-use dmiopt::{BiosType, Keyword, Opt};
+use dmiopt::{print_dmidecode_version, BiosType, Keyword, Opt};
 use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
 use structopt::StructOpt;
@@ -41,6 +41,8 @@ use structopt::StructOpt;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
 
+    print_dmidecode_version();
+
     if opt.has_no_args() {
         println!("{:#X?}", platform::table_load(&opt)?);
         return Ok(());
@@ -63,16 +65,20 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         opt.undefined_dump,
         opt.list,
     ) {
+        // opt.keyword, -s, --string KEYWORD   Only display the value of the given DMI string
         (Some(keyword), None, None, None, None, false, false) => {
             let output = keyword.parse(&smbios_data)?;
             println!("{}", output);
         }
+        // opt.output, --dump-bin FILE    Dump the DMI data to a binary file
         (None, Some(output), None, None, None, false, false) => {
             dump_raw(raw_smbios_from_device()?, &output.as_path())?
         }
+        // opt.bios_types, -t, --type TYPE        Only display the entries of given type
         (None, None, Some(bios_types), None, None, false, false) => {
             BiosType::parse_and_display(bios_types, &smbios_data);
         }
+        // opt.handle, -H, --handle HANDLE    Only display the entry of given handle
         (None, None, None, Some(handle), None, false, false) => {
             let found_struct = smbios_data
                 .find_by_handle(&handle)
@@ -82,6 +88,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 ))?;
             println!("{:#X?}", &found_struct.defined_struct())
         }
+        // opt.oem_string, --oem-string N     Only display the value of the given OEM string
         (None, None, None, None, Some(oem), false, false) => {
             fn invalid_num(s: &str) -> Result<(), Box<dyn std::error::Error>> {
                 Err(Box::new(std::io::Error::new(
@@ -120,6 +127,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 None => invalid_num(oem.as_str())?,
             }
         }
+        // opt.undefined_dump, -u, --dump             Do not decode the entries
         (None, None, None, None, None, true, false) => {
             for undefined_struct in smbios_data {
                 /*
@@ -136,6 +144,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 31 32 2F 30 37 2F 32 30 31 38 00
                                 "12/07/2018"
                 */
+                println!();
                 println!(
                     "Handle {:#06X}, DMI type {}, {} bytes",
                     *undefined_struct.header.handle(),
@@ -153,7 +162,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!();
                 print!("\tStrings:");
                 for string_item in undefined_struct.strings.iter() {
-                    for item in string_item.iter().enumerate() {
+                    // chain() adds a terminating \0 for parity with the original dmidecode
+                    for item in string_item.iter().chain([0].iter()).enumerate() {
                         if item.0 % 16 == 0 {
                             println!();
                             print!("\t\t");
@@ -167,6 +177,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!();
             }
         }
+        // opt.list, -l, --list        List supported DMI string
         (None, None, None, None, None, false, true) => {
             for i in Keyword::into_enum_iter() {
                 println!("{}", &i);
