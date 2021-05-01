@@ -116,3 +116,21 @@ fn test_no_sysfs() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[test]
+fn test_dev_mem() -> Result<(), Box<dyn std::error::Error>> {
+    // test good path to /dev/mem
+    let mut cmd = Command::cargo_bin(CLI_COMMAND)?;
+    cmd.arg("--no-sysfs").arg("--dev-mem").arg("/dev/mem");
+    cmd.assert().success();
+
+    // test bad path to /dev/memx
+    cmd = Command::cargo_bin(CLI_COMMAND)?;
+    cmd.arg("--no-sysfs").arg("--dev-mem").arg("/dev/memx");
+    cmd.assert()
+        .failure()
+        .stderr(predicate::str::contains("No such file or directory"));
+
+    Ok(())
+}

@@ -18,7 +18,7 @@ pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
     // read from /dev/mem (default) or a given device file.
     let path = match &opt.dev_mem {
         Some(given_file) => given_file.as_path(),
-        None => std::path::Path::new(SYS_ENTRY_FILE),
+        None => std::path::Path::new(DEV_MEM_FILE),
     };
     let smbios_data = table_load_from_dev_mem(&path)?;
 
@@ -29,7 +29,11 @@ pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
 #[cfg(target_os = "freebsd")]
 pub fn table_load(_opt: &Opt) -> Result<SMBiosData, Error> {
     // FreeBSD only has /dev/mem and does not have sysfs (/sys/firmware/dmi/tables/DMI)
-    let smbios_data = table_load_from_dev_mem()?;
+    let path = match &opt.dev_mem {
+        Some(given_file) => given_file.as_path(),
+        None => std::path::Path::new(DEV_MEM_FILE),
+    };
+    let smbios_data = table_load_from_dev_mem(&path)?;
 
     print!("{}", smbios_data.1);
     Ok(smbios_data.0)
