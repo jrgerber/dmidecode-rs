@@ -10,22 +10,29 @@ pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
     if !opt.no_sysfs {
         // read from /sys/firmware/dmi/tables/DMI
         if let Ok(smbios_data) = table_load_from_sysfs() {
-            return Ok(smbios_data);
+            print!("{}", smbios_data.1);
+            return Ok(smbios_data.0);
         }
     }
 
     // read from /dev/mem
-    table_load_from_dev_mem()
+    let smbios_data = table_load_from_dev_mem()?;
+
+    print!("{}", smbios_data.1);
+    Ok(smbios_data.0)
 }
 
 #[cfg(target_os = "freebsd")]
 pub fn table_load(_opt: &Opt) -> Result<SMBiosData, Error> {
     // FreeBSD only has /dev/mem and does not have sysfs (/sys/firmware/dmi/tables/DMI)
-    table_load_from_dev_mem()
+    let smbios_data = table_load_from_dev_mem()?;
+
+    print!("{}", smbios_data.1);
+    Ok(smbios_data.0)
 }
 
 /// Load from /sys/firmware/dmi/tables/DMI
-fn table_load_from_sysfs() -> Result<SMBiosData, Error> {
+fn table_load_from_sysfs() -> Result<(SMBiosData, String), Error> {
     let mut output = String::new();
 
     writeln!(&mut output, "Getting SMBIOS data from sysfs.").unwrap();
@@ -102,13 +109,13 @@ fn table_load_from_sysfs() -> Result<SMBiosData, Error> {
         },
     }
 
-    print!("{}", output);
+    let smbios_data = SMBiosData::try_load_from_file(SYS_TABLE_FILE, Some(version))?;
 
-    SMBiosData::try_load_from_file(SYS_TABLE_FILE, Some(version))
+    Ok((smbios_data, output))
 }
 
 /// Load from /dev/mem
-fn table_load_from_dev_mem() -> Result<SMBiosData, Error> {
+fn table_load_from_dev_mem() -> Result<(SMBiosData, String), Error> {
     const RANGE_START: u64 = 0x000F0000u64;
     const RANGE_END: u64 = 0x000FFFFFu64;
     let mut dev_mem = fs::File::open(DEV_MEM_FILE)?;
@@ -210,7 +217,5 @@ fn table_load_from_dev_mem() -> Result<SMBiosData, Error> {
         structure_table_length as usize,
     )?;
 
-    print!("{}", output);
-
-    Ok(SMBiosData::new(table, Some(version)))
+    Ok((SMBiosData::new(table, Some(version)), output))
 }
