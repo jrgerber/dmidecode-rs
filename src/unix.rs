@@ -1,7 +1,7 @@
 use crate::Opt;
 use io::{Error, ErrorKind};
 use smbioslib::*;
-use std::fmt::Write;
+use std::{fmt::Write, path::Path};
 
 mod dmiopt;
 
@@ -15,8 +15,12 @@ pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
         }
     }
 
-    // read from /dev/mem
-    let smbios_data = table_load_from_dev_mem()?;
+    // read from /dev/mem (default) or a given device file.
+    let path = match &opt.dev_mem {
+        Some(given_file) => given_file.as_path(),
+        None => std::path::Path::new(DEV_MEM_FILE),
+    };
+    let smbios_data = table_load_from_dev_mem(&path)?;
 
     print!("{}", smbios_data.1);
     Ok(smbios_data.0)
@@ -25,7 +29,11 @@ pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
 #[cfg(target_os = "freebsd")]
 pub fn table_load(_opt: &Opt) -> Result<SMBiosData, Error> {
     // FreeBSD only has /dev/mem and does not have sysfs (/sys/firmware/dmi/tables/DMI)
-    let smbios_data = table_load_from_dev_mem()?;
+    let path = match &opt.dev_mem {
+        Some(given_file) => given_file.as_path(),
+        None => std::path::Path::new(DEV_MEM_FILE),
+    };
+    let smbios_data = table_load_from_dev_mem(&path)?;
 
     print!("{}", smbios_data.1);
     Ok(smbios_data.0)
@@ -115,16 +123,21 @@ fn table_load_from_sysfs() -> Result<(SMBiosData, String), Error> {
 }
 
 /// Load from /dev/mem
-fn table_load_from_dev_mem() -> Result<(SMBiosData, String), Error> {
+fn table_load_from_dev_mem(path: &Path) -> Result<(SMBiosData, String), Error> {
     const RANGE_START: u64 = 0x000F0000u64;
     const RANGE_END: u64 = 0x000FFFFFu64;
-    let mut dev_mem = fs::File::open(DEV_MEM_FILE)?;
+    let mut dev_mem = fs::File::open(path)?;
     let structure_table_address: u64;
     let structure_table_length: u32;
     let version: SMBiosVersion;
     let mut output = String::new();
 
-    writeln!(&mut output, "Scanning /dev/mem for entry point.").unwrap();
+    writeln!(
+        &mut output,
+        "Scanning {} for entry point.",
+        path.to_string_lossy()
+    )
+    .unwrap();
 
     // First try 32 bit entry point
     match SMBiosEntryPoint32::try_scan_from_file(&mut dev_mem, RANGE_START..=RANGE_END) {
