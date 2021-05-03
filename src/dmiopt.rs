@@ -2,6 +2,7 @@ use enum_iterator::IntoEnumIterator;
 use std::{
     collections::HashSet,
     fmt::{self, Display, Formatter},
+    ops::Add,
     path::PathBuf,
     str::FromStr,
 };
@@ -315,6 +316,15 @@ impl Display for Keyword {
 
 impl Keyword {
     pub fn parse(&self, data: &SMBiosData) -> Result<String, BiosParseError> {
+        // Note: Some structures are single instance and some can be multi-instance.
+        // Therefore, multiple strings may be returned in some cases.
+        //
+        // BIOS Information (type 0): single
+        // System Information (type 1): single
+        // Baseboard Information (type 2): multi
+        // Chassis Information (type 3): multi
+        // Processor Information (type 4): multi
+
         match self {
             Keyword::BiosVendor => data
                 .find_map(|bios_info: SMBiosInformation<'_>| bios_info.vendor())
@@ -435,8 +445,18 @@ impl Keyword {
                 None => Err(BiosParseError::ProcessorFamilyNotFound),
             },
             Keyword::ProcessorManufacturer => data
-                .find_map(|processor_info: SMBiosProcessorInformation<'_>| {
+                .map(|processor_info: SMBiosProcessorInformation<'_>| {
                     processor_info.processor_manufacturer()
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::ProcessorManufacturerNotFound),
             Keyword::ProcessorVersion => data
