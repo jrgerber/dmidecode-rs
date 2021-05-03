@@ -462,15 +462,19 @@ impl Keyword {
                     None => None,
                 })
                 .ok_or(BiosParseError::ChassisManufacturerNotFound),
-            Keyword::ChassisType => {
-                // TODO
-                match data.find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
-                    chassis_info.chassis_type()
-                }) {
-                    Some(chassis_type) => Ok(format!("{}", chassis_type)),
-                    None => Err(BiosParseError::ChassisTypeNotFound),
-                }
-            }
+            Keyword::ChassisType => data
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.chassis_type())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&format!("{}", &val).to_string());
+                        acc
+                    }),
+                    None => None,
+                })
+                .ok_or(BiosParseError::ChassisTypeNotFound),
             Keyword::ChassisVersion => data
                 .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.version())
                 .try_fold(String::new(), |mut acc, item| match item {
@@ -560,15 +564,21 @@ impl Keyword {
                     None => None,
                 })
                 .ok_or(BiosParseError::ProcessorVersionNotFound),
-            Keyword::ProcessorFrequency => {
-                // TODO
-                match data.find_map(|processor_info: SMBiosProcessorInformation<'_>| {
+            Keyword::ProcessorFrequency => data
+                .map(|processor_info: SMBiosProcessorInformation<'_>| {
                     processor_info.current_speed()
-                }) {
-                    Some(current_speed) => Ok(format!("{:?}", current_speed)),
-                    None => Err(BiosParseError::ProcessorFrequencyNotFound),
-                }
-            }
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&format!("{:?}", &val).to_string());
+                        acc
+                    }),
+                    None => None,
+                })
+                .ok_or(BiosParseError::ProcessorFrequencyNotFound),
         }
     }
 }
