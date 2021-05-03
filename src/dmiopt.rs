@@ -383,32 +383,87 @@ impl Keyword {
                 .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.family())
                 .ok_or(BiosParseError::SystemFamilyNotFound),
             Keyword::BaseboardManufacturer => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
-                    baseboard_info.manufacturer()
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.manufacturer())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::BaseboardManufacturerNotFound),
             Keyword::BaseboardProductName => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.product())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.product())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::BaseboardProductNameNotFound),
             Keyword::BaseboardVersion => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.version())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.version())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::BaseboardVersionNotFound),
             Keyword::BaseboardSerialNumber => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
                     baseboard_info.serial_number()
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::BaseboardSerialNumberNotFound),
             Keyword::BaseboardAssetTag => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
-                    baseboard_info.asset_tag()
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.asset_tag())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::BaseboardAssetTagNotFound),
             Keyword::ChassisManufacturer => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
-                    chassis_info.manufacturer()
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.manufacturer())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::ChassisManufacturerNotFound),
             Keyword::ChassisType => {
+                // TODO
                 match data.find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
                     chassis_info.chassis_type()
                 }) {
@@ -417,18 +472,49 @@ impl Keyword {
                 }
             }
             Keyword::ChassisVersion => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.version())
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.version())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::ChassisVersionNotFound),
             Keyword::ChassisSerialNumber => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
                     chassis_info.serial_number()
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::ChassisSerialNumberNotFound),
             Keyword::ChassisAssetTag => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
                     chassis_info.asset_tag_number()
                 })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::ChassisAssetTagNotFound),
+            // TODO
             Keyword::ProcessorFamily => match data.first::<SMBiosProcessorInformation<'_>>() {
                 Some(processor_info) => match processor_info.processor_family() {
                     Some(family) => match family.value {
@@ -460,11 +546,22 @@ impl Keyword {
                 })
                 .ok_or(BiosParseError::ProcessorManufacturerNotFound),
             Keyword::ProcessorVersion => data
-                .find_map(|processor_info: SMBiosProcessorInformation<'_>| {
+                .map(|processor_info: SMBiosProcessorInformation<'_>| {
                     processor_info.processor_version()
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::ProcessorVersionNotFound),
             Keyword::ProcessorFrequency => {
+                // TODO
                 match data.find_map(|processor_info: SMBiosProcessorInformation<'_>| {
                     processor_info.current_speed()
                 }) {
