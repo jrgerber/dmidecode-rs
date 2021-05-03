@@ -156,10 +156,10 @@ fn test_handle_valid() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_handle_invalid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
-    cmd1.arg("-H").arg("100");
+    cmd1.arg("-H").arg("1000");
     cmd1.assert()
         .failure()
-        .stderr(predicate::str::contains("Handle not found: 100"));
+        .stderr(predicate::str::contains("Handle not found: 1000"));
 
     Ok(())
 }
