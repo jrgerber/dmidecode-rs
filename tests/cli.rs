@@ -134,3 +134,32 @@ fn test_dev_mem() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_dump_opt() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd1.arg("-u");
+    cmd1.assert().success();
+
+    Ok(())
+}
+
+#[test]
+fn test_handle_valid() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd1.arg("-H").arg("10");
+    cmd1.assert().success().stdout(predicate::str::contains("0xA"));
+
+    Ok(())
+}
+
+#[test]
+fn test_handle_invalid() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd1.arg("-H").arg("1000");
+    cmd1.assert()
+        .failure()
+        .stderr(predicate::str::contains("Handle not found: 1000"));
+
+    Ok(())
+}
