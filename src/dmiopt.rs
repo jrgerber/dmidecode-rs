@@ -244,37 +244,64 @@ pub enum Keyword {
     ProcessorFrequency,
 }
 
+const BIOS_VENDOR: &'static str = "bios-vendor";
+const BIOS_VERSION: &'static str = "bios-version";
+const BIOS_RELEASE_DATE: &'static str = "bios-release-date";
+const BIOS_REVISION: &'static str = "bios-revision";
+const FIRMWARE_REVISION: &'static str = "firmware-revision";
+const SYSTEM_MANUFACTURER: &'static str = "system-manufacturer";
+const SYSTEM_PRODUCT_NAME: &'static str = "system-product-name";
+const SYSTEM_VERSION: &'static str = "system-version";
+const SYSTEM_SERIAL_NUMBER: &'static str = "system-serial-number";
+const SYSTEM_UUID: &'static str = "system-uuid";
+const SYSTEM_SKU_NUMBER: &'static str = "system-sku-number";
+const SYSTEM_FAMILY: &'static str = "system-family";
+const BASEBOARD_MANUFACTURER: &'static str = "baseboard-manufacturer";
+const BASEBOARD_PRODUCT_NAME: &'static str = "baseboard-product-name";
+const BASEBOARD_VERSION: &'static str = "baseboard-version";
+const BASEBOARD_SERIAL_NUMBER: &'static str = "baseboard-serial-number";
+const BASEBOARD_ASSET_TAG: &'static str = "baseboard-asset-tag";
+const CHASSIS_MANUFACTURER: &'static str = "chassis-manufacturer";
+const CHASSIS_TYPE: &'static str = "chassis-type";
+const CHASSIS_VERSION: &'static str = "chassis-version";
+const CHASSIS_SERIAL_NUMBER: &'static str = "chassis-serial-number";
+const CHASSIS_ASSET_TAG: &'static str = "chassis-asset-tag";
+const PROCESSOR_FAMILY: &'static str = "processor-family";
+const PROCESSOR_MANUFACTURER: &'static str = "processor-manufacturer";
+const PROCESSOR_VERSION: &'static str = "processor-version";
+const PROCESSOR_FREQUENCY: &'static str = "processor-frequency";
+
 impl FromStr for Keyword {
     type Err = std::io::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "bios-vendor" => Ok(Keyword::BiosVendor),
-            "bios-version" => Ok(Keyword::BiosVersion),
-            "bios-release-date" => Ok(Keyword::BiosReleaseDate),
-            "bios-revision" => Ok(Keyword::BiosRevision),
-            "firmware-revision" => Ok(Keyword::FirmwareRevision),
-            "system-manufacturer" => Ok(Keyword::SystemManufacturer),
-            "system-product-name" => Ok(Keyword::SystemProductName),
-            "system-version" => Ok(Keyword::SystemVersion),
-            "system-serial-number" => Ok(Keyword::SystemSerialNumber),
-            "system-uuid" => Ok(Keyword::SystemUuid),
-            "system-sku-number" => Ok(Keyword::SystemSkuNumber),
-            "system-family" => Ok(Keyword::SystemFamily),
-            "baseboard-manufacturer" => Ok(Keyword::BaseboardManufacturer),
-            "baseboard-product-name" => Ok(Keyword::BaseboardProductName),
-            "baseboard-version" => Ok(Keyword::BaseboardVersion),
-            "baseboard-serial-number" => Ok(Keyword::BaseboardSerialNumber),
-            "baseboard-asset-tag" => Ok(Keyword::BaseboardAssetTag),
-            "chassis-manufacturer" => Ok(Keyword::ChassisManufacturer),
-            "chassis-type" => Ok(Keyword::ChassisType),
-            "chassis-version" => Ok(Keyword::ChassisVersion),
-            "chassis-serial-number" => Ok(Keyword::ChassisSerialNumber),
-            "chassis-asset-tag" => Ok(Keyword::ChassisAssetTag),
-            "processor-family" => Ok(Keyword::ProcessorFamily),
-            "processor-manufacturer" => Ok(Keyword::ProcessorManufacturer),
-            "processor-version" => Ok(Keyword::ProcessorVersion),
-            "processor-frequency" => Ok(Keyword::ProcessorFrequency),
+            BIOS_VENDOR => Ok(Keyword::BiosVendor),
+            BIOS_VERSION => Ok(Keyword::BiosVersion),
+            BIOS_RELEASE_DATE => Ok(Keyword::BiosReleaseDate),
+            BIOS_REVISION => Ok(Keyword::BiosRevision),
+            FIRMWARE_REVISION => Ok(Keyword::FirmwareRevision),
+            SYSTEM_MANUFACTURER => Ok(Keyword::SystemManufacturer),
+            SYSTEM_PRODUCT_NAME => Ok(Keyword::SystemProductName),
+            SYSTEM_VERSION => Ok(Keyword::SystemVersion),
+            SYSTEM_SERIAL_NUMBER => Ok(Keyword::SystemSerialNumber),
+            SYSTEM_UUID => Ok(Keyword::SystemUuid),
+            SYSTEM_SKU_NUMBER => Ok(Keyword::SystemSkuNumber),
+            SYSTEM_FAMILY => Ok(Keyword::SystemFamily),
+            BASEBOARD_MANUFACTURER => Ok(Keyword::BaseboardManufacturer),
+            BASEBOARD_PRODUCT_NAME => Ok(Keyword::BaseboardProductName),
+            BASEBOARD_VERSION => Ok(Keyword::BaseboardVersion),
+            BASEBOARD_SERIAL_NUMBER => Ok(Keyword::BaseboardSerialNumber),
+            BASEBOARD_ASSET_TAG => Ok(Keyword::BaseboardAssetTag),
+            CHASSIS_MANUFACTURER => Ok(Keyword::ChassisManufacturer),
+            CHASSIS_TYPE => Ok(Keyword::ChassisType),
+            CHASSIS_VERSION => Ok(Keyword::ChassisVersion),
+            CHASSIS_SERIAL_NUMBER => Ok(Keyword::ChassisSerialNumber),
+            CHASSIS_ASSET_TAG => Ok(Keyword::ChassisAssetTag),
+            PROCESSOR_FAMILY => Ok(Keyword::ProcessorFamily),
+            PROCESSOR_MANUFACTURER => Ok(Keyword::ProcessorManufacturer),
+            PROCESSOR_VERSION => Ok(Keyword::ProcessorVersion),
+            PROCESSOR_FREQUENCY => Ok(Keyword::ProcessorFrequency),
             _ => Err(std::io::Error::new(std::io::ErrorKind::InvalidData, s)),
         }
     }
@@ -283,38 +310,47 @@ impl FromStr for Keyword {
 impl Display for Keyword {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
-            Keyword::BiosVendor => write!(f, "bios-vendor"),
-            Keyword::BiosVersion => write!(f, "bios-version"),
-            Keyword::BiosReleaseDate => write!(f, "bios-release-date"),
-            Keyword::BiosRevision => write!(f, "bios-revision"),
-            Keyword::FirmwareRevision => write!(f, "firmware-revision"),
-            Keyword::SystemManufacturer => write!(f, "system-manufacturer"),
-            Keyword::SystemProductName => write!(f, "system-product-name"),
-            Keyword::SystemVersion => write!(f, "system-version"),
-            Keyword::SystemSerialNumber => write!(f, "system-serial-number"),
-            Keyword::SystemUuid => write!(f, "system-uuid"),
-            Keyword::SystemSkuNumber => write!(f, "system-sku-number"),
-            Keyword::SystemFamily => write!(f, "system-family"),
-            Keyword::BaseboardManufacturer => write!(f, "baseboard-manufacturer"),
-            Keyword::BaseboardProductName => write!(f, "baseboard-product-name"),
-            Keyword::BaseboardVersion => write!(f, "baseboard-version"),
-            Keyword::BaseboardSerialNumber => write!(f, "baseboard-serial-number"),
-            Keyword::BaseboardAssetTag => write!(f, "baseboard-asset-tag"),
-            Keyword::ChassisManufacturer => write!(f, "chassis-manufacturer"),
-            Keyword::ChassisType => write!(f, "chassis-type"),
-            Keyword::ChassisVersion => write!(f, "chassis-version"),
-            Keyword::ChassisSerialNumber => write!(f, "chassis-serial-number"),
-            Keyword::ChassisAssetTag => write!(f, "chassis-asset-tag"),
-            Keyword::ProcessorFamily => write!(f, "processor-family"),
-            Keyword::ProcessorManufacturer => write!(f, "processor-manufacturer"),
-            Keyword::ProcessorVersion => write!(f, "processor-version"),
-            Keyword::ProcessorFrequency => write!(f, "processor-frequency"),
+            Keyword::BiosVendor => write!(f, "{}", BIOS_VENDOR),
+            Keyword::BiosVersion => write!(f, "{}", BIOS_VERSION),
+            Keyword::BiosReleaseDate => write!(f, "{}", BIOS_RELEASE_DATE),
+            Keyword::BiosRevision => write!(f, "{}", BIOS_REVISION),
+            Keyword::FirmwareRevision => write!(f, "{}", FIRMWARE_REVISION),
+            Keyword::SystemManufacturer => write!(f, "{}", SYSTEM_MANUFACTURER),
+            Keyword::SystemProductName => write!(f, "{}", SYSTEM_PRODUCT_NAME),
+            Keyword::SystemVersion => write!(f, "{}", SYSTEM_VERSION),
+            Keyword::SystemSerialNumber => write!(f, "{}", SYSTEM_SERIAL_NUMBER),
+            Keyword::SystemUuid => write!(f, "{}", SYSTEM_UUID),
+            Keyword::SystemSkuNumber => write!(f, "{}", SYSTEM_SKU_NUMBER),
+            Keyword::SystemFamily => write!(f, "{}", SYSTEM_FAMILY),
+            Keyword::BaseboardManufacturer => write!(f, "{}", BASEBOARD_MANUFACTURER),
+            Keyword::BaseboardProductName => write!(f, "{}", BASEBOARD_PRODUCT_NAME),
+            Keyword::BaseboardVersion => write!(f, "{}", BASEBOARD_VERSION),
+            Keyword::BaseboardSerialNumber => write!(f, "{}", BASEBOARD_SERIAL_NUMBER),
+            Keyword::BaseboardAssetTag => write!(f, "{}", BASEBOARD_ASSET_TAG),
+            Keyword::ChassisManufacturer => write!(f, "{}", CHASSIS_MANUFACTURER),
+            Keyword::ChassisType => write!(f, "{}", CHASSIS_TYPE),
+            Keyword::ChassisVersion => write!(f, "{}", CHASSIS_VERSION),
+            Keyword::ChassisSerialNumber => write!(f, "{}", CHASSIS_SERIAL_NUMBER),
+            Keyword::ChassisAssetTag => write!(f, "{}", CHASSIS_ASSET_TAG),
+            Keyword::ProcessorFamily => write!(f, "{}", PROCESSOR_FAMILY),
+            Keyword::ProcessorManufacturer => write!(f, "{}", PROCESSOR_MANUFACTURER),
+            Keyword::ProcessorVersion => write!(f, "{}", PROCESSOR_VERSION),
+            Keyword::ProcessorFrequency => write!(f, "{}", PROCESSOR_FREQUENCY),
         }
     }
 }
 
 impl Keyword {
     pub fn parse(&self, data: &SMBiosData) -> Result<String, BiosParseError> {
+        // Note: Some structures are single instance and some can be multi-instance.
+        // Therefore, multiple strings may be returned in some cases.
+        //
+        // BIOS Information (type 0): single
+        // System Information (type 1): single
+        // Baseboard Information (type 2): multi
+        // Chassis Information (type 3): multi
+        // Processor Information (type 4): multi
+
         match self {
             Keyword::BiosVendor => data
                 .find_map(|bios_info: SMBiosInformation<'_>| bios_info.vendor())
@@ -373,85 +409,218 @@ impl Keyword {
                 .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.family())
                 .ok_or(BiosParseError::SystemFamilyNotFound),
             Keyword::BaseboardManufacturer => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
-                    baseboard_info.manufacturer()
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.manufacturer())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::BaseboardManufacturerNotFound),
             Keyword::BaseboardProductName => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.product())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.product())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::BaseboardProductNameNotFound),
             Keyword::BaseboardVersion => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.version())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.version())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::BaseboardVersionNotFound),
             Keyword::BaseboardSerialNumber => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
                     baseboard_info.serial_number()
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::BaseboardSerialNumberNotFound),
             Keyword::BaseboardAssetTag => data
-                .find_map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
-                    baseboard_info.asset_tag()
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.asset_tag())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::BaseboardAssetTagNotFound),
             Keyword::ChassisManufacturer => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
-                    chassis_info.manufacturer()
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.manufacturer())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::ChassisManufacturerNotFound),
-            Keyword::ChassisType => {
-                match data.find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
-                    chassis_info.chassis_type()
-                }) {
-                    Some(chassis_type) => Ok(format!("{}", chassis_type)),
-                    None => Err(BiosParseError::ChassisTypeNotFound),
-                }
-            }
+            Keyword::ChassisType => data
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.chassis_type())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&format!("{}", &val).to_string());
+                        acc
+                    }),
+                    None => None,
+                })
+                .ok_or(BiosParseError::ChassisTypeNotFound),
             Keyword::ChassisVersion => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.version())
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.version())
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::ChassisVersionNotFound),
             Keyword::ChassisSerialNumber => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
                     chassis_info.serial_number()
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::ChassisSerialNumberNotFound),
             Keyword::ChassisAssetTag => data
-                .find_map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
                     chassis_info.asset_tag_number()
                 })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::ChassisAssetTagNotFound),
-            Keyword::ProcessorFamily => match data.first::<SMBiosProcessorInformation<'_>>() {
-                Some(processor_info) => match processor_info.processor_family() {
-                    Some(family) => match family.value {
-                        ProcessorFamily::SeeProcessorFamily2 => {
-                            match processor_info.processor_family_2() {
-                                Some(family) => Ok(format!("{}", family)),
-                                None => Err(BiosParseError::ProcessorFamilyNotFound),
+            Keyword::ProcessorFamily => data
+                .map(|processor_info: SMBiosProcessorInformation<'_>| {
+                    if let Some(family) = processor_info.processor_family() {
+                        match family.value {
+                            ProcessorFamily::SeeProcessorFamily2 => {
+                                if let Some(family2) = processor_info.processor_family_2() {
+                                    Some(format!("{}", family2))
+                                } else {
+                                    None
+                                }
                             }
+                            _ => Some(format!("{}", family)),
                         }
-                        _ => Ok(format!("{}", family)),
-                    },
-                    None => Err(BiosParseError::ProcessorFamilyNotFound),
-                },
-                None => Err(BiosParseError::ProcessorFamilyNotFound),
-            },
+                    } else {
+                        None
+                    }
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
+                .ok_or(BiosParseError::ProcessorFamilyNotFound),
             Keyword::ProcessorManufacturer => data
-                .find_map(|processor_info: SMBiosProcessorInformation<'_>| {
+                .map(|processor_info: SMBiosProcessorInformation<'_>| {
                     processor_info.processor_manufacturer()
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
                 })
                 .ok_or(BiosParseError::ProcessorManufacturerNotFound),
             Keyword::ProcessorVersion => data
-                .find_map(|processor_info: SMBiosProcessorInformation<'_>| {
+                .map(|processor_info: SMBiosProcessorInformation<'_>| {
                     processor_info.processor_version()
                 })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        acc.push_str(&val);
+                        acc
+                    }),
+                    None => None,
+                })
                 .ok_or(BiosParseError::ProcessorVersionNotFound),
-            Keyword::ProcessorFrequency => {
-                match data.find_map(|processor_info: SMBiosProcessorInformation<'_>| {
+            Keyword::ProcessorFrequency => data
+                .map(|processor_info: SMBiosProcessorInformation<'_>| {
                     processor_info.current_speed()
-                }) {
-                    Some(current_speed) => Ok(format!("{:?}", current_speed)),
-                    None => Err(BiosParseError::ProcessorFrequencyNotFound),
-                }
-            }
+                })
+                .try_fold(String::new(), |mut acc, item| match item {
+                    Some(val) => Some({
+                        if !acc.is_empty() {
+                            acc.push_str("\n");
+                        };
+                        let output = match &val {
+                            ProcessorSpeed::Unknown => String::from("Unknown"),
+                            ProcessorSpeed::MHz(frequency) => format!("{} MHz", frequency),
+                        };
+                        acc.push_str(output.as_str());
+                        acc
+                    }),
+                    None => None,
+                })
+                .ok_or(BiosParseError::ProcessorFrequencyNotFound),
         }
     }
 }

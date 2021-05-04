@@ -6,12 +6,11 @@ use std::{fmt::Write, path::Path};
 mod dmiopt;
 
 #[cfg(target_os = "linux")]
-pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
+pub fn table_load(opt: &Opt) -> Result<(SMBiosData, String), Error> {
     if !opt.no_sysfs {
         // read from /sys/firmware/dmi/tables/DMI
         if let Ok(smbios_data) = table_load_from_sysfs() {
-            print!("{}", smbios_data.1);
-            return Ok(smbios_data.0);
+            return Ok(smbios_data);
         }
     }
 
@@ -20,23 +19,19 @@ pub fn table_load(opt: &Opt) -> Result<SMBiosData, Error> {
         Some(given_file) => given_file.as_path(),
         None => std::path::Path::new(DEV_MEM_FILE),
     };
-    let smbios_data = table_load_from_dev_mem(&path)?;
 
-    print!("{}", smbios_data.1);
-    Ok(smbios_data.0)
+    table_load_from_dev_mem(&path)
 }
 
 #[cfg(target_os = "freebsd")]
-pub fn table_load(_opt: &Opt) -> Result<SMBiosData, Error> {
+pub fn table_load(_opt: &Opt) -> Result<(SMBiosData, String), Error> {
     // FreeBSD only has /dev/mem and does not have sysfs (/sys/firmware/dmi/tables/DMI)
     let path = match &opt.dev_mem {
         Some(given_file) => given_file.as_path(),
         None => std::path::Path::new(DEV_MEM_FILE),
     };
-    let smbios_data = table_load_from_dev_mem(&path)?;
 
-    print!("{}", smbios_data.1);
-    Ok(smbios_data.0)
+    table_load_from_dev_mem(&path)
 }
 
 /// Load from /sys/firmware/dmi/tables/DMI
