@@ -145,7 +145,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     }
                 }
-                None => invalid_num(oem.as_str())?,
+                None => {
+                    if index != 0 {
+                        invalid_num(oem.as_str())?
+                    } else {
+                        // When no structure exists and --oem-string is "count", return "0"
+                        println!("0")
+                    }
+                }
             }
         }
         // opt.undefined_dump, -u, --dump             Do not decode the entries
