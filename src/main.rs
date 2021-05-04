@@ -14,6 +14,7 @@ mod error;
 use dmiopt::{print_dmidecode_version, BiosType, Keyword, Opt};
 use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
+use std::fmt::Write;
 use structopt::StructOpt;
 
 /* The original DMI decode command line:
@@ -41,16 +42,29 @@ use structopt::StructOpt;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
 
-    print_dmidecode_version();
-
     if opt.has_no_args() {
-        println!("{:#X?}", platform::table_load(&opt)?);
+        print_dmidecode_version();
+        let smbios_data = platform::table_load(&opt)?;
+        println!("{}", smbios_data.1);
+        println!("{:#X?}", smbios_data.0);
         return Ok(());
     }
 
     // Select an input source, file or device.
     let smbios_data = if let Some(input) = opt.input {
-        load_smbios_data_from_file(&input.as_path())?
+        let mut output = String::new();
+
+        let path = input.as_path();
+        writeln!(
+            &mut output,
+            "Getting SMBIOS data from {}.",
+            path.to_string_lossy()
+        )
+        .unwrap();
+
+        let data = load_smbios_data_from_file(path)?;
+
+        (data, output)
     } else {
         platform::table_load(&opt)?
     };
@@ -67,20 +81,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ) {
         // opt.keyword, -s, --string KEYWORD   Only display the value of the given DMI string
         (Some(keyword), None, None, None, None, false, false) => {
-            let output = keyword.parse(&smbios_data)?;
+            let output = keyword.parse(&smbios_data.0)?;
             println!("{}", output);
         }
         // opt.output, --dump-bin FILE    Dump the DMI data to a binary file
         (None, Some(output), None, None, None, false, false) => {
+            print_dmidecode_version();
+            // TODO: create stdout output.  dump_raw() and raw_smbios_from_device() do not output.
             dump_raw(raw_smbios_from_device()?, &output.as_path())?
         }
         // opt.bios_types, -t, --type TYPE        Only display the entries of given type
         (None, None, Some(bios_types), None, None, false, false) => {
-            BiosType::parse_and_display(bios_types, &smbios_data);
+            print_dmidecode_version();
+            println!("{}", smbios_data.1);
+            BiosType::parse_and_display(bios_types, &smbios_data.0);
         }
         // opt.handle, -H, --handle HANDLE    Only display the entry of given handle
         (None, None, None, Some(handle), None, false, false) => {
+            print_dmidecode_version();
+            println!("{}", smbios_data.1);
             let found_struct = smbios_data
+                .0
                 .find_by_handle(&handle)
                 .ok_or(std::io::Error::new(
                     std::io::ErrorKind::InvalidInput,
@@ -111,7 +132,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            match smbios_data.first::<SMBiosOemStrings<'_>>() {
+            match smbios_data.0.first::<SMBiosOemStrings<'_>>() {
                 Some(v) => {
                     match v.oem_strings().get_string(index) {
                         Some(s) => println!("{}", s),
@@ -129,7 +150,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         // opt.undefined_dump, -u, --dump             Do not decode the entries
         (None, None, None, None, None, true, false) => {
-            for undefined_struct in smbios_data {
+            print_dmidecode_version();
+            println!("{}", smbios_data.1);
+            for undefined_struct in smbios_data.0 {
                 /*
                     Handle 0x0000, DMI type 0, 20 bytes
                         Header and Data:
@@ -183,7 +206,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 println!("{}", &i);
             }
         }
-        _ => println!("{:#X?}", smbios_data),
+        _ => {
+            print_dmidecode_version();
+            println!("{}", smbios_data.1);
+            println!("{:#X?}", smbios_data.0)
+        }
     }
 
     Ok(())
