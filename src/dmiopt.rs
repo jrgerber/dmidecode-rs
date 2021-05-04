@@ -611,7 +611,11 @@ impl Keyword {
                         if !acc.is_empty() {
                             acc.push_str("\n");
                         };
-                        acc.push_str(&format!("{:?}", &val).to_string());
+                        let output = match &val {
+                            ProcessorSpeed::Unknown => String::from("Unknown"),
+                            ProcessorSpeed::MHz(frequency) => format!("{} MHz", frequency),
+                        };
+                        acc.push_str(output.as_str());
                         acc
                     }),
                     None => None,
