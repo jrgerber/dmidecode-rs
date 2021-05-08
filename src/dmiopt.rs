@@ -110,11 +110,12 @@ pub struct Opt {
     pub no_sysfs: bool,
 
     /// Display output in JSON pretty print format.
+    #[structopt(long)]
+    pub json_pretty: bool,
+
+    /// Display output in JSON compact format.
     #[structopt(short, long)]
     pub json: bool,
-    /// Display output in JSON compact format.
-    #[structopt(long)]
-    pub json_compact: bool,
 }
 
 impl Opt {
@@ -128,8 +129,8 @@ impl Opt {
             && !self.no_sysfs
             && !self.undefined_dump
             && !self.list
+            && !self.json_pretty
             && !self.json
-            && !self.json_compact
     }
 }
 

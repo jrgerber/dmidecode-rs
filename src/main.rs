@@ -78,8 +78,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         opt.oem_string,
         opt.undefined_dump,
         opt.list,
+        opt.json_pretty,
         opt.json,
-        opt.json_compact,
     ) {
         // opt.keyword, -s, --string KEYWORD   Only display the value of the given DMI string
         (Some(keyword), None, None, None, None, false, false, false, false) => {

@@ -97,12 +97,13 @@ fn test_oem_string_invalid() -> Result<(), Box<dyn std::error::Error>> {
 #[test]
 fn test_oem_string_valid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
-    cmd1.arg("--oem-string").arg("1");
+    cmd1.arg("--oem-string").arg("count");
     cmd1.assert().success();
 
-    let mut cmd2 = Command::cargo_bin(CLI_COMMAND)?;
-    cmd2.arg("--oem-string").arg("count");
-    cmd2.assert().success();
+    // TODO: Learn how to capture stdout from cmd1.  If it is "0", do not run cmd2.
+    let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd1.arg("--oem-string").arg("1");
+    cmd1.assert().success();
 
     Ok(())
 }
@@ -148,7 +149,9 @@ fn test_dump_opt() -> Result<(), Box<dyn std::error::Error>> {
 fn test_handle_valid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
     cmd1.arg("-H").arg("10");
-    cmd1.assert().success().stdout(predicate::str::contains("0xA"));
+    cmd1.assert()
+        .success()
+        .stdout(predicate::str::contains("10"));
 
     Ok(())
 }
@@ -160,6 +163,17 @@ fn test_handle_invalid() -> Result<(), Box<dyn std::error::Error>> {
     cmd1.assert()
         .failure()
         .stderr(predicate::str::contains("Handle not found: 1000"));
+
+    Ok(())
+}
+
+#[test]
+fn test_json_valid() -> Result<(), Box<dyn std::error::Error>> {
+    let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
+    cmd1.arg("-j");
+    cmd1.assert()
+        .success()
+        .stdout(predicate::str::contains("{\"version\":{\"major\":"));
 
     Ok(())
 }
