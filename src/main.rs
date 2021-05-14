@@ -8,9 +8,11 @@
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 mod platform;
 
+mod default_out;
 mod dmiopt;
 mod error;
 
+use default_out::default_dump;
 use dmiopt::{print_dmidecode_version, BiosType, Keyword, Opt};
 use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
@@ -46,7 +48,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         print_dmidecode_version();
         let smbios_data = platform::table_load(&opt)?;
         println!("{}", smbios_data.1);
-        println!("{:#X?}", smbios_data.0);
+        //println!("{:#X?}", smbios_data.0);
+        default_dump(&smbios_data.0);
         return Ok(());
     }
 
