@@ -232,20 +232,30 @@ pub fn default_dump(data: &SMBiosData) {
                         println!("\t\tSystem is a virtual machine");
                     }
                 }
-                // pr_list_start("Characteristics", NULL);
-                // dmi_bios_characteristics(QWORD(data + 0x0A));
-                // pr_list_end();
-                // if (h->length < 0x13) break;
-                // dmi_bios_characteristics_x1(data[0x12]);
-                // if (h->length < 0x14) break;
-                // dmi_bios_characteristics_x2(data[0x13]);
-                // if (h->length < 0x18) break;
-                // if (data[0x14] != 0xFF && data[0x15] != 0xFF)
-                // 	pr_attr("BIOS Revision", "%u.%u",
-                // 		data[0x14], data[0x15]);
-                // if (data[0x16] != 0xFF && data[0x17] != 0xFF)
-                // 	pr_attr("Firmware Revision", "%u.%u",
-                // 		data[0x16], data[0x17]);
+
+                match (
+                    data.system_bios_major_release(),
+                    data.system_bios_minor_release(),
+                ) {
+                    (Some(major_release), Some(minor_release)) => {
+                        if major_release != 0xFF && minor_release != 0xFF {
+                            println!("\tBIOS Revision: {}.{}", major_release, minor_release);
+                        }
+                    }
+                    _ => {}
+                }
+
+                match (
+                    data.e_c_firmware_major_release(),
+                    data.e_c_firmware_minor_release(),
+                ) {
+                    (Some(major_release), Some(minor_release)) => {
+                        if major_release != 0xFF && minor_release != 0xFF {
+                            println!("\tFirmware Revision: {}.{}", major_release, minor_release);
+                        }
+                    }
+                    _ => {}
+                }
             }
             DefinedStruct::SystemInformation(data) => {
                 println!("System Information");
