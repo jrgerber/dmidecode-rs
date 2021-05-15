@@ -8,8 +8,8 @@ const KB: &str = "kB";
 const MB: &str = "MB";
 const GB: &str = "GB";
 
-pub fn default_dump(data: &SMBiosData) {
-    for undefined_struct in data.iter() {
+pub fn default_dump(smbios_data: &SMBiosData) {
+    for undefined_struct in smbios_data.iter() {
         /*
             # dmidecode 3.1
             Getting SMBIOS data from sysfs.
@@ -42,12 +42,15 @@ pub fn default_dump(data: &SMBiosData) {
         match undefined_struct.defined_struct() {
             DefinedStruct::Information(data) => {
                 println!("BIOS Information");
-                println!("\tVendor: {}", data.vendor().unwrap_or_default());
-                println!("\tVersion: {}", data.version().unwrap_or_default());
-                println!(
-                    "\tRelease Date: {}",
-                    data.release_date().unwrap_or_default()
-                );
+                if let Some(vendor) = data.vendor() {
+                    println!("\tVendor: {}", vendor);
+                }
+                if let Some(version) = data.version() {
+                    println!("\tVersion: {}", version);
+                }
+                if let Some(release_date) = data.release_date() {
+                    println!("\tRelease Date: {}", release_date);
+                }
 
                 /*
                  * On IA-64, the BIOS base address will read 0 because
@@ -84,7 +87,7 @@ pub fn default_dump(data: &SMBiosData) {
                                     println!("{} {}", size, GB);
                                 }
                                 ExtendedRomSize::Undefined(size) => {
-                                    println!("{} {}", size, OUT_OF_SPEC);
+                                    println!("{} ({})", OUT_OF_SPEC, size);
                                 }
                             }
                         }
@@ -259,6 +262,95 @@ pub fn default_dump(data: &SMBiosData) {
             }
             DefinedStruct::SystemInformation(data) => {
                 println!("System Information");
+                if let Some(manufacturer) = data.manufacturer() {
+                    println!("\tManufacturer: {}", manufacturer);
+                }
+                if let Some(product_name) = data.product_name() {
+                    println!("\tProduct Name: {}", product_name);
+                }
+                if let Some(version) = data.version() {
+                    println!("\tVersion: {}", version);
+                }
+                if let Some(serial_number) = data.serial_number() {
+                    println!("\tSerial Number: {}", serial_number);
+                }
+                if let Some(uuid) = data.uuid() {
+                    print!("\tUUID: ");
+                    match uuid {
+                        SystemUuidData::IdNotPresentButSettable => {
+                            println!("Not Present");
+                        }
+                        SystemUuidData::IdNotPresent => {
+                            println!("Not Settable");
+                        }
+                        SystemUuidData::Uuid(val) => {
+                            /*
+                             * As of version 2.6 of the SMBIOS specification, the first 3
+                             * fields of the UUID are supposed to be encoded on little-endian.
+                             * The specification says that this is the defacto standard,
+                             * however I've seen systems following RFC 4122 instead and use
+                             * network byte order, so I am reluctant to apply the byte-swapping
+                             * for older versions.
+                             */
+
+                            let two_six_version = &SMBiosVersion {
+                                major: 2,
+                                minor: 6,
+                                revision: 0,
+                            };
+                            if let Some(version) = &smbios_data.version {
+                                if version < two_six_version {
+                                    let p = val.raw;
+                                    println!("{:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}", 
+                                    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
+                                } else {
+                                    println!("{}", val);
+                                }
+                            } else {
+                                println!("{}", val);
+                            }
+                        }
+                    }
+                }
+
+                if let Some(wakeup_type) = data.wakeup_type() {
+                    print!("\tWake-up Type: ");
+                    match wakeup_type.value {
+                        SystemWakeUpType::Other => {
+                            println!("Other");
+                        }
+                        SystemWakeUpType::Unknown => {
+                            println!("Unknown");
+                        }
+                        SystemWakeUpType::ApmTimer => {
+                            println!("APM Timer");
+                        }
+                        SystemWakeUpType::ModernRing => {
+                            println!("Modem Ring");
+                        }
+                        SystemWakeUpType::LanRemote => {
+                            println!("LAN Remote");
+                        }
+                        SystemWakeUpType::PowerSwitch => {
+                            println!("Power Switch");
+                        }
+                        SystemWakeUpType::PciPme => {
+                            println!("PCI PME#");
+                        }
+                        SystemWakeUpType::ACPowerRestored => {
+                            println!("AC Power Restored");
+                        }
+                        SystemWakeUpType::None => {
+                            println!("{} ({})", OUT_OF_SPEC, wakeup_type.raw);
+                        }
+                    }
+                }
+                if let Some(sku_number) = data.sku_number() {
+                    println!("\tSKU Number: {}", sku_number);
+                }
+                if let Some(family) = data.family() {
+                    println!("\tFamily: {}", family);
+                }
             }
             DefinedStruct::BaseBoardInformation(data) => {
                 println!("Base Board Information");
