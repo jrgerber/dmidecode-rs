@@ -49,7 +49,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         let smbios_data = platform::table_load(&opt)?;
         println!("{}", smbios_data.1);
         //println!("{:#X?}", smbios_data.0);
-        default_dump(&smbios_data.0);
+        default_dump(&smbios_data.0, opt.quiet);
         return Ok(());
     }
 

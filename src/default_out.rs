@@ -8,7 +8,7 @@ const KB: &str = "kB";
 const MB: &str = "MB";
 const GB: &str = "GB";
 
-pub fn default_dump(smbios_data: &SMBiosData) {
+pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
     for undefined_struct in smbios_data.iter() {
         /*
             # dmidecode 3.1
@@ -354,6 +354,105 @@ pub fn default_dump(smbios_data: &SMBiosData) {
             }
             DefinedStruct::BaseBoardInformation(data) => {
                 println!("Base Board Information");
+                if let Some(manufacturer) = data.manufacturer() {
+                    println!("\tManufacturer: {}", manufacturer);
+                }
+                if let Some(product) = data.product() {
+                    println!("\tProduct: {}", product);
+                }
+                if let Some(version) = data.version() {
+                    println!("\tVersion: {}", version);
+                }
+                if let Some(serial_number) = data.serial_number() {
+                    println!("\tSerial Number: {}", serial_number);
+                }
+                if let Some(asset_tag) = data.asset_tag() {
+                    println!("\tAsset Tag: {}", asset_tag);
+                }
+                if let Some(feature_flags) = data.feature_flags() {
+                    println!("\tFeatures:");
+                    if feature_flags.hosting_board() {
+                        println!("\t\tBoard is a hosting board");
+                    }
+                    if feature_flags.requires_daughterboard() {
+                        println!("\t\tBoard requires at least one daughter board");
+                    }
+                    if feature_flags.is_removable() {
+                        println!("\t\tBoard is removable");
+                    }
+                    if feature_flags.is_replaceable() {
+                        println!("\t\tBoard is replaceable");
+                    }
+                    if feature_flags.is_hot_swappable() {
+                        println!("\t\tBoard is hot swappable");
+                    }
+                }
+                if let Some(location_in_chassis) = data.location_in_chassis() {
+                    println!("\tLocation in Chassis: {}", location_in_chassis);
+                }
+                if !quiet {
+                    if let Some(chassis_handle) = data.chassis_handle() {
+                        println!("\tChassis Handle: {:#06X}", chassis_handle.0);
+                    }
+                }
+                if let Some(board_type) = data.board_type() {
+                    print!("\tType: ");
+                    match board_type.value {
+                        BoardType::Unknown => {
+                            println!("Unknown");
+                        }
+                        BoardType::Other => {
+                            println!("Other");
+                        }
+                        BoardType::ServerBlade => {
+                            println!("Server Blade");
+                        }
+                        BoardType::ConnectivitySwitch => {
+                            println!("Connectivity Switch");
+                        }
+                        BoardType::SystemManagementModule => {
+                            println!("System Management Module");
+                        }
+                        BoardType::ProcessorModule => {
+                            println!("Processor Module");
+                        }
+                        BoardType::IOModule => {
+                            println!("I/O Module");
+                        }
+                        BoardType::MemoryModule => {
+                            println!("Memory Module");
+                        }
+                        BoardType::Daughterboard => {
+                            println!("Daughter Board");
+                        }
+                        BoardType::Motherboard => {
+                            println!("Motherboard");
+                        }
+                        BoardType::ProcessorMemoryModule => {
+                            println!("Processor+Memory Module");
+                        }
+                        BoardType::ProcessorIOModule => {
+                            println!("Processor+I/O Module");
+                        }
+                        BoardType::InterconnectBoard => {
+                            println!("Interconnect Board");
+                        }
+                        BoardType::None => {
+                            println!("{} ({})", OUT_OF_SPEC, board_type.raw);
+                        }
+                    }
+                }
+
+                if !quiet {
+                    if let Some(handle_count) = data.number_of_contained_object_handles() {
+                        if handle_count > 0 {
+                            println!("Contained Object Handles: {}", handle_count);
+                            for handle in data.contained_object_handle_iterator() {
+                                println!("\t\t{:#06X}", handle.0);
+                            }
+                        }
+                    }
+                }
             }
             DefinedStruct::SystemChassisInformation(data) => {
                 println!("Chassis Information");
