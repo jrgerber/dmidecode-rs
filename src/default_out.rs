@@ -456,6 +456,187 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::SystemChassisInformation(data) => {
                 println!("Chassis Information");
+                if let Some(manufacturer) = data.manufacturer() {
+                    println!("\tManufacturer: {}", manufacturer);
+                }
+                if let Some(chassis_type) = data.chassis_type() {
+                    print!("\tType: ");
+                    let print = match chassis_type.value {
+                        ChassisType::Other => "Other",
+                        ChassisType::Unknown => "Unknown",
+                        ChassisType::Desktop => "Desktop",
+                        ChassisType::LowProfileDesktop => "Low Profile Desktop",
+                        ChassisType::PizzaBox => "Pizza Box",
+                        ChassisType::MiniTower => "Mini Tower",
+                        ChassisType::Tower => "Tower",
+                        ChassisType::Portable => "Portable",
+                        ChassisType::Laptop => "Laptop",
+                        ChassisType::Notebook => "Notebook",
+                        ChassisType::HandHeld => "Hand Held",
+                        ChassisType::DockingStation => "Docking Station",
+                        ChassisType::AllInOne => "All In One",
+                        ChassisType::SubNotebook => "Sub Notebook",
+                        ChassisType::SpaceSaving => "Space-saving",
+                        ChassisType::LunchBox => "Lunch Box",
+                        ChassisType::MainServerChassis => "Main Server Chassis",
+                        ChassisType::ExpansionChassis => "Expansion Chassis",
+                        ChassisType::SubChassis => "Sub Chassis",
+                        ChassisType::BusExpansionChassis => "Bus Expansion Chassis",
+                        ChassisType::PeripheralChassis => "Peripheral Chassis",
+                        ChassisType::RaidChassis => "RAID Chassis",
+                        ChassisType::RackMountChassis => "Rack Mount Chassis",
+                        ChassisType::SealedCasePC => "Sealed-case PC",
+                        ChassisType::MultiSystemChassis => "Multi-system",
+                        ChassisType::CompactPci => "CompactPCI",
+                        ChassisType::AdvancedTca => "AdvancedTCA",
+                        ChassisType::Blade => "Blade",
+                        ChassisType::BladeEnclosure => "Blade Enclosing",
+                        ChassisType::Tablet => "Tablet",
+                        ChassisType::Convertible => "Convertible",
+                        ChassisType::Detachable => "Detachable",
+                        ChassisType::IoTGateway => "IoT Gateway",
+                        ChassisType::EmbeddedPC => "Embedded PC",
+                        ChassisType::MiniPC => "Mini PC",
+                        ChassisType::StickPC => "Stick PC",
+                        ChassisType::None => "",
+                    };
+
+                    if print == "" {
+                        println!("{} ({})", OUT_OF_SPEC, chassis_type.raw);
+                    } else {
+                        println!("{}", print);
+                    }
+
+                    print!("\tLock: ");
+                    if chassis_type.raw & 0x80 == 0x80 {
+                        println!("Present");
+                    } else {
+                        println!("Not Present");
+                    }
+                }
+                if let Some(version) = data.version() {
+                    println!("\tVersion: {}", version);
+                }
+                if let Some(serial_number) = data.serial_number() {
+                    println!("\tSerial Number: {}", serial_number);
+                }
+                if let Some(asset_tag_number) = data.asset_tag_number() {
+                    println!("\tAsset Tag: {}", asset_tag_number);
+                }
+                if let Some(bootup_state) = data.bootup_state() {
+                    println!("\tBoot-up State: {}", dmi_chassis_state(bootup_state));
+                }
+                if let Some(power_supply_state) = data.power_supply_state() {
+                    println!(
+                        "\tPower Supply State: {}",
+                        dmi_chassis_state(power_supply_state)
+                    );
+                }
+
+                if let Some(thermal_state) = data.thermal_state() {
+                    println!("\tThermal State: {}", dmi_chassis_state(thermal_state));
+                }
+
+                if let Some(security_status) = data.security_status() {
+                    println!(
+                        "\tSecurity Status: {}",
+                        match security_status.value {
+                            ChassisSecurityStatus::Other => "Other".to_string(),
+                            ChassisSecurityStatus::Unknown => "Unknown".to_string(),
+                            ChassisSecurityStatus::StatusNone => "None".to_string(),
+                            ChassisSecurityStatus::ExternalInterfaceLockedOut =>
+                                "External Interface Locked Out".to_string(),
+                            ChassisSecurityStatus::ExternalInterfaceEnabled =>
+                                "External Interface Enabled".to_string(),
+                            ChassisSecurityStatus::None =>
+                                format!("{} ({})", OUT_OF_SPEC, security_status.raw),
+                        }
+                    );
+                }
+                if let Some(oem_defined) = data.oem_defined() {
+                    println!("\tOEM Information: {:#010X}", oem_defined);
+                }
+                if let Some(height) = data.height() {
+                    match height {
+                        ChassisHeight::Unspecified => {
+                            println!("\tHeight: Unspecified");
+                        }
+                        ChassisHeight::U(units) => {
+                            println!("\tHeight: {} U", units);
+                        }
+                    }
+                }
+                if let Some(number_of_power_cords) = data.number_of_power_cords() {
+                    match number_of_power_cords {
+                        PowerCords::Unspecified => {
+                            println!("\tNumber Of Power Cords: Unspecified");
+                        }
+                        PowerCords::Count(count) => {
+                            println!("\tNumber Of Power Cords: {}", count);
+                        }
+                    }
+                }
+                if let Some(contained_element_count) = data.contained_element_count() {
+                    println!("Contained Elements: {}", contained_element_count);
+                    if let Some(elements) = data.contained_elements() {
+                        for element in elements.into_iter() {
+                            let type_description = match element.element_type() {
+                                ElementType::BaseboardType(baseboard_type) => {
+                                    match baseboard_type.value {
+                                        BoardType::Unknown => "Unknown".to_string(),
+                                        BoardType::Other => "Other".to_string(),
+                                        BoardType::ServerBlade => "ServerBlade".to_string(),
+                                        BoardType::ConnectivitySwitch => {
+                                            "Connectivity Switch".to_string()
+                                        }
+                                        BoardType::SystemManagementModule => {
+                                            "System Management Module".to_string()
+                                        }
+                                        BoardType::ProcessorModule => {
+                                            "Processor Module".to_string()
+                                        }
+                                        BoardType::IOModule => "I/O Module".to_string(),
+                                        BoardType::MemoryModule => "Memory Module".to_string(),
+                                        BoardType::Daughterboard => "Daughter Board".to_string(),
+                                        BoardType::Motherboard => "Motherboard".to_string(),
+                                        BoardType::ProcessorMemoryModule => {
+                                            "Processor Memory Module".to_string()
+                                        }
+                                        BoardType::ProcessorIOModule => {
+                                            "Processor+I/O Module".to_string()
+                                        }
+                                        BoardType::InterconnectBoard => {
+                                            "InterconnectBoard".to_string()
+                                        }
+                                        BoardType::None => {
+                                            format!("{} ({})", OUT_OF_SPEC, baseboard_type.raw)
+                                                .to_string()
+                                        }
+                                    }
+                                }
+                                ElementType::SMBiosType(bios_type) => {
+                                    dmi_smbios_structure_type(*bios_type)
+                                }
+                            };
+                            match (element.element_minimum(), element.element_maximum()) {
+                                (
+                                    ElementMinimum::Count(minimum),
+                                    ElementMaximum::Count(maximum),
+                                ) => {
+                                    let range = match minimum == maximum {
+                                        true => format!("{}", minimum),
+                                        false => format!("{}-{}", minimum, maximum),
+                                    };
+                                    println!("\t\t{} {}", type_description, range);
+                                }
+                                _ => (),
+                            }
+                        }
+                    }
+                }
+                if let Some(sku_number) = data.sku_number() {
+                    println!("\tSKU Number: {}", sku_number);
+                }
             }
             DefinedStruct::ProcessorInformation(data) => {
                 println!("Processor Information");
@@ -592,6 +773,75 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 } else {
                     println!("Unknown");
                 }
+            }
+        }
+
+        fn dmi_smbios_structure_type(code: u8) -> String {
+            let description = match code {
+                0 => "BIOS",
+                1 => "System",
+                2 => "Base Board",
+                3 => "Chassis",
+                4 => "Processor",
+                5 => "Memory Controller",
+                6 => "Memory Module",
+                7 => "Cache",
+                8 => "Port Connector",
+                9 => "System Slots",
+                10 => "On Board Devices",
+                11 => "OEM Strings",
+                12 => "System Configuration Options",
+                13 => "BIOS Language",
+                14 => "Group Associations",
+                15 => "System Event Log",
+                16 => "Physical Memory Array",
+                17 => "Memory Device",
+                18 => "32-bit Memory Error",
+                19 => "Memory Array Mapped Address",
+                20 => "Memory Device Mapped Address",
+                21 => "Built-in Pointing Device",
+                22 => "Portable Battery",
+                23 => "System Reset",
+                24 => "Hardware Security",
+                25 => "System Power Controls",
+                26 => "Voltage Probe",
+                27 => "Cooling Device",
+                28 => "Temperature Probe",
+                29 => "Electrical Current Probe",
+                30 => "Out-of-band Remote Access",
+                31 => "Boot Integrity Services",
+                32 => "System Boot",
+                33 => "64-bit Memory Error",
+                34 => "Management Device",
+                35 => "Management Device Component",
+                36 => "Management Device Threshold Data",
+                37 => "Memory Channel",
+                38 => "IPMI Device",
+                39 => "Power Supply",
+                40 => "Additional Information",
+                41 => "Onboard Device",
+                42 => "Management Controller Host Interface",
+                43 => "TPM Device",
+                _ => "",
+            };
+
+            match description == "" {
+                true => match code >= 128 {
+                    true => "OEM-specific".to_string(),
+                    false => format!("{} ({})", OUT_OF_SPEC, code),
+                },
+                false => description.to_string(),
+            }
+        }
+        fn dmi_chassis_state(state: ChassisStateData) -> String {
+            match state.value {
+                ChassisState::Other => "Other".to_string(),
+                ChassisState::Unknown => "Unknown".to_string(),
+                ChassisState::Safe => "Safe".to_string(),
+                ChassisState::Warning => "Warning".to_string(),
+                ChassisState::Critical => "Critical".to_string(),
+                ChassisState::NonRecoverable => "Non-recoverable".to_string(),
+                ChassisState::None => format!("{} ({})", OUT_OF_SPEC, state.raw),
             }
         }
     }
