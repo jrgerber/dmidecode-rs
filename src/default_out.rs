@@ -199,7 +199,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                         println!("\t\tACPI is supported");
                     }
                     if characteristics.usb_legacy_is_supported() {
-                        println!("\t\\tUSB legacy is supported");
+                        println!("\t\tUSB legacy is supported");
                     }
                     if characteristics.i2oboot_is_supported() {
                         println!("\t\tI2O boot is supported");
@@ -577,7 +577,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     }
                 }
                 if let Some(contained_element_count) = data.contained_element_count() {
-                    println!("Contained Elements: {}", contained_element_count);
+                    println!("\tContained Elements: {}", contained_element_count);
                     if let Some(elements) = data.contained_elements() {
                         for element in elements.into_iter() {
                             let type_description = match element.element_type() {
@@ -1363,10 +1363,10 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
         }
         fn dmi_processor_characteristics(characteristics: ProcessorCharacteristics) {
-            print!("\tCharacteristics: ");
             if characteristics.raw & 0xFC == 0 {
-                println!("None");
+                println!("\tCharacteristics: None");
             } else {
+                println!("\tCharacteristics: ");
                 if characteristics.unknown() {
                     println!("\t\tUnknown");
                 }
