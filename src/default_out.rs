@@ -640,6 +640,183 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::ProcessorInformation(data) => {
                 println!("Processor Information");
+                if let Some(socket_designation) = data.socket_designation() {
+                    println!("\tSocket Designation: {}", socket_designation);
+                }
+                if let Some(processor_type) = data.processor_type() {
+                    println!("\tType: {}", dmi_processor_type(processor_type));
+                }
+                if let Some(processor_family) = data.processor_family() {
+                    if processor_family.value == ProcessorFamily::SeeProcessorFamily2 {
+                        if let Some(processor_family_2) = data.processor_family_2() {
+                            println!(
+                                "\tFamily: {}",
+                                dmi_processor_family(
+                                    processor_family_2.value,
+                                    processor_family_2.raw
+                                )
+                            );
+                        }
+                    } else {
+                        println!(
+                            "\tFamily: {}",
+                            dmi_processor_family(
+                                processor_family.value,
+                                processor_family.raw as u16
+                            )
+                        );
+                    }
+                }
+                if let Some(processor_manufacturer) = data.processor_manufacturer() {
+                    println!("\tManufacturer: {}", processor_manufacturer);
+                }
+
+                dmi_processor_id(&data);
+
+                if let Some(processor_version) = data.processor_version() {
+                    println!("\tVersion: {}", processor_version);
+                }
+                if let Some(voltage) = data.voltage() {
+                    print!("\tVoltage: ");
+                    match voltage {
+                        ProcessorVoltage::CurrentVolts(volts) => println!("{:.1} V", volts),
+                        ProcessorVoltage::SupportedVolts(supported) => {
+                            let voltages = supported.voltages();
+                            match voltages.len() == 0 {
+                                true => print!("Unknown"),
+                                false => {
+                                    let mut iter = voltages.iter();
+                                    print!("{:.1} V", iter.next().unwrap());
+                                    while let Some(voltage) = iter.next() {
+                                        // Insert space if not the first value
+                                        print!(" {:.1} V", voltage);
+                                    }
+                                    println!();
+                                }
+                            }
+                        }
+                    }
+                }
+                if let Some(external_clock) = data.external_clock() {
+                    print!("\tExternal Clock: ");
+                    match external_clock {
+                        ProcessorExternalClock::Unknown => println!("Unknown"),
+                        ProcessorExternalClock::MHz(mhz) => println!("{} MHz", mhz),
+                    }
+                }
+                if let Some(max_speed) = data.max_speed() {
+                    print!("\tMax Speed: ");
+                    match max_speed {
+                        ProcessorSpeed::Unknown => println!("Unknown"),
+                        ProcessorSpeed::MHz(mhz) => println!("{} MHz", mhz),
+                    }
+                }
+                if let Some(current_speed) = data.current_speed() {
+                    print!("\tCurrent Speed: ");
+                    match current_speed {
+                        ProcessorSpeed::Unknown => println!("Unknown"),
+                        ProcessorSpeed::MHz(mhz) => println!("{} MHz", mhz),
+                    }
+                }
+                if let Some(status) = data.status() {
+                    print!("\tStatus: ");
+                    match status.socket_populated() {
+                        true => {
+                            print!("Populated, ");
+                            let print = match status.cpu_status() {
+                                CpuStatus::Unknown => "Unknown",
+                                CpuStatus::Enabled => "Enabled",
+                                CpuStatus::UserDisabled => "Disabled by User",
+                                CpuStatus::BiosDisabled => "Disabled by BIOS",
+                                CpuStatus::Idle => "Idle",
+                                CpuStatus::Other => "Other",
+                                CpuStatus::None => "",
+                            };
+                            match print == "" {
+                                true => println!("{} ({})", OUT_OF_SPEC, status.raw),
+                                false => println!("{}", print),
+                            }
+                        }
+                        false => println!("Unpopulated"),
+                    }
+                }
+                if let Some(processor_upgrade) = data.processor_upgrade() {
+                    println!("\tUpgrade: {0}", dmi_processor_upgrade(processor_upgrade));
+                }
+                if !quiet {
+                    if let Some(handle) = data.l1cache_handle() {
+                        dmi_processor_cache("L1 Cache Handle", handle, "L1", smbios_data.version);
+                    }
+                    if let Some(handle) = data.l2cache_handle() {
+                        dmi_processor_cache("L2 Cache Handle", handle, "L2", smbios_data.version);
+                    }
+                    if let Some(handle) = data.l3cache_handle() {
+                        dmi_processor_cache("L3 Cache Handle", handle, "L3", smbios_data.version);
+                    }
+                }
+                if let Some(serial_number) = data.serial_number() {
+                    println!("\tSerial Number: {}", serial_number);
+                }
+                if let Some(asset_tag) = data.asset_tag() {
+                    println!("\tAsset Tag: {}", asset_tag);
+                }
+                if let Some(part_number) = data.part_number() {
+                    println!("\tPart Number: {}", part_number);
+                }
+                if let Some(core_count) = data.core_count() {
+                    print!("\tCore Count: ");
+                    match core_count {
+                        CoreCount::Unknown => println!("Unknown"),
+                        CoreCount::Count(count) => println!("{}", count),
+                        CoreCount::SeeCoreCount2 => match data.core_count_2() {
+                            Some(core_count_2) => match core_count_2 {
+                                CoreCount2::Unknown => println!("Unknown"),
+                                CoreCount2::Count(count) => println!("{}", count),
+                                CoreCount2::Reserved => println!("Reserved"),
+                            },
+                            // CoreCount said to read CoreCount2 but CoreCount2 does not exist.
+                            None => println!("Error"),
+                        },
+                    }
+                }
+                if let Some(cores_enabled) = data.cores_enabled() {
+                    print!("\tCore Enabled: ");
+                    match cores_enabled {
+                        CoresEnabled::Unknown => println!("Unknown"),
+                        CoresEnabled::Count(count) => println!("{}", count),
+                        CoresEnabled::SeeCoresEnabled2 => match data.cores_enabled_2() {
+                            Some(cores_enabled_2) => match cores_enabled_2 {
+                                CoresEnabled2::Unknown => println!("Unknown"),
+                                CoresEnabled2::Count(count) => println!("{}", count),
+                                CoresEnabled2::Reserved => println!("Reserved"),
+                            },
+                            // CoreEnabled said to read CoreEnabled2 but CoreEnabled2 does not exist.
+                            None => println!("Error"),
+                        },
+                    }
+                }
+                if let Some(thread_count) = data.thread_count() {
+                    print!("\tThread Count: ");
+                    match thread_count {
+                        ThreadCount::Unknown => println!("Unknown"),
+                        ThreadCount::Count(count) => println!("{}", count),
+                        ThreadCount::SeeThreadCount2 => match data.thread_count_2() {
+                            Some(thread_count_2) => match thread_count_2 {
+                                ThreadCount2::Unknown => println!("Unknown"),
+                                ThreadCount2::Count(count) => println!("{}", count),
+                                ThreadCount2::Reserved => println!("Reserved"),
+                            },
+                            // ThreadCount said to read ThreadCount2 but ThreadCount2 does not exist.
+                            None => println!("Error"),
+                        },
+                    }
+                }
+                if let Some(processor_characteristics) = data.processor_characteristics() {
+                    dmi_processor_characteristics(processor_characteristics);
+                }
+                /*
+                dmi_processor_id(h);
+                */
             }
             DefinedStruct::MemoryControllerInformation(data) => {
                 println!("Memory Controller Information");
@@ -842,6 +1019,644 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 ChassisState::Critical => "Critical".to_string(),
                 ChassisState::NonRecoverable => "Non-recoverable".to_string(),
                 ChassisState::None => format!("{} ({})", OUT_OF_SPEC, state.raw),
+            }
+        }
+
+        fn dmi_processor_type(processor_type: ProcessorTypeData) -> String {
+            match processor_type.value {
+                ProcessorType::Other => "Other".to_string(),
+                ProcessorType::Unknown => "Unknown".to_string(),
+                ProcessorType::CentralProcessor => "Central Processor".to_string(),
+                ProcessorType::MathProcessor => "Math Processor".to_string(),
+                ProcessorType::DspProcessor => "DSP Processor".to_string(),
+                ProcessorType::VideoProcessor => "VideoProcessor".to_string(),
+                ProcessorType::None => format!("{} ({})", OUT_OF_SPEC, processor_type.raw),
+            }
+        }
+        fn dmi_processor_family(processor_family: ProcessorFamily, raw: u16) -> String {
+            let print = match processor_family {
+                ProcessorFamily::Other => "Other",
+                ProcessorFamily::Unknown => "Unknown",
+                ProcessorFamily::I8086 => "8086",
+                ProcessorFamily::I80286 => "80286",
+                ProcessorFamily::Intel386Processor => "80386",
+                ProcessorFamily::Intel486Processor => "80486",
+                ProcessorFamily::I8087 => "8087",
+                ProcessorFamily::I80287 => "80287",
+                ProcessorFamily::I80387 => "80387",
+                ProcessorFamily::I80487 => "80487",
+                ProcessorFamily::IntelPentiumProcessor => "Pentium",
+                ProcessorFamily::PentiumProProcessor => "Pentium Pro",
+                ProcessorFamily::PentiumIIProcessor => "Pentium II",
+                ProcessorFamily::PentiumprocessorwithMMXtechnology => "Pentium MMX",
+                ProcessorFamily::IntelCeleronProcessor => "Celeron",
+                ProcessorFamily::PentiumIIXeonProcessor => "Pentium II Xeon",
+                ProcessorFamily::PentiumIIIProcessor => "Pentium II",
+                ProcessorFamily::M1Family => "M1",
+                ProcessorFamily::M2Family => "M2",
+                ProcessorFamily::IntelCeleronMProcessor => "Celeron M",
+                ProcessorFamily::IntelPentium4HTProcessor => "Pentium 4 HT",
+                ProcessorFamily::AMDDuronProcessorFamily => "Duron",
+                ProcessorFamily::K5Family => "K5",
+                ProcessorFamily::K6Family => "K6",
+                ProcessorFamily::K62 => "K6-2",
+                ProcessorFamily::K63 => "K6-3",
+                ProcessorFamily::AMDAthlonProcessorFamily => "Athlon",
+                ProcessorFamily::AMD29000Family => "AMD29000",
+                ProcessorFamily::K62Plus => "K6-2+",
+                ProcessorFamily::PowerPCFamily => "Power PC",
+                ProcessorFamily::PowerPC601 => "Power PC 601",
+                ProcessorFamily::PowerPC603 => "Power PC 603",
+                ProcessorFamily::PowerPC603Plus => "Power PC 603+",
+                ProcessorFamily::PowerPC604 => "Power PC 604",
+                ProcessorFamily::PowerPC620 => "Power PC 620",
+                ProcessorFamily::PowerPCx704 => "Power PC x704",
+                ProcessorFamily::PowerPC750 => "Power PC 750",
+                ProcessorFamily::IntelCoreDuoProcessor => "Core Duo",
+                ProcessorFamily::IntelCoreDuomobileProcessor => "Core Duo Mobile",
+                ProcessorFamily::IntelCoreSolomobileProcessor => "Core Solo Mobile",
+                ProcessorFamily::IntelAtomProcessor => "Atom",
+                ProcessorFamily::IntelCoreMProcessor => "Core M",
+                ProcessorFamily::IntelCorem3Processor => "Core m3",
+                ProcessorFamily::IntelCorem5Processor => "Core m5",
+                ProcessorFamily::IntelCorem7Processor => "Core m7",
+                ProcessorFamily::AlphaFamily => "Alpha",
+                ProcessorFamily::Alpha21064 => "Alpha 21064",
+                ProcessorFamily::Alpha21066 => "Alpha 21066",
+                ProcessorFamily::Alpha21164 => "Alpha 21164",
+                ProcessorFamily::Alpha21164PC => "Alpha 21164PC",
+                ProcessorFamily::Alpha21164a => "Alpha 21164a",
+                ProcessorFamily::Alpha21264 => "Alpha 21264",
+                ProcessorFamily::Alpha21364 => "Alpha 21364",
+                ProcessorFamily::AMDTurionIIUltraDualCoreMobileMProcessorFamily => {
+                    "Turion II Ultra Dual-Core Mobile M"
+                }
+                ProcessorFamily::AMDTurionIIDualCoreMobileMProcessorFamily => {
+                    "Turion II Dual-Core Mobile M"
+                }
+                ProcessorFamily::AMDAthlonIIDualCoreMProcessorFamily => "Athlon II Dual-Core M",
+                ProcessorFamily::AMDOpteron6100SeriesProcessor => "Opteron 6100",
+                ProcessorFamily::AMDOpteron4100SeriesProcessor => "Opteron 4100",
+                ProcessorFamily::AMDOpteron6200SeriesProcessor => "Opteron 6200",
+                ProcessorFamily::AMDOpteron4200SeriesProcessor => "Opteron 4200",
+                ProcessorFamily::AMDFXSeriesProcessor => "FX",
+                ProcessorFamily::MIPSFamily => "MIPS",
+                ProcessorFamily::MIPSR4000 => "MIPS R4000",
+                ProcessorFamily::MIPSR4200 => "MIPS R4200",
+                ProcessorFamily::MIPSR4400 => "MIPS R4400",
+                ProcessorFamily::MIPSR4600 => "MIPS R4600",
+                ProcessorFamily::MIPSR10000 => "MIPS R10000",
+                ProcessorFamily::AMDCSeriesProcessor => "C-Series",
+                ProcessorFamily::AMDESeriesProcessor => "E-Series",
+                ProcessorFamily::AMDASeriesProcessor => "A-Series",
+                ProcessorFamily::AMDGSeriesProcessor => "G-Series",
+                ProcessorFamily::AMDZSeriesProcessor => "Z-Series",
+                ProcessorFamily::AMDRSeriesProcessor => "R-Series",
+                ProcessorFamily::AMDOpteron4300SeriesProcessor => "Opteron 4300",
+                ProcessorFamily::AMDOpteron6300SeriesProcessor => "Opteron 6300",
+                ProcessorFamily::AMDOpteron3300SeriesProcessor => "Opteron 3300",
+                ProcessorFamily::AMDFireProSeriesProcessor => "FirePro",
+                ProcessorFamily::SPARCFamily => "SPARC",
+                ProcessorFamily::SuperSPARC => "SuperSPARC",
+                ProcessorFamily::MicroSparcii => "MicroSPARC II",
+                ProcessorFamily::MicroSparciiep => "MicroSPARC IIep",
+                ProcessorFamily::UltraSPARC => "UltraSPARC",
+                ProcessorFamily::UltraSPARCII => "UltraSPARC II",
+                ProcessorFamily::UltraSPARCIii => "UltraSPARC IIi",
+                ProcessorFamily::UltraSPARCIII => "UltraSPARC III",
+                ProcessorFamily::UltraSPARCIIIi => "UltraSPARC IIIi",
+                ProcessorFamily::M68040Family => "68040",
+                ProcessorFamily::M68xxx => "68xxx",
+                ProcessorFamily::M68000 => "68000",
+                ProcessorFamily::M68010 => "68010",
+                ProcessorFamily::M68020 => "68020",
+                ProcessorFamily::M68030 => "68030",
+                ProcessorFamily::AMDAthlonX4QuadCoreProcessorFamily => "Athlon X4",
+                ProcessorFamily::AMDOpteronX1000SeriesProcessor => "Opteron X1000",
+                ProcessorFamily::AMDOpteronX2000SeriesAPU => "Opteron X2000",
+                ProcessorFamily::AMDOpteronASeriesProcessor => "Opteron A-Series",
+                ProcessorFamily::AMDOpteronX3000SeriesAPU => "Opteron X3000",
+                ProcessorFamily::AMDZenProcessorFamily => "Zen",
+                ProcessorFamily::HobbitFamily => "Hobbit",
+                ProcessorFamily::CrusoeTM5000Family => "Crusoe TM5000",
+                ProcessorFamily::CrusoeTM3000Family => "Crusoe TM3000",
+                ProcessorFamily::EfficeonTM8000Family => "Efficeon TM8000",
+                ProcessorFamily::Weitek => "Weitek",
+                ProcessorFamily::Itaniumprocessor => "Itanium",
+                ProcessorFamily::AMDAthlon64ProcessorFamily => "Athlon 64",
+                ProcessorFamily::AMDOpteronProcessorFamily => "Opteron",
+                ProcessorFamily::AMDSempronProcessorFamily => "Sempron",
+                ProcessorFamily::AMDTurion64MobileTechnology => "Turion 64",
+                ProcessorFamily::DualCoreAMDOpteronProcessorFamily => "Dual-Core Opteron",
+                ProcessorFamily::AMDAthlon64X2DualCoreProcessorFamily => "Athlon 64 X2",
+                ProcessorFamily::AMDTurion64X2MobileTechnology => "Turion 64 X2",
+                ProcessorFamily::QuadCoreAMDOpteronProcessorFamily => "Quad-Core Opteron",
+                ProcessorFamily::ThirdGenerationAMDOpteronProcessorFamily => {
+                    "Third-Generation Opteron"
+                }
+                ProcessorFamily::AMDPhenomFXQuadCoreProcessorFamily => "Phenom FX",
+                ProcessorFamily::AMDPhenomX4QuadCoreProcessorFamily => "Phenom X4",
+                ProcessorFamily::AMDPhenomX2DualCoreProcessorFamily => "Phenom X2",
+                ProcessorFamily::AMDAthlonX2DualCoreProcessorFamily => "Athlon X2",
+                ProcessorFamily::PARISCFamily => "PA-RISC",
+                ProcessorFamily::PARISC8500 => "PA-RISC 8500",
+                ProcessorFamily::PARISC8000 => "PA-RISC 8000",
+                ProcessorFamily::PARISC7300LC => "PA-RISC 7300LC",
+                ProcessorFamily::PARISC7200 => "PA-RISC 7200",
+                ProcessorFamily::PARISC7100LC => "PA-RISC 7100LC",
+                ProcessorFamily::PARISC7100 => "PA-RISC 7100",
+                ProcessorFamily::V30Family => "V30",
+                ProcessorFamily::QuadCoreIntelXeonProcessor3200Series => "Quad-Core Xeon 3200",
+                ProcessorFamily::DualCoreIntelXeonProcessor3000Series => "Dual-Core Xeon 3000",
+                ProcessorFamily::QuadCoreIntelXeonProcessor5300Series => "Quad-Core Xeon 5300",
+                ProcessorFamily::DualCoreIntelXeonProcessor5100Series => "Dual-Core Xeon 5100",
+                ProcessorFamily::DualCoreIntelXeonProcessor5000Series => "Dual-Core Xeon 5000",
+                ProcessorFamily::DualCoreIntelXeonProcessorLV => "Dual-Core Xeon LV",
+                ProcessorFamily::DualCoreIntelXeonProcessorULV => "Dual-Core Xeon ULV",
+                ProcessorFamily::DualCoreIntelXeonProcessor7100Series => "Dual-Core Xeon 7100",
+                ProcessorFamily::QuadCoreIntelXeonProcessor5400Series => "Quad-Core Xeon 5400",
+                ProcessorFamily::QuadCoreIntelXeonProcessor => "Quad-Core Xeon",
+                ProcessorFamily::DualCoreIntelXeonProcessor5200Series => "Dual-Core Xeon 5200",
+                ProcessorFamily::DualCoreIntelXeonProcessor7200Series => "Dual-Core Xeon 7200",
+                ProcessorFamily::QuadCoreIntelXeonProcessor7300Series => "Quad-Core Xeon 7300",
+                ProcessorFamily::QuadCoreIntelXeonProcessor7400Series => "Quad-Core Xeon 7400",
+                ProcessorFamily::MultiCoreIntelXeonProcessor7400Series => "Multi-Core Xeon 7400",
+                ProcessorFamily::PentiumIIIXeonProcessor => "Pentium III Xeon",
+                ProcessorFamily::PentiumIIIProcessorwithIntelSpeedStepTechnology => {
+                    "Pentium III Speedstep"
+                }
+                ProcessorFamily::Pentium4Processor => "Pentium 4",
+                ProcessorFamily::IntelXeonProcessor => "Xeon",
+                ProcessorFamily::AS400Family => "AS400",
+                ProcessorFamily::IntelXeonProcessorMP => "Xeon MP",
+                ProcessorFamily::AMDAthlonXPProcessorFamily => "Athlon XP",
+                ProcessorFamily::AMDAthlonMPProcessorFamily => "Athlon MP",
+                ProcessorFamily::IntelItanium2Processor => "Itanium 2",
+                ProcessorFamily::IntelPentiumMProcessor => "Pentium M",
+                ProcessorFamily::IntelCeleronDProcessor => "Celeron D",
+                ProcessorFamily::IntelPentiumDProcessor => "Pentium D",
+                ProcessorFamily::IntelPentiumProcessorExtremeEdition => "Pentium EE",
+                ProcessorFamily::IntelCoreSoloProcessor => "Core Solo",
+                ProcessorFamily::IntelCore2DuoProcessor => "Core 2 Duo",
+                ProcessorFamily::IntelCore2SoloProcessor => "Core 2 Solo",
+                ProcessorFamily::IntelCore2ExtremeProcessor => "Core 2 Extreme",
+                ProcessorFamily::IntelCore2QuadProcessor => "Core 2 Quad",
+                ProcessorFamily::IntelCore2ExtremeMobileProcessor => "Core 2 Extreme Mobile",
+                ProcessorFamily::IntelCore2DuoMobileProcessor => "Core 2 Duo Mobile",
+                ProcessorFamily::IntelCore2SoloMobileProcessor => "Core 2 Solo Mobile",
+                ProcessorFamily::IntelCorei7Processor => "Core i7",
+                ProcessorFamily::DualCoreIntelCeleronProcessor => "Dual-Core Celeron",
+                ProcessorFamily::IBM390Family => "IBM390",
+                ProcessorFamily::G4 => "G4",
+                ProcessorFamily::G5 => "G5",
+                ProcessorFamily::ESA390G6 => "ESA/390 G6",
+                ProcessorFamily::ZArchitecturebase => "z/Architecture",
+                ProcessorFamily::IntelCorei5processor => "Core i5",
+                ProcessorFamily::IntelCorei3processor => "Core i3",
+                ProcessorFamily::IntelCorei9processor => "Core i9",
+                ProcessorFamily::VIAC7MProcessorFamily => "C7-M",
+                ProcessorFamily::VIAC7DProcessorFamily => "C7-D",
+                ProcessorFamily::VIAC7ProcessorFamily => "C7",
+                ProcessorFamily::VIAEdenProcessorFamily => "Eden",
+                ProcessorFamily::MultiCoreIntelXeonProcessor => "Multi-Core Xeon",
+                ProcessorFamily::DualCoreIntelXeonProcessor3xxxSeries => "Dual-Core Xeon 3xxx",
+                ProcessorFamily::QuadCoreIntelXeonProcessor3xxxSeries => "Quad-Core Xeon 3xxx",
+                ProcessorFamily::VIANanoProcessorFamily => "Nano",
+                ProcessorFamily::DualCoreIntelXeonProcessor5xxxSeries => "Dual-Core Xeon 5xxx",
+                ProcessorFamily::QuadCoreIntelXeonProcessor5xxxSeries => "Quad-Core Xeon 5xxx",
+                ProcessorFamily::DualCoreIntelXeonProcessor7xxxSeries => "Dual-Core Xeon 7xxx",
+                ProcessorFamily::QuadCoreIntelXeonProcessor7xxxSeries => "Quad-Core Xeon 7xxx",
+                ProcessorFamily::MultiCoreIntelXeonProcessor7xxxSeries => "Multi-Core Xeon 7xxx",
+                ProcessorFamily::MultiCoreIntelXeonProcessor3400Series => "Multi-Core Xeon 3400",
+                ProcessorFamily::AMDOpteron3000SeriesProcessor => "Opteron 3000",
+                ProcessorFamily::AMDSempronIIProcessor => "Sempron II",
+                ProcessorFamily::EmbeddedAMDOpteronQuadCoreProcessorFamily => {
+                    "Embedded Opteron Quad-Core"
+                }
+                ProcessorFamily::AMDPhenomTripleCoreProcessorFamily => "Phenom Triple-Core",
+                ProcessorFamily::AMDTurionUltraDualCoreMobileProcessorFamily => {
+                    "Turion Ultra Dual-Core Mobile"
+                }
+                ProcessorFamily::AMDTurionDualCoreMobileProcessorFamily => {
+                    "Turion Dual-Core Mobile"
+                }
+                ProcessorFamily::AMDAthlonDualCoreProcessorFamily => "Athlon Dual-Core",
+                ProcessorFamily::AMDSempronSIProcessorFamily => "Sempron SI",
+                ProcessorFamily::AMDPhenomIIProcessorFamily => "Phenom II",
+                ProcessorFamily::AMDAthlonIIProcessorFamily => "Athlon II",
+                ProcessorFamily::SixCoreAMDOpteronProcessorFamily => "Six-Core Opteron",
+                ProcessorFamily::AMDSempronMProcessorFamily => "Sempron M",
+                ProcessorFamily::I860 => "i860",
+                ProcessorFamily::I960 => "i960",
+                ProcessorFamily::SeeProcessorFamily2 => "See Processor Family #2",
+                ProcessorFamily::ARMv7 => "ARMv7",
+                ProcessorFamily::ARMv8 => "ARMv8",
+                ProcessorFamily::SH3 => "SH-3",
+                ProcessorFamily::SH4 => "SH-4",
+                ProcessorFamily::ARM => "ARM",
+                ProcessorFamily::StrongARM => "StrongARM",
+                ProcessorFamily::Cyrix6x86 => "6x86",
+                ProcessorFamily::MediaGX => "MediaGX",
+                ProcessorFamily::MII => "MII",
+                ProcessorFamily::WinChip => "WinChip",
+                ProcessorFamily::DSP => "DSP",
+                ProcessorFamily::VideoProcessor => "Video Processor",
+                ProcessorFamily::RISCVRV32 => "RV32",
+                ProcessorFamily::RISCVRV64 => "RV64",
+                ProcessorFamily::RISCVRV128 => "RV128",
+                ProcessorFamily::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, raw),
+                false => print.to_string(),
+            }
+        }
+
+        fn dmi_processor_upgrade(processor_upgrade: ProcessorUpgradeData) -> String {
+            let print = match processor_upgrade.value {
+                ProcessorUpgrade::Other => "Other",
+                ProcessorUpgrade::Unknown => "Unknown",
+                ProcessorUpgrade::DaughterBoard => "Daughter Board",
+                ProcessorUpgrade::ZIFSocket => "ZIF Socket",
+                ProcessorUpgrade::ReplaceablePiggyBack => "Replaceable Piggy Back",
+                ProcessorUpgrade::NoUpgrade => "None",
+                ProcessorUpgrade::LIFSocket => "LIF Socket",
+                ProcessorUpgrade::Slot1 => "Slot 1",
+                ProcessorUpgrade::Slot2 => "Slot 2",
+                ProcessorUpgrade::PinSocket370 => "370-pin Socket",
+                ProcessorUpgrade::SlotA => "Slot A",
+                ProcessorUpgrade::SlotM => "Slot M",
+                ProcessorUpgrade::Socket423 => "Socket 423",
+                ProcessorUpgrade::SocketASocket462 => "Socket A (Socket 462)",
+                ProcessorUpgrade::Socket478 => "Socket 478",
+                ProcessorUpgrade::Socket754 => "Socket 754",
+                ProcessorUpgrade::Socket940 => "Socket 940",
+                ProcessorUpgrade::Socket939 => "Socket 939",
+                ProcessorUpgrade::SocketmPGA604 => "Socket mPGA604",
+                ProcessorUpgrade::SocketLGA771 => "Socket LGA771",
+                ProcessorUpgrade::SocketLGA775 => "Socket LGA775",
+                ProcessorUpgrade::SocketS1 => "Socket S1",
+                ProcessorUpgrade::SocketAM2 => "Socket AM2",
+                ProcessorUpgrade::SocketF1207 => "Socket F (1207)",
+                ProcessorUpgrade::SocketLGA1366 => "Socket LGA1366",
+                ProcessorUpgrade::SocketG34 => "Socket G34",
+                ProcessorUpgrade::SocketAM3 => "Socket AM3",
+                ProcessorUpgrade::SocketC32 => "Socket C32",
+                ProcessorUpgrade::SocketLGA1156 => "Socket LGA1156",
+                ProcessorUpgrade::SocketLGA1567 => "Socket LGA1567",
+                ProcessorUpgrade::SocketPGA988A => "Socket PGA988A",
+                ProcessorUpgrade::SocketBGA1288 => "Socket BGA1288",
+                ProcessorUpgrade::SocketrPGA988B => "Socket rPGA988B",
+                ProcessorUpgrade::SocketBGA1023 => "Socket BGA1023",
+                ProcessorUpgrade::SocketBGA1224 => "Socket BGA1224",
+                ProcessorUpgrade::SocketLGA1155 => "Socket BGA1155",
+                ProcessorUpgrade::SocketLGA1356 => "Socket LGA1356",
+                ProcessorUpgrade::SocketLGA2011 => "Socket LGA2011",
+                ProcessorUpgrade::SocketFS1 => "Socket FS1",
+                ProcessorUpgrade::SocketFS2 => "Socket FS2",
+                ProcessorUpgrade::SocketFM1 => "Socket FM1",
+                ProcessorUpgrade::SocketFM2 => "Socket FM2",
+                ProcessorUpgrade::SocketLGA2011_3 => "Socket LGA2011-3",
+                ProcessorUpgrade::SocketLGA1356_3 => "Socket LGA1356-3",
+                ProcessorUpgrade::SocketLGA1150 => "Socket LGA1150",
+                ProcessorUpgrade::SocketBGA1168 => "Socket BGA1168",
+                ProcessorUpgrade::SocketBGA1234 => "Socket BGA1234",
+                ProcessorUpgrade::SocketBGA1364 => "Socket BGA1364",
+                ProcessorUpgrade::SocketAM4 => "Socket AM4",
+                ProcessorUpgrade::SocketLGA1151 => "Socket LGA1151",
+                ProcessorUpgrade::SocketBGA1356 => "Socket BGA1356",
+                ProcessorUpgrade::SocketBGA1440 => "Socket BGA1440",
+                ProcessorUpgrade::SocketBGA1515 => "Socket BGA1515",
+                ProcessorUpgrade::SocketLGA3647_1 => "Socket LGA3647-1",
+                ProcessorUpgrade::SocketSP3 => "Socket SP3",
+                ProcessorUpgrade::SocketSP3r23 => "Socket SP3r2",
+                ProcessorUpgrade::SocketLGA2066 => "Socket LGA2066",
+                ProcessorUpgrade::SocketBGA1392 => "Socket BGA1392",
+                ProcessorUpgrade::SocketBGA1510 => "Socket BGA1510",
+                ProcessorUpgrade::SocketBGA1528 => "Socket BGA1528",
+                ProcessorUpgrade::SocketLGA4189 => "Socket LGA4189",
+                ProcessorUpgrade::SocketLGA1200 => "Socket LGA1200",
+                ProcessorUpgrade::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, processor_upgrade.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_processor_cache(
+            label: &str,
+            handle: Handle,
+            level: &str,
+            version: Option<SMBiosVersion>,
+        ) {
+            print!("\t{}: ", label);
+            match *handle == 0xFFFF {
+                true => {
+                    if let Some(ver) = version {
+                        match ver >= SMBiosVersion::new(2, 3, 0) {
+                            true => println!("Not Provided"),
+                            false => println!("No {} Cache", level),
+                        }
+                    }
+                }
+                false => println!("{:#06X}", *handle),
+            }
+        }
+        fn dmi_processor_characteristics(characteristics: ProcessorCharacteristics) {
+            print!("\tCharacteristics: ");
+            if characteristics.raw & 0xFC == 0 {
+                println!("None");
+            } else {
+                if characteristics.unknown() {
+                    println!("\t\tUnknown");
+                }
+                if characteristics.bit_64capable() {
+                    println!("\t\t64-bit capable");
+                }
+                if characteristics.multi_core() {
+                    println!("\t\tMulti-core");
+                }
+                if characteristics.hardware_thread() {
+                    println!("\t\tHardware Thread");
+                }
+                if characteristics.execute_protection() {
+                    println!("\t\tExecute Protection");
+                }
+                if characteristics.enhanced_virtualization() {
+                    println!("\t\tEnhanced Virtualization");
+                }
+                if characteristics.power_performance_control() {
+                    println!("\t\tPower/Performance Control");
+                }
+                if characteristics.bit_128capable() {
+                    println!("\t\t128-bit Capable");
+                }
+                if characteristics.arm_64soc_id() {
+                    println!("\t\tArm64 SoC ID");
+                }
+            }
+        }
+        fn dmi_processor_id(data: &SMBiosProcessorInformation<'_>) {
+            if let Some(p) = data.processor_id() {
+                println!(
+                    "\tID: {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X} {:02X}",
+                    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]
+                );
+
+                let option_family = match (data.processor_family(), data.processor_family_2()) {
+                    (Some(processor_family), None) => {
+                        Some((processor_family.value, processor_family.raw as u16))
+                    }
+                    (Some(_), Some(processor_family_2)) => {
+                        Some((processor_family_2.value, processor_family_2.raw))
+                    }
+                    _ => None,
+                };
+
+                match option_family {
+                    Some(family) => {
+                        let mut sig = 0;
+
+                        if family.0 == ProcessorFamily::Intel386Processor {
+                            let dx =
+                                u16::from_le_bytes(p[0..=1].try_into().expect("u16 is 2 bytes"));
+                            println!("\tSignature: Type {}, Family {}, Major Stepping {}, Minor Stepping {}", dx >> 12, (dx >> 8) & 0xF, (dx >> 4) & 0xF, dx & 0xF);
+                            return;
+                        } else if family.0 == ProcessorFamily::Intel486Processor {
+                            let dx =
+                                u16::from_le_bytes(p[0..=1].try_into().expect("u16 is 2 bytes"));
+
+                            // Not all 80486 CPU support the CPUID instruction, we have to find
+                            // whether the one we have here does or not. Note that this trick
+                            // works only because we know that 80486 must be little-endian.
+                            if (dx & 0x0F00) == 0x0400
+                                && ((dx & 0x00F0) == 0x0040 || (dx & 0x00F0) >= 0x0070)
+                                && ((dx & 0x000F) >= 0x0003)
+                            {
+                                sig = 1;
+                            } else {
+                                println!("\tSignature: Type {}, Family {}, Major Stepping {}, Minor Stepping {}", (dx >> 12) & 0x3, (dx >> 8) & 0xF, (dx >> 4) & 0xF, dx & 0xF);
+                                return;
+                            }
+                        }
+                        // ARM
+                        else if family.0 == ProcessorFamily::ARMv7
+                            || family.0 == ProcessorFamily::ARMv8
+                            || (family.1 >= 0x118 && family.1 <= 0x119)
+                        {
+                            let midr =
+                                u32::from_le_bytes(p[4..=7].try_into().expect("u32 is 4 bytes"));
+
+                            // The format of this field was not defined for ARM processors
+                            // before version 3.1.0 of the SMBIOS specification, so we
+                            // silently skip it if it reads all zeroes.
+                            if midr == 0 {
+                                return;
+                            }
+
+                            println!("\tSignature: Implementor {:#04x}, Variant {:#x}, Architecture {}, Part {:#05x}, Revision {}", midr >> 24, (midr >> 20) & 0xF, (midr >> 16) & 0xF, (midr >> 4) & 0xFFF, midr & 0xF);
+                            return;
+                        }
+                        // Intel
+                        else if (family.1 >= 0x0B && family.1 <= 0x15)
+                            || (family.1 >= 0x28 && family.1 <= 0x2F)
+                            || (family.1 >= 0xA1 && family.1 <= 0xB3)
+                            || family.0 == ProcessorFamily::IntelXeonProcessorMP
+                            || (family.1 >= 0xB9 && family.1 <= 0xC7)
+                            || (family.1 >= 0xCD && family.1 <= 0xCF)
+                            || (family.1 >= 0xD2 && family.1 <= 0xDB)
+                            || (family.1 >= 0xDD && family.1 <= 0xE0)
+                        {
+                            sig = 1;
+                        }
+                        // AMD
+                        else if (family.1 >= 0x18 && family.1 <= 0x1D)
+                            || family.0 == ProcessorFamily::K62Plus
+                            || (family.1 >= 0x38 && family.1 <= 0x3F)
+                            || (family.1 >= 0x46 && family.1 <= 0x4F)
+                            || (family.1 >= 0x66 && family.1 <= 0x6B)
+                            || (family.1 >= 0x83 && family.1 <= 0x8F)
+                            || (family.1 >= 0xB6 && family.1 <= 0xB7)
+                            || (family.1 >= 0xE4 && family.1 <= 0xEF)
+                        {
+                            sig = 2;
+                        }
+                        // Some X86-class CPU have family "Other" or "Unknown". In this case,
+                        // we use the version string to determine if they are known to
+                        // support the CPUID instruction.
+                        else if family.0 == ProcessorFamily::Other
+                            || family.0 == ProcessorFamily::Unknown
+                        {
+                            if let Some(version) = data.processor_version() {
+                                match version.as_str() {
+                                    "Pentium III MMX" => {
+                                        sig = 1;
+                                    }
+                                    "Intel(R) Core(TM)2" => {
+                                        sig = 1;
+                                    }
+                                    "Intel(R) Pentium(R)" => {
+                                        sig = 1;
+                                    }
+                                    "Genuine Intel(R) CPU U1400" => {
+                                        sig = 1;
+                                    }
+                                    "AMD Athlon(TM)" => {
+                                        sig = 2;
+                                    }
+                                    "AMD Opteron(tm)" => {
+                                        sig = 2;
+                                    }
+                                    "Dual-Core AMD Opteron(tm)" => {
+                                        sig = 2;
+                                    }
+                                    _ => return,
+                                }
+                            }
+                        } else {
+                            // neither X86 nor ARM
+                            return;
+                        }
+
+                        // Extra flags are now returned in the ECX register when one calls
+                        // the CPUID instruction. Their meaning is explained in table 3-5, but
+                        // DMI doesn't support this yet.
+                        let eax = u32::from_le_bytes(p[0..=3].try_into().expect("u32 is 4 bytes"));
+                        let edx = u32::from_le_bytes(p[4..=7].try_into().expect("u32 is 4 bytes"));
+
+                        match sig {
+                            // Intel
+                            1 => {
+                                println!(
+                                    "\tSignature: Type {}, Family {}, Model {}, Stepping {}",
+                                    (eax >> 12) & 0x3,
+                                    ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
+                                    ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F),
+                                    eax & 0xF
+                                );
+                            }
+                            // AMD
+                            2 => {
+                                println!(
+                                    "\tSignature: Family {}, Model {}, Stepping {}",
+                                    (eax >> 8)
+                                        & 0xF
+                                            + match ((eax >> 8) & 0xF) == 0xF {
+                                                true => (eax >> 20) & 0xFF,
+                                                false => 0,
+                                            },
+                                    (eax >> 4) & 0xF
+                                        | match ((eax >> 8) & 0xF) == 0xF {
+                                            true => (eax >> 12) & 0xF0,
+                                            false => 0,
+                                        },
+                                    eax & 0xF
+                                );
+                            }
+                            _ => (),
+                        }
+
+                        // Flags
+                        match edx & 0xBFEFFBFF == 0 {
+                            true => println!("\tFlags: None"),
+                            false => {
+                                println!("\tFlags:");
+                                if (edx & (1 << 0)) != 0 {
+                                    println!("\t\tFPU (Floating-point unit on-chip)");
+                                }
+                                if (edx & (1 << 1)) != 0 {
+                                    println!("\t\tVME (Virtual mode extension)");
+                                }
+                                if (edx & (1 << 9)) != 0 {
+                                    println!("\t\tDE (Debugging extension)");
+                                }
+                                if (edx & (1 << 3)) != 0 {
+                                    println!("\t\tPSE (Page size extension)");
+                                }
+                                if (edx & (1 << 4)) != 0 {
+                                    println!("\t\tTSC (Time stamp counter)");
+                                }
+                                if (edx & (1 << 5)) != 0 {
+                                    println!("\t\tMSR (Model specific registers)");
+                                }
+                                if (edx & (1 << 6)) != 0 {
+                                    println!("\t\tPAE (Physical address extension)");
+                                }
+                                if (edx & (1 << 7)) != 0 {
+                                    println!("\t\tMCE (Machine check exception)");
+                                }
+                                if (edx & (1 << 8)) != 0 {
+                                    println!("\t\tCX8 (CMPXCHG8 instruction supported)");
+                                }
+                                if (edx & (1 << 9)) != 0 {
+                                    println!("\t\tAPIC (On-chip APIC hardware supported)");
+                                }
+
+                                if (edx & (1 << 11)) != 0 {
+                                    println!("\t\tSEP (Fast system call)");
+                                }
+                                if (edx & (1 << 12)) != 0 {
+                                    println!("\t\tMTRR (Memory type range registers)");
+                                }
+                                if (edx & (1 << 13)) != 0 {
+                                    println!("\t\tPGE (Page global enable)");
+                                }
+                                if (edx & (1 << 14)) != 0 {
+                                    println!("\t\tMCA (Machine check architecture)");
+                                }
+                                if (edx & (1 << 15)) != 0 {
+                                    println!("\t\tCMOV (Conditional move instruction supported)");
+                                }
+                                if (edx & (1 << 16)) != 0 {
+                                    println!("\t\tPAT (Page attribute table)");
+                                }
+                                if (edx & (1 << 17)) != 0 {
+                                    println!("\t\tPSE-36 (36-bit page size extension)");
+                                }
+                                if (edx & (1 << 18)) != 0 {
+                                    println!(
+                                        "\t\tPSN (Processor serial number present and enabled)"
+                                    );
+                                }
+                                if (edx & (1 << 19)) != 0 {
+                                    println!("\t\tCLFSH (CLFLUSH instruction supported)");
+                                }
+
+                                if (edx & (1 << 21)) != 0 {
+                                    println!("\t\tDS (Debug store)");
+                                }
+                                if (edx & (1 << 22)) != 0 {
+                                    println!("\t\tACPI (ACPI supported)");
+                                }
+                                if (edx & (1 << 23)) != 0 {
+                                    println!("\t\tMMX (MMX technology supported)");
+                                }
+                                if (edx & (1 << 24)) != 0 {
+                                    println!("\t\tFXSR (FXSAVE and FXSTOR instructions supported)");
+                                }
+                                if (edx & (1 << 25)) != 0 {
+                                    println!("\t\tSSE (Streaming SIMD extensions)");
+                                }
+                                if (edx & (1 << 26)) != 0 {
+                                    println!("\t\tSSE2 (Streaming SIMD extensions 2)");
+                                }
+                                if (edx & (1 << 27)) != 0 {
+                                    println!("\t\tSS (Self-snoop)");
+                                }
+                                if (edx & (1 << 28)) != 0 {
+                                    println!("\t\tHTT (Multi-threading)");
+                                }
+                                if (edx & (1 << 29)) != 0 {
+                                    println!("\t\tTM (Thermal monitor supported)");
+                                }
+                                if (edx & (1 << 31)) != 0 {
+                                    println!("\t\tPBE (Pending break enabled)");
+                                }
+                            }
+                        }
+                    }
+                    None => (),
+                }
             }
         }
     }
