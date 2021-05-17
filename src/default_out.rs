@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{convert::TryInto, str::FromStr};
 
 use smbioslib::*;
 
