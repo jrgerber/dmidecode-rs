@@ -3,6 +3,13 @@ name = "dmidecode-rs"
 version = "0.1.0"
 authors = ["Jeffrey R. Gerber <jeffreygerber@gmail.com>", "Juan Zuluaga <juzuluag@hotmail.com>"]
 edition = "2018"
+description = "dmidecode is a tool to report SMBIOS table content in human readable format."
+homepage = "https://github.com/jrgerber/dmidecode-rs"
+repository = "https://github.com/jrgerber/dmidecode-rs"
+readme = "README.md"
+keywords = ["bios", "smbios", "dmtf", "dmi", "dmidecode"]
+categories = ["hardware-support"]
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
