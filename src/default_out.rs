@@ -814,15 +814,96 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 if let Some(processor_characteristics) = data.processor_characteristics() {
                     dmi_processor_characteristics(processor_characteristics);
                 }
-                /*
-                dmi_processor_id(h);
-                */
             }
             DefinedStruct::MemoryControllerInformation(data) => {
                 println!("Memory Controller Information");
+                if let Some(error_detecting_method) = data.error_detecting_method() {
+                    println!(
+                        "\tError Detecting Method: {}",
+                        dmi_memory_controller_ed_method(error_detecting_method)
+                    );
+                }
+                if let Some(error_correcting_capabilities) = data.error_correcting_capability() {
+                    dmi_memory_controller_ec_capabilities(
+                        "Error Correcting Capabilities",
+                        error_correcting_capabilities,
+                    );
+                }
+                if let Some(supported_interleave) = data.supported_interleave() {
+                    println!(
+                        "\tSupported Interleave: {}",
+                        dmi_memory_controller_interleave(supported_interleave)
+                    );
+                }
+                if let Some(current_interleave) = data.current_interleave() {
+                    println!(
+                        "\tCurrent Interleave: {}",
+                        dmi_memory_controller_interleave(current_interleave)
+                    );
+                }
+
+                match (
+                    data.maximum_memory_module_size(),
+                    data.number_of_associated_memory_slots(),
+                ) {
+                    (Some(size_power), Some(count)) => {
+                        if let Some(module_size_mb) = 0x1u128.checked_shl(size_power as u32) {
+                            println!("\tMaximum Memory Module Size: {} MB", module_size_mb);
+                            if let Some(modules_total_size_mb) =
+                                module_size_mb.checked_mul(count as u128)
+                            {
+                                println!(
+                                    "\tMaximum Total Memory Size: {} MB",
+                                    modules_total_size_mb
+                                );
+                            }
+                        }
+                    }
+                    _ => (),
+                }
+                if let Some(supported_speeds) = data.supported_speeds() {
+                    dmi_memory_controller_speeds(supported_speeds);
+                }
+                if let Some(supported_memory_types) = data.supported_memory_types() {
+                    dmi_memory_module_types(
+                        "Supported Memory Types",
+                        supported_memory_types,
+                        false,
+                    );
+                }
+
+                dmi_memory_controller_slots(data.memory_module_handle_iterator());
+
+                for capability in data.error_correcting_capabilities_iterator() {
+                    dmi_memory_controller_ec_capabilities(
+                        "Enabled Error Correcting Capabilities",
+                        capability,
+                    );
+                }
             }
             DefinedStruct::MemoryModuleInformation(data) => {
                 println!("Memory Module Information");
+                if let Some(socket_designation) = data.socket_designation() {
+                    println!("\tSocket Designation: {}", socket_designation);
+                }
+                if let Some(bank_connections) = data.bank_connections() {
+                    dmi_memory_module_connections(bank_connections);
+                }
+                if let Some(current_speed) = data.current_speed() {
+                    dmi_memory_module_speed("Current Speed", current_speed);
+                }
+                if let Some(current_memory_type) = data.current_memory_type() {
+                    dmi_memory_module_types("Type", current_memory_type, true);
+                }
+                if let Some(installed_size) = data.installed_size() {
+                    dmi_memory_module_size("Installed Size", installed_size);
+                }
+                if let Some(enabled_size) = data.enabled_size() {
+                    dmi_memory_module_size("Enabled Size", enabled_size);
+                }
+                if let Some(error_status) = data.error_status() {
+                    dmi_memory_module_error(error_status);
+                }
             }
             DefinedStruct::CacheInformation(data) => {
                 println!("Cache Information");
@@ -1657,6 +1738,211 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     }
                     None => (),
                 }
+            }
+        }
+        fn dmi_memory_controller_ed_method(
+            error_detecting_method: ErrorDetectingMethodData,
+        ) -> String {
+            let print = match error_detecting_method.value {
+                ErrorDetectingMethod::Other => "Other",
+                ErrorDetectingMethod::Unknown => "Unknown",
+                ErrorDetectingMethod::NoErrorDetection => "None",
+                ErrorDetectingMethod::Parity8Bit => "8-bit Parity",
+                ErrorDetectingMethod::Ecc32Bit => "32-bit ECC",
+                ErrorDetectingMethod::Ecc64Bit => "64-bit ECC",
+                ErrorDetectingMethod::Ecc128Bit => "128-bit ECC",
+                ErrorDetectingMethod::Crc => "CRC",
+                ErrorDetectingMethod::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, error_detecting_method.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_controller_ec_capabilities(
+            attr: &str,
+            error_correcting_capabilities: ErrorCorrectingCapabilities,
+        ) {
+            if error_correcting_capabilities.raw & 0x3F == 0 {
+                println!("\t{}: None", attr);
+            } else {
+                println!("\t{}:", attr);
+                if error_correcting_capabilities.other() {
+                    println!("\t\tOther");
+                }
+                if error_correcting_capabilities.unknown() {
+                    println!("\t\tUnknown");
+                }
+                if error_correcting_capabilities.no_capabilities() {
+                    println!("\t\tNone");
+                }
+                if error_correcting_capabilities.single_bit_error_correcting() {
+                    println!("\t\tSingle-bit Error Correcting");
+                }
+                if error_correcting_capabilities.double_bit_error_correcting() {
+                    println!("\t\tDouble-bit Error Correcting");
+                }
+                if error_correcting_capabilities.error_scrubbing() {
+                    println!("\t\tError Scrubbing");
+                }
+                if error_correcting_capabilities.other() {
+                    println!("\t\tOther");
+                }
+            }
+        }
+        fn dmi_memory_controller_interleave(interleave: InterleaveSupportData) -> String {
+            let print = match interleave.value {
+                InterleaveSupport::Other => "Other",
+                InterleaveSupport::Unknown => "Unknown",
+                InterleaveSupport::OneWay => "One-way Interleave",
+                InterleaveSupport::TwoWay => "Two-way Interleave",
+                InterleaveSupport::FourWay => "Four-way Interleave",
+                InterleaveSupport::EightWay => "Eight-way Interleave",
+                InterleaveSupport::SixteenWay => "Sixteen-way Interleave",
+                InterleaveSupport::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, interleave.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_controller_speeds(speeds: MemorySpeeds) {
+            println!("\tSupported Speeds:");
+            if speeds.raw == 0 {
+                println!(": None");
+            } else {
+                println!();
+                if speeds.other() {
+                    println!("\t\tOther");
+                }
+                if speeds.unknown() {
+                    println!("\t\tUnknown");
+                }
+                if speeds.ns70() {
+                    println!("\t\t70 ns");
+                }
+                if speeds.ns60() {
+                    println!("\t\t60 ns");
+                }
+                if speeds.ns50() {
+                    println!("\t\t50 ns");
+                }
+            }
+        }
+        fn dmi_memory_module_types(attr: &str, memory_types: MemoryTypes, flat: bool) {
+            if memory_types.raw & 0x07FF == 0 {
+                println!("\t{}: None", attr);
+            } else {
+                let mut vec = Vec::new();
+                if memory_types.other() {
+                    vec.push("Other")
+                }
+                if memory_types.unknown() {
+                    vec.push("Unknown")
+                }
+                if memory_types.standard() {
+                    vec.push("Standard")
+                }
+                if memory_types.fast_page_mode() {
+                    vec.push("FPM")
+                }
+                if memory_types.edo() {
+                    vec.push("EDO")
+                }
+                if memory_types.parity() {
+                    vec.push("Parity")
+                }
+                if memory_types.ecc() {
+                    vec.push("ECC")
+                }
+                if memory_types.simm() {
+                    vec.push("SIMM")
+                }
+                if memory_types.dimm() {
+                    vec.push("DIMM")
+                }
+                if memory_types.burst_edo() {
+                    vec.push("Burst EDO")
+                }
+                if memory_types.sdram() {
+                    vec.push("SDRAM")
+                }
+
+                if vec.len() != 0 {
+                    if flat {
+                        print!("\t{}: ", attr);
+                        let mut iter = vec.iter();
+                        print!("{}", iter.next().unwrap());
+                        while let Some(memory_type) = iter.next() {
+                            // Insert space if not the first value
+                            print!(" {}", memory_type);
+                        }
+                        println!();
+                    } else {
+                        println!("\t{}:", attr);
+                        for memory_type in vec {
+                            println!("\t\t{}", memory_type);
+                        }
+                    }
+                }
+            }
+        }
+        fn dmi_memory_controller_slots(associated_slots: ModuleHandleIterator<'_>) {
+            let iter: Vec<Handle> = associated_slots.collect();
+            println!("\tAssociated Memory Slots: {}", iter.len());
+            for handle in iter {
+                println!("\t\t{:#06X}", *handle);
+            }
+        }
+        fn dmi_memory_module_connections(bank_connections: u8) {
+            print!("\tBank Connections: ");
+            if bank_connections == 0xFF {
+                println!("None");
+            } else if bank_connections & 0xF0 == 0xF0 {
+                println!("{}", bank_connections & 0x0F);
+            } else if bank_connections & 0x0F == 0x0F {
+                println!("{}", bank_connections >> 4);
+            } else {
+                println!("{} {}", bank_connections >> 4, bank_connections & 0x0F);
+            }
+        }
+        fn dmi_memory_module_speed(attr: &str, speed: u8) {
+            print!("\t{}: ", attr);
+            if speed == 0 {
+                println!("Unknown");
+            } else {
+                println!("{} ns", speed);
+            }
+        }
+        fn dmi_memory_module_size(attr: &str, size: u8) {
+            print!("\t{}: ", attr);
+            let connection = match size & 0x80 == 0x80 {
+                true => "(Double-bank Connection)",
+                false => "(Single-bank Connection)",
+            };
+            match size & 0x7F {
+                0x7D => println!("Not Determinable {}", connection),
+                0x7E => println!("Disabled {}", connection),
+                0x7F => println!("Not Installed"),
+                val => match 1u128.checked_shl(val as u32) {
+                    Some(mb) => println!("{} MB {}", mb, connection),
+                    None => println!("Overflow MB {}", connection),
+                },
+            }
+        }
+        fn dmi_memory_module_error(error_status: u8) {
+            print!("\tError Status: ");
+            let print = match error_status {
+                0x00 => "OK",
+                0x01 => "Uncorrectable Errors",
+                0x02 => "Correctable Errors",
+                0x03 => "Correctable and Uncorrectable Errors",
+                0x04 => "See Event Log",
+                _ => "",
+            };
+            match print == "" {
+                true => println!("{} ({})", OUT_OF_SPEC, error_status),
+                false => println!("{}", print),
             }
         }
     }
