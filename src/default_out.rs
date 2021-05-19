@@ -907,6 +907,75 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::CacheInformation(data) => {
                 println!("Cache Information");
+                if let Some(socket_designation) = data.socket_designation() {
+                    println!("\t{}", socket_designation);
+                }
+                if let Some(cache_configuration) = data.cache_configuration() {
+                    println!(
+                        "\tConfiguration: {} {} Level {}",
+                        match cache_configuration.enabled_at_boot() {
+                            true => "Enabled",
+                            false => "Disabled",
+                        },
+                        match cache_configuration.cache_socketed() {
+                            true => "Socketed",
+                            false => "Not Socketed",
+                        },
+                        cache_configuration.cache_level()
+                    );
+                    println!(
+                        "\tOperational Mode: {}",
+                        match cache_configuration.operational_mode() {
+                            CacheOperationalMode::WriteThrough => "Write Through",
+                            CacheOperationalMode::WriteBack => "Write Back",
+                            CacheOperationalMode::VariesWithMemoryAddress =>
+                                "Varies WithMemory Address",
+                            CacheOperationalMode::Unknown => "Unknown",
+                        }
+                    );
+                    println!(
+                        "\tLocation: {}",
+                        match cache_configuration.location() {
+                            CacheLocation::Internal => "Internal",
+                            CacheLocation::External => "External",
+                            CacheLocation::Reserved => "Reserved",
+                            CacheLocation::Unknown => "Unknown",
+                        }
+                    );
+                }
+                let size = match (data.installed_size(), data.installed_cache_size_2()) {
+                    (Some(installed_size), None) => {
+                        // The high bit 15 is granularity:
+                        // 0 == 1K
+                        // 1 == 16K
+                        let size_32 = installed_size as u32;
+                        Some((size_32 & 0x8000u32 << 16) | (size_32 & 0x7FFFu32))
+                    }
+                    (Some(_), Some(installed_size)) => Some(installed_size),
+                    _ => None,
+                };
+
+                if let Some(cache_size) = size {}
+                /*
+                if (h->length >= 0x1B)
+                    dmi_cache_size_2("Installed Size", DWORD(data + 0x17));
+                else
+                    dmi_cache_size("Installed Size", WORD(data + 0x09));
+                if (h->length >= 0x17)
+                    dmi_cache_size_2("Maximum Size", DWORD(data + 0x13));
+                else
+                    dmi_cache_size("Maximum Size", WORD(data + 0x07));
+                dmi_cache_types("Supported SRAM Types", WORD(data + 0x0B), 0);
+                dmi_cache_types("Installed SRAM Type", WORD(data + 0x0D), 1);
+                if (h->length < 0x13) break;
+                dmi_memory_module_speed("Speed", data[0x0F]);
+                pr_attr("Error Correction Type", "%s",
+                    dmi_cache_ec_type(data[0x10]));
+                pr_attr("System Type", "%s",
+                    dmi_cache_type(data[0x11]));
+                pr_attr("Associativity", "%s",
+                    dmi_cache_associativity(data[0x12]));
+                    */
             }
             DefinedStruct::PortConnectorInformation(data) => {
                 println!("Port Connector Information");
