@@ -943,39 +943,41 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                         }
                     );
                 }
-                let size = match (data.installed_size(), data.installed_cache_size_2()) {
-                    (Some(installed_size), None) => {
-                        // The high bit 15 is granularity:
-                        // 0 == 1K
-                        // 1 == 16K
-                        let size_32 = installed_size as u32;
-                        Some((size_32 & 0x8000u32 << 16) | (size_32 & 0x7FFFu32))
-                    }
-                    (Some(_), Some(installed_size)) => Some(installed_size),
-                    _ => None,
-                };
+                dmi_cache_size(
+                    "Installed Size",
+                    data.installed_size(),
+                    data.installed_cache_size_2(),
+                );
+                dmi_cache_size(
+                    "Maximum Size",
+                    data.maximum_cache_size(),
+                    data.maximum_cache_size_2(),
+                );
 
-                if let Some(cache_size) = size {}
-                /*
-                if (h->length >= 0x1B)
-                    dmi_cache_size_2("Installed Size", DWORD(data + 0x17));
-                else
-                    dmi_cache_size("Installed Size", WORD(data + 0x09));
-                if (h->length >= 0x17)
-                    dmi_cache_size_2("Maximum Size", DWORD(data + 0x13));
-                else
-                    dmi_cache_size("Maximum Size", WORD(data + 0x07));
-                dmi_cache_types("Supported SRAM Types", WORD(data + 0x0B), 0);
-                dmi_cache_types("Installed SRAM Type", WORD(data + 0x0D), 1);
-                if (h->length < 0x13) break;
-                dmi_memory_module_speed("Speed", data[0x0F]);
-                pr_attr("Error Correction Type", "%s",
-                    dmi_cache_ec_type(data[0x10]));
-                pr_attr("System Type", "%s",
-                    dmi_cache_type(data[0x11]));
-                pr_attr("Associativity", "%s",
-                    dmi_cache_associativity(data[0x12]));
-                    */
+                if let Some(supported_sram_type) = data.supported_sram_type() {
+                    dmi_cache_types("Supported SRAM Types", supported_sram_type, false);
+                }
+                if let Some(current_sram_type) = data.current_sram_type() {
+                    dmi_cache_types("Installed SRAM Type", current_sram_type, true);
+                }
+                if let Some(cache_speed) = data.cache_speed() {
+                    dmi_memory_module_speed("Speed", cache_speed);
+                }
+                if let Some(error_correction_type) = data.error_correction_type() {
+                    println!(
+                        "\tError Correction Type: {}",
+                        dmi_cache_ec_type(error_correction_type)
+                    );
+                }
+                if let Some(system_cache_type) = data.system_cache_type() {
+                    println!("\tSystem Type: {}", dmi_cache_type(system_cache_type));
+                }
+                if let Some(associativity) = data.associativity() {
+                    println!(
+                        "\tAssociativity: {}",
+                        dmi_cache_associativity(associativity)
+                    );
+                }
             }
             DefinedStruct::PortConnectorInformation(data) => {
                 println!("Port Connector Information");
@@ -2012,6 +2014,194 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             match print == "" {
                 true => println!("{} ({})", OUT_OF_SPEC, error_status),
                 false => println!("{}", print),
+            }
+        }
+        fn dmi_cache_size(attr: &str, size1_opt: Option<u16>, size2_opt: Option<u32>) {
+            let large_opt = match (size1_opt, size2_opt) {
+                (Some(installed_size), None) => {
+                    // High bit 15 is granularity.  Make it bit 31 to match installed_cache_size_2):
+                    // 0 == 1K
+                    // 1 == 16K
+                    let size_32 = installed_size as u32;
+                    Some((size_32 & 0x8000u32 << 16) | (size_32 & 0x7FFFu32))
+                }
+                (Some(_), Some(installed_size_2)) => Some(installed_size_2),
+                _ => None,
+            };
+
+            if let Some(large) = large_opt {
+                // Read bit 31:
+                // 0 == 1K
+                // 1 == 16K
+                // ... then normalize to 1K units.
+                let size: u64 = match large & 0x80000000u32 == 0x80000000u32 {
+                    true => (large as u64 & 0x7FFFFFFFu64) * 16u64,
+                    false => large as u64,
+                };
+
+                dmi_print_memory_size(attr, size, true);
+            }
+        }
+        fn dmi_print_memory_size(attr: &str, size: u64, shift: bool) {
+            // The number 0 has no units, report it as 0 bytes.
+            if size == 0 {
+                println!("\t{}: 0 bytes", attr);
+                return;
+            }
+
+            const U_BYTES: &str = "bytes";
+            const U_KB: &str = "kB";
+            const U_MB: &str = "MB";
+            const U_GB: &str = "GB";
+            const U_TB: &str = "TB";
+            const U_PB: &str = "PB";
+            const U_EB: &str = "EB";
+            const U_ZB: &str = "ZB";
+
+            // Note: 0n1024 decimal is 0b0100 0000 0000 binary (a 1 with 10 zeros)
+            // byte, kb, MB, etc. are n^1024.
+            let units = match (63 - size.leading_zeros()) / 10 {
+                0 => (
+                    size,
+                    match shift {
+                        true => U_KB,
+                        false => U_BYTES,
+                    },
+                ),
+                1 => (
+                    size >> 10,
+                    match shift {
+                        true => U_MB,
+                        false => U_KB,
+                    },
+                ),
+                2 => (
+                    size >> 20,
+                    match shift {
+                        true => U_GB,
+                        false => U_MB,
+                    },
+                ),
+                3 => (
+                    size >> 30,
+                    match shift {
+                        true => U_TB,
+                        false => U_GB,
+                    },
+                ),
+                4 => (
+                    size >> 40,
+                    match shift {
+                        true => U_PB,
+                        false => U_TB,
+                    },
+                ),
+                5 => (
+                    size >> 50,
+                    match shift {
+                        true => U_EB,
+                        false => U_PB,
+                    },
+                ),
+                _ => (
+                    size >> 60,
+                    match shift {
+                        true => U_ZB,
+                        false => U_EB,
+                    },
+                ),
+            };
+
+            println!("\t{}: {} {}", attr, units.0, units.1);
+        }
+        fn dmi_cache_types(attr: &str, types: SramTypes, flat: bool) {
+            if types.raw & 0x7F == 0 {
+                println!("\t{}: None", attr);
+            } else {
+                let mut vec = Vec::new();
+                if types.other() {
+                    vec.push("Other")
+                } else if types.unknown() {
+                    vec.push("Unknown")
+                } else if types.non_burst() {
+                    vec.push("Non-burst")
+                } else if types.pipeline_burst() {
+                    vec.push("Pipeline Burst")
+                } else if types.synchronous() {
+                    vec.push("Synchronous")
+                } else if types.asynchronous() {
+                    vec.push("Asynchronous")
+                }
+
+                if vec.len() != 0 {
+                    if flat {
+                        print!("\t{}: ", attr);
+                        let mut iter = vec.iter();
+                        print!("{}", iter.next().unwrap());
+                        while let Some(cache_type) = iter.next() {
+                            // Insert space if not the first value
+                            print!(" {}", cache_type);
+                        }
+                        println!();
+                    } else {
+                        println!("\t{}:", attr);
+                        for cache_type in vec {
+                            println!("\t\t{}", cache_type);
+                        }
+                    }
+                }
+            }
+        }
+        fn dmi_cache_ec_type(ec_type: ErrorCorrectionTypeData) -> String {
+            let print = match ec_type.value {
+                ErrorCorrectionType::Other => "Other",
+                ErrorCorrectionType::Unknown => "Unknown",
+                ErrorCorrectionType::NoCorrection => "None",
+                ErrorCorrectionType::Parity => "Parity",
+                ErrorCorrectionType::SingleBitEcc => "Single-bit ECC",
+                ErrorCorrectionType::MultiBitEcc => "Multi-bit ECC",
+                ErrorCorrectionType::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, ec_type.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_cache_type(cache_type: SystemCacheTypeData) -> String {
+            let print = match cache_type.value {
+                SystemCacheType::Other => "Other",
+                SystemCacheType::Unknown => "Unknown",
+                SystemCacheType::Instruction => "Instruction",
+                SystemCacheType::Data => "Data",
+                SystemCacheType::Unified => "Unified",
+                SystemCacheType::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, cache_type.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_cache_associativity(associativity: CacheAssociativityData) -> String {
+            let print = match associativity.value {
+                CacheAssociativity::Other => "Other",
+                CacheAssociativity::Unknown => "Unknown",
+                CacheAssociativity::DirectMapped => "Direct Mapped",
+                CacheAssociativity::SetAssociative2Way => "2-way Set-associative",
+                CacheAssociativity::SetAssociative4Way => "4-way Set-associative",
+                CacheAssociativity::FullyAssociative => "Fully Associative",
+                CacheAssociativity::SetAssociative8Way => "8-way Set-associative",
+                CacheAssociativity::SetAssociative16Way => "16-way Set-associative",
+                CacheAssociativity::SetAssociative12Way => "12-way Set-associative",
+                CacheAssociativity::SetAssociative24Way => "24-way Set-associative",
+                CacheAssociativity::SetAssociative32Way => "32-way Set-associative",
+                CacheAssociativity::SetAssociative48Way => "48-way Set-associative",
+                CacheAssociativity::SetAssociative64Way => "64-way Set-associative",
+                CacheAssociativity::SetAssociative20Way => "20-way Set-associative",
+                CacheAssociativity::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, associativity.raw),
+                false => print.to_string(),
             }
         }
     }
