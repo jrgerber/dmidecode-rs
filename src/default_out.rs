@@ -1165,6 +1165,36 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::MemoryErrorInformation32Bit(data) => {
                 println!("32-bit Memory Error Information");
+                if let Some(error_type) = data.error_type() {
+                    println!("\tType: {}", dmi_memory_error_type(error_type));
+                }
+                if let Some(error_granularity) = data.error_granularity() {
+                    println!(
+                        "\tGranularity: {}",
+                        dmi_memory_error_granularity(error_granularity)
+                    );
+                }
+                if let Some(error_operation) = data.error_operation() {
+                    println!(
+                        "\tOperation: {}",
+                        dmi_memory_error_operation(error_operation)
+                    );
+                }
+                if let Some(vendor_syndrome) = data.vendor_syndrome() {
+                    dmi_memory_error_syndrome(vendor_syndrome);
+                }
+                if let Some(memory_array_error_address) = data.memory_array_error_address() {
+                    dmi_32bit_memory_error_address(
+                        "Memory Array Address",
+                        memory_array_error_address,
+                    );
+                }
+                if let Some(device_error_address) = data.device_error_address() {
+                    dmi_32bit_memory_error_address("Device Address", device_error_address);
+                }
+                if let Some(error_resolution) = data.error_resolution() {
+                    dmi_32bit_memory_error_address("Resolution", error_resolution);
+                }
             }
             DefinedStruct::MemoryArrayMappedAddress(data) => {
                 println!("Memory Array Mapped Address");
@@ -2606,6 +2636,70 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                         dmi_print_memory_size(attr, bytes, false);
                     }
                 },
+            }
+        }
+        fn dmi_memory_error_type(error_type: MemoryErrorTypeData) -> String {
+            let print = match error_type.value {
+                MemoryErrorType::Other => OTHER,
+                MemoryErrorType::Unknown => UNKNOWN,
+                MemoryErrorType::OK => "OK",
+                MemoryErrorType::BadRead => "Bad Read",
+                MemoryErrorType::ParityError => "Parity Error",
+                MemoryErrorType::SingleBitError => "Single-bit Error",
+                MemoryErrorType::DoubleBitError => "Double-bit Error",
+                MemoryErrorType::MultiBitError => "Multi-bit Error",
+                MemoryErrorType::NibbleError => "Nibble Error",
+                MemoryErrorType::ChecksumError => "Checksum Error",
+                MemoryErrorType::CrcError => "CRC Error",
+                MemoryErrorType::CorrectedSingleBitError => "Corrected Single-bit Error",
+                MemoryErrorType::CorrectedError => "Corrected Error",
+                MemoryErrorType::UncorrectableError => "Uncorrectable Error",
+                MemoryErrorType::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, error_type.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_error_granularity(granularity: MemoryErrorGranularityData) -> String {
+            let print = match granularity.value {
+                MemoryErrorGranularity::Other => OTHER,
+                MemoryErrorGranularity::Unknown => UNKNOWN,
+                MemoryErrorGranularity::DeviceLevel => "Device Level",
+                MemoryErrorGranularity::MemoryPartitionLevel => "Memory Partition Level",
+                MemoryErrorGranularity::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, granularity.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_error_operation(operation: MemoryErrorOperationData) -> String {
+            let print = match operation.value {
+                MemoryErrorOperation::Other => OTHER,
+                MemoryErrorOperation::Unknown => UNKNOWN,
+                MemoryErrorOperation::Read => "Read",
+                MemoryErrorOperation::Write => "Write",
+                MemoryErrorOperation::PartialWrite => "Partial Write",
+                MemoryErrorOperation::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, operation.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_error_syndrome(syndrome: u32) {
+            print!("\tVendor Syndrome: ");
+            match syndrome == 0 {
+                true => println!("{}", UNKNOWN),
+                false => println!("{:#10X}", syndrome),
+            }
+        }
+        fn dmi_32bit_memory_error_address(attr: &str, address: u32) {
+            print!("\t{}: ", attr);
+            match address == 0x80000000u32 {
+                true => println!("{}", UNKNOWN),
+                false => println!("{:#10X}", address),
             }
         }
     }
