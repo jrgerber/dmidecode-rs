@@ -1008,6 +1008,157 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::MemoryDevice(data) => {
                 println!("Memory Device");
+                if !quiet {
+                    if let Some(physical_memory_array_handle) = data.physical_memory_array_handle()
+                    {
+                        println!("\tArray Handle: {:#06X}", *physical_memory_array_handle);
+                    }
+                    if let Some(memory_error_information_handle) =
+                        data.memory_error_information_handle()
+                    {
+                        dmi_memory_array_error_handle(memory_error_information_handle);
+                    }
+                }
+                if let Some(total_width) = data.total_width() {
+                    dmi_memory_device_width("Total Width", total_width);
+                }
+                if let Some(data_width) = data.data_width() {
+                    dmi_memory_device_width("Data Width", data_width);
+                }
+                let mut module_present = false;
+                match (data.size(), data.extended_size()) {
+                    (Some(size), None) => {
+                        module_present = size != MemorySize::NotInstalled;
+                        dmi_memory_device_size(size);
+                    }
+                    (Some(size1), Some(size2)) => match size1 == MemorySize::SeeExtendedSize {
+                        true => {
+                            print!("\tSize: ");
+                            let masked_size = size2 & 0x7FFFFFFF;
+                            if masked_size == 0 {
+                                println!("0 MB");
+                            } else {
+                                module_present = true;
+                                match (31 - masked_size.leading_zeros()) / 10 {
+                                    0 => println!("{} MB", masked_size),
+                                    1 => println!("{} GB", masked_size >> 10),
+                                    _ => println!("{} TB", masked_size >> 20),
+                                }
+                            }
+                        }
+                        false => {
+                            module_present = size1 != MemorySize::NotInstalled;
+                            dmi_memory_device_size(size1);
+                        }
+                    },
+                    _ => (),
+                }
+                if let Some(form_factor) = data.form_factor() {
+                    println!(
+                        "\tForm Factor: {}",
+                        dmi_memory_device_form_factor(form_factor)
+                    );
+                }
+                if let Some(device_set) = data.device_set() {
+                    dmi_memory_device_set(device_set);
+                }
+                if let Some(device_locator) = data.device_locator() {
+                    println!("\tLocator: {}", device_locator);
+                }
+                if let Some(bank_locator) = data.bank_locator() {
+                    println!("\tBank Locator: {}", bank_locator);
+                }
+                if let Some(memory_type) = data.memory_type() {
+                    println!("\tType: {}", dmi_memory_device_type(memory_type));
+                }
+                if let Some(type_detail) = data.type_detail() {
+                    dmi_memory_device_type_detail(type_detail);
+                }
+                // If a module is present, the remaining fields are relevant
+                if module_present {
+                    dmi_memory_device_speed("Speed", data.speed(), data.extended_speed());
+                    if let Some(manufacturer) = data.manufacturer() {
+                        println!("\tManufacturer: {}", manufacturer);
+                    }
+                    if let Some(serial_number) = data.serial_number() {
+                        println!("\tSerial Number: {}", serial_number);
+                    }
+                    if let Some(asset_tag) = data.asset_tag() {
+                        println!("\tAsset Tag: {}", asset_tag);
+                    }
+                    if let Some(part_number) = data.part_number() {
+                        println!("\tPart Number: {}", part_number);
+                    }
+                    if let Some(attributes) = data.attributes() {
+                        print!("\tRank: ");
+                        match attributes & 0x0F == 0 {
+                            true => println!("Unknown"),
+                            false => println!("{}", attributes),
+                        }
+                    }
+                    dmi_memory_device_speed(
+                        "Configured Speed",
+                        data.configured_memory_speed(),
+                        data.extended_configured_memory_speed(),
+                    );
+                    if let Some(minimum_voltage) = data.minimum_voltage() {
+                        dmi_memory_voltage_value("Minimum Voltage", minimum_voltage);
+                    }
+                    if let Some(maximum_voltage) = data.maximum_voltage() {
+                        dmi_memory_voltage_value("Maximum Voltage", maximum_voltage);
+                    }
+                    if let Some(configured_voltage) = data.configured_voltage() {
+                        dmi_memory_voltage_value("Configured Voltage", configured_voltage);
+                    }
+                    if let Some(memory_technology) = data.memory_technology() {
+                        dmi_memory_technology(memory_technology);
+                    }
+                    if let Some(memory_operating_mode_capability) =
+                        data.memory_operating_mode_capability()
+                    {
+                        dmi_memory_operating_mode_capability(memory_operating_mode_capability);
+                    }
+                    if let Some(firmware_version) = data.firmware_version() {
+                        println!("\tFirmware Version: {}", firmware_version);
+                    }
+                    if let Some(module_manufacturer_id) = data.module_manufacturer_id() {
+                        dmi_memory_manufacturer_id(
+                            "Module Manufacturer ID",
+                            module_manufacturer_id,
+                        );
+                    }
+                    if let Some(module_product_id) = data.module_product_id() {
+                        dmi_memory_product_id("Module Product ID", module_product_id);
+                    }
+                    if let Some(memory_subsystem_controller_manufacturer_id) =
+                        data.memory_subsystem_controller_manufacturer_id()
+                    {
+                        dmi_memory_manufacturer_id(
+                            "Memory Subsystem Controller Manufacturer ID",
+                            memory_subsystem_controller_manufacturer_id,
+                        );
+                    }
+                    if let Some(memory_subsystem_controller_product_id) =
+                        data.memory_subsystem_controller_product_id()
+                    {
+                        dmi_memory_product_id(
+                            "Memory Subsystem Controller Product ID",
+                            memory_subsystem_controller_product_id,
+                        );
+                    }
+                    if let Some(non_volatile_size) = data.non_volatile_size() {
+                        dmi_memory_size("Non-Volatile Size", non_volatile_size);
+                    }
+                    if let Some(volatile_size) = data.volatile_size() {
+                        dmi_memory_size("Volatile Size", volatile_size);
+                    }
+                    if let Some(cache_size) = data.cache_size() {
+                        dmi_memory_size("Cache Size", cache_size);
+                    }
+                    if let Some(logical_size) = data.logical_size() {
+                        dmi_memory_size("Logical Size", logical_size);
+                    }
+                }
             }
             DefinedStruct::MemoryErrorInformation32Bit(data) => {
                 println!("32-bit Memory Error Information");
@@ -2202,6 +2353,256 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             match print == "" {
                 true => format!("{} ({})", OUT_OF_SPEC, associativity.raw),
                 false => print.to_string(),
+            }
+        }
+        fn dmi_memory_array_error_handle(handle: Handle) {
+            print!("\tError Information Handle: ");
+            match *handle {
+                0xFFFE => println!("Not Provided"),
+                0xFFFF => println!("No Error"),
+                val => println!("{:#06X}", val),
+            }
+        }
+        fn dmi_memory_device_width(attr: &str, width: u16) {
+            print!("\t{}: ", attr);
+            match width == 0xFFFF || width == 0 {
+                true => println!("Unknown"),
+                false => println!("{} bits", width),
+            }
+        }
+        fn dmi_memory_device_size(size: MemorySize) {
+            print!("\tSize: ");
+            match size {
+                MemorySize::NotInstalled => println!("No Module Installed"),
+                MemorySize::Unknown => println!("Unknown"),
+                MemorySize::SeeExtendedSize => {
+                    println!("Error, extended Size does not exist.")
+                }
+                MemorySize::Kilobytes(size_kb) => println!("{} kB", size_kb),
+                MemorySize::Megabytes(size_mb) => println!("{} MB", size_mb),
+            };
+        }
+        fn dmi_memory_device_form_factor(form_factor: MemoryFormFactorData) -> String {
+            let print = match form_factor.value {
+                MemoryFormFactor::Other => "Other",
+                MemoryFormFactor::Unknown => "Unknown",
+                MemoryFormFactor::Simm => "SIMM",
+                MemoryFormFactor::Sip => "SIP",
+                MemoryFormFactor::Chip => "Chip",
+                MemoryFormFactor::Dip => "DIP",
+                MemoryFormFactor::Zip => "ZIP",
+                MemoryFormFactor::ProprietaryCard => "Proprietary Card",
+                MemoryFormFactor::Dimm => "DIMM",
+                MemoryFormFactor::Tsop => "TSOP",
+                MemoryFormFactor::RowOfChips => "Row Of Chips",
+                MemoryFormFactor::Rimm => "RIMM",
+                MemoryFormFactor::Sodimm => "SODIMM",
+                MemoryFormFactor::Srimm => "SRIMM",
+                MemoryFormFactor::Fbdimm => "FB-DIMM",
+                MemoryFormFactor::Die => "Die",
+                MemoryFormFactor::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, form_factor.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_device_set(device_set: u8) {
+            print!("\tSet: ");
+            match device_set {
+                0 => println!("None"),
+                0xFF => println!("Unknown"),
+                val => println!("{}", val),
+            }
+        }
+        fn dmi_memory_device_type(memory_type: MemoryDeviceTypeData) -> String {
+            let print = match memory_type.value {
+                MemoryDeviceType::Other => "Other",
+                MemoryDeviceType::Unknown => "Unknown",
+                MemoryDeviceType::Dram => "DRAM",
+                MemoryDeviceType::Edram => "EDRAM",
+                MemoryDeviceType::Vram => "VRAM",
+                MemoryDeviceType::Sram => "SRAM",
+                MemoryDeviceType::Ram => "RAM",
+                MemoryDeviceType::Rom => "ROM",
+                MemoryDeviceType::Flash => "Flash",
+                MemoryDeviceType::Eeprom => "EEPROM",
+                MemoryDeviceType::Feprom => "FEPROM",
+                MemoryDeviceType::Eprom => "EPROM",
+                MemoryDeviceType::Cdram => "CDRAM",
+                MemoryDeviceType::ThreeDram => "3DRAM",
+                MemoryDeviceType::Sdram => "SDRAM",
+                MemoryDeviceType::Sgram => "SGRAM",
+                MemoryDeviceType::Rdram => "RDRAM",
+                MemoryDeviceType::Ddr => "DDR",
+                MemoryDeviceType::Ddr2 => "DDR2",
+                MemoryDeviceType::Ddr2Fbdimm => "DDR2 FB-DIMM",
+                MemoryDeviceType::Ddr3 => "DDR3",
+                MemoryDeviceType::Fbd2 => "FBD2",
+                MemoryDeviceType::Ddr4 => "DDR4",
+                MemoryDeviceType::Lpddr => "LPDDR",
+                MemoryDeviceType::Lpddr2 => "LPDDR2",
+                MemoryDeviceType::Lpddr3 => "LPDDR3",
+                MemoryDeviceType::Lpddr4 => "LPDDR4",
+                MemoryDeviceType::LogicalNonVolatileDevice => "Logical non-volatile device",
+                MemoryDeviceType::Hbm => "HBM",
+                MemoryDeviceType::Hbm2 => "HBM2",
+                MemoryDeviceType::Ddr5 => "DDR5",
+                MemoryDeviceType::Lpddr5 => "LPDDR5",
+                MemoryDeviceType::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, memory_type.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_device_type_detail(type_detail: MemoryTypeDetails) {
+            print!("\tType Detail: ");
+            if type_detail.raw & 0xFFFE == 0 {
+                println!("None");
+            } else {
+                let mut vec = Vec::new();
+                if type_detail.other() {
+                    vec.push("Other")
+                } else if type_detail.unknown() {
+                    vec.push("Unknown")
+                } else if type_detail.fast_paged() {
+                    vec.push("Fast-paged")
+                } else if type_detail.static_column() {
+                    vec.push("Static Column")
+                } else if type_detail.ram_bus() {
+                    vec.push("RAMBus")
+                } else if type_detail.synchronous() {
+                    vec.push("Synchronous")
+                }
+                if vec.len() != 0 {
+                    let mut iter = vec.iter();
+                    print!("{}", iter.next().unwrap());
+                    while let Some(detail) = iter.next() {
+                        // Insert space if not the first value
+                        print!(" {}", detail);
+                    }
+                    println!();
+                }
+            }
+        }
+        fn dmi_memory_device_speed(
+            attr: &str,
+            speed_short: Option<MemorySpeed>,
+            speed_long: Option<u32>,
+        ) {
+            let val_opt = match (speed_short, speed_long) {
+                (Some(short), Some(long)) => {
+                    match short {
+                        MemorySpeed::Unknown => Some("Unknown".to_string()),
+                        MemorySpeed::SeeExtendedSpeed => {
+                            // Bit 31 is reserved for future use and must be set to 0
+                            let mts = long & 0x7FFFFFFFu32;
+                            Some(format!("{} MT/s", mts))
+                        }
+                        MemorySpeed::MTs(mts) => Some(format!("{} MT/s", mts)),
+                    }
+                }
+                (Some(short), None) => match short {
+                    MemorySpeed::Unknown => Some("Unknown".to_string()),
+                    MemorySpeed::SeeExtendedSpeed => {
+                        Some("Error, extended speed required but not present".to_string())
+                    }
+                    MemorySpeed::MTs(mts) => Some(format!("{} MT/s", mts)),
+                },
+                _ => None,
+            };
+            if let Some(val) = val_opt {
+                println!("\t{}: {}", attr, val);
+            }
+        }
+        fn dmi_memory_voltage_value(attr: &str, millivolts: u16) {
+            match millivolts == 0 {
+                true => println!("\t{}: Unknown", attr),
+                false => {
+                    let volts = (millivolts as f32) / 1000f32;
+                    match millivolts % 100 == 0 {
+                        true => println!("\t{}: {:.1} V", attr, volts),
+                        false => println!("\t{}: {:e} V", attr, volts),
+                    }
+                }
+            }
+        }
+        fn dmi_memory_technology(technology: MemoryDeviceTechnologyData) {
+            print!("\tMemory Technology: ");
+            let print = match technology.value {
+                MemoryDeviceTechnology::Other => "Other",
+                MemoryDeviceTechnology::Unknown => "Unknown",
+                MemoryDeviceTechnology::Dram => "DRAM",
+                MemoryDeviceTechnology::NvdimmN => "NVDIMM-N",
+                MemoryDeviceTechnology::NvdimmF => "NVDIMM-F",
+                MemoryDeviceTechnology::NvdimmP => "NVDIMM-P",
+                MemoryDeviceTechnology::IntelOptaneDcPersistentMemory => {
+                    "Intel Optane DC persistent memory"
+                }
+                MemoryDeviceTechnology::None => "",
+            };
+            match print == "" {
+                true => println!("{} ({})", OUT_OF_SPEC, technology.raw),
+                false => println!("{}", print),
+            }
+        }
+        fn dmi_memory_operating_mode_capability(mode: MemoryOperatingModeCapabilities) {
+            print!("\tMemory Operating Mode Capability: ");
+            if mode.raw & 0xFFFE == 0 {
+                println!("None");
+            } else {
+                let mut vec = Vec::new();
+                if mode.other() {
+                    vec.push("Other")
+                } else if mode.unknown() {
+                    vec.push("Unknown")
+                } else if mode.volatile_memory() {
+                    vec.push("Volatile memory")
+                } else if mode.byte_accessible_persistent_memory() {
+                    vec.push("Byte-accessible persistent memory")
+                } else if mode.block_accessible_persistent_memory() {
+                    vec.push("Block-accessible persistent memory")
+                }
+
+                if vec.len() != 0 {
+                    let mut iter = vec.iter();
+                    print!("{}", iter.next().unwrap());
+                    while let Some(mode) = iter.next() {
+                        // Insert space if not the first value
+                        print!(" {}", mode);
+                    }
+                    println!();
+                }
+            }
+        }
+        fn dmi_memory_manufacturer_id(attr: &str, id: u16) {
+            print!("\t{}: ", attr);
+            match id == 0 {
+                true => println!("Unknown"),
+                false => println!("Bank {}, Hex {:#04X}", (id & 0x7F) + 1, id >> 8),
+            }
+        }
+        fn dmi_memory_product_id(attr: &str, id: u16) {
+            print!("\t{}: ", attr);
+            match id == 0 {
+                true => println!("Unknown"),
+                false => println!("{:#06X}", id),
+            }
+        }
+        fn dmi_memory_size(attr: &str, size: MemoryIndicatedSize) {
+            match size {
+                MemoryIndicatedSize::Unknown => {
+                    println!("\t{}: Unknown", attr);
+                }
+                MemoryIndicatedSize::Bytes(bytes) => match bytes {
+                    0u64 => {
+                        println!("\t{}: None", attr);
+                    }
+                    _ => {
+                        dmi_print_memory_size(attr, bytes, false);
+                    }
+                },
             }
         }
     }
