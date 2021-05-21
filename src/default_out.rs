@@ -1,4 +1,4 @@
-use std::{convert::TryInto, str::FromStr};
+use std::convert::TryInto;
 
 use smbioslib::*;
 
@@ -7,6 +7,9 @@ const BYTES: &str = "bytes";
 const KB: &str = "kB";
 const MB: &str = "MB";
 const GB: &str = "GB";
+const OTHER: &str = "Other";
+const UNKNOWN: &str = "Unknown";
+const NONE: &str = "None";
 
 pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
     for undefined_struct in smbios_data.iter() {
@@ -317,10 +320,10 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     print!("\tWake-up Type: ");
                     match wakeup_type.value {
                         SystemWakeUpType::Other => {
-                            println!("Other");
+                            println!("{}", OTHER);
                         }
                         SystemWakeUpType::Unknown => {
-                            println!("Unknown");
+                            println!("{}", UNKNOWN);
                         }
                         SystemWakeUpType::ApmTimer => {
                             println!("APM Timer");
@@ -399,10 +402,10 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     print!("\tType: ");
                     match board_type.value {
                         BoardType::Unknown => {
-                            println!("Unknown");
+                            println!("{}", UNKNOWN);
                         }
                         BoardType::Other => {
-                            println!("Other");
+                            println!("{}", OTHER);
                         }
                         BoardType::ServerBlade => {
                             println!("Server Blade");
@@ -462,8 +465,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 if let Some(chassis_type) = data.chassis_type() {
                     print!("\tType: ");
                     let print = match chassis_type.value {
-                        ChassisType::Other => "Other",
-                        ChassisType::Unknown => "Unknown",
+                        ChassisType::Other => OTHER,
+                        ChassisType::Unknown => UNKNOWN,
                         ChassisType::Desktop => "Desktop",
                         ChassisType::LowProfileDesktop => "Low Profile Desktop",
                         ChassisType::PizzaBox => "Pizza Box",
@@ -541,9 +544,9 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     println!(
                         "\tSecurity Status: {}",
                         match security_status.value {
-                            ChassisSecurityStatus::Other => "Other".to_string(),
-                            ChassisSecurityStatus::Unknown => "Unknown".to_string(),
-                            ChassisSecurityStatus::StatusNone => "None".to_string(),
+                            ChassisSecurityStatus::Other => OTHER.to_string(),
+                            ChassisSecurityStatus::Unknown => UNKNOWN.to_string(),
+                            ChassisSecurityStatus::StatusNone => NONE.to_string(),
                             ChassisSecurityStatus::ExternalInterfaceLockedOut =>
                                 "External Interface Locked Out".to_string(),
                             ChassisSecurityStatus::ExternalInterfaceEnabled =>
@@ -583,8 +586,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                             let type_description = match element.element_type() {
                                 ElementType::BaseboardType(baseboard_type) => {
                                     match baseboard_type.value {
-                                        BoardType::Unknown => "Unknown".to_string(),
-                                        BoardType::Other => "Other".to_string(),
+                                        BoardType::Unknown => UNKNOWN.to_string(),
+                                        BoardType::Other => OTHER.to_string(),
                                         BoardType::ServerBlade => "ServerBlade".to_string(),
                                         BoardType::ConnectivitySwitch => {
                                             "Connectivity Switch".to_string()
@@ -683,7 +686,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                         ProcessorVoltage::SupportedVolts(supported) => {
                             let voltages = supported.voltages();
                             match voltages.len() == 0 {
-                                true => print!("Unknown"),
+                                true => print!("{}", UNKNOWN),
                                 false => {
                                     let mut iter = voltages.iter();
                                     print!("{:.1} V", iter.next().unwrap());
@@ -700,21 +703,21 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 if let Some(external_clock) = data.external_clock() {
                     print!("\tExternal Clock: ");
                     match external_clock {
-                        ProcessorExternalClock::Unknown => println!("Unknown"),
+                        ProcessorExternalClock::Unknown => println!("{}", UNKNOWN),
                         ProcessorExternalClock::MHz(mhz) => println!("{} MHz", mhz),
                     }
                 }
                 if let Some(max_speed) = data.max_speed() {
                     print!("\tMax Speed: ");
                     match max_speed {
-                        ProcessorSpeed::Unknown => println!("Unknown"),
+                        ProcessorSpeed::Unknown => println!("{}", UNKNOWN),
                         ProcessorSpeed::MHz(mhz) => println!("{} MHz", mhz),
                     }
                 }
                 if let Some(current_speed) = data.current_speed() {
                     print!("\tCurrent Speed: ");
                     match current_speed {
-                        ProcessorSpeed::Unknown => println!("Unknown"),
+                        ProcessorSpeed::Unknown => println!("{}", UNKNOWN),
                         ProcessorSpeed::MHz(mhz) => println!("{} MHz", mhz),
                     }
                 }
@@ -724,12 +727,12 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                         true => {
                             print!("Populated, ");
                             let print = match status.cpu_status() {
-                                CpuStatus::Unknown => "Unknown",
+                                CpuStatus::Unknown => UNKNOWN,
                                 CpuStatus::Enabled => "Enabled",
                                 CpuStatus::UserDisabled => "Disabled by User",
                                 CpuStatus::BiosDisabled => "Disabled by BIOS",
                                 CpuStatus::Idle => "Idle",
-                                CpuStatus::Other => "Other",
+                                CpuStatus::Other => OTHER,
                                 CpuStatus::None => "",
                             };
                             match print == "" {
@@ -766,11 +769,11 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 if let Some(core_count) = data.core_count() {
                     print!("\tCore Count: ");
                     match core_count {
-                        CoreCount::Unknown => println!("Unknown"),
+                        CoreCount::Unknown => println!("{}", UNKNOWN),
                         CoreCount::Count(count) => println!("{}", count),
                         CoreCount::SeeCoreCount2 => match data.core_count_2() {
                             Some(core_count_2) => match core_count_2 {
-                                CoreCount2::Unknown => println!("Unknown"),
+                                CoreCount2::Unknown => println!("{}", UNKNOWN),
                                 CoreCount2::Count(count) => println!("{}", count),
                                 CoreCount2::Reserved => println!("Reserved"),
                             },
@@ -782,11 +785,11 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 if let Some(cores_enabled) = data.cores_enabled() {
                     print!("\tCore Enabled: ");
                     match cores_enabled {
-                        CoresEnabled::Unknown => println!("Unknown"),
+                        CoresEnabled::Unknown => println!("{}", UNKNOWN),
                         CoresEnabled::Count(count) => println!("{}", count),
                         CoresEnabled::SeeCoresEnabled2 => match data.cores_enabled_2() {
                             Some(cores_enabled_2) => match cores_enabled_2 {
-                                CoresEnabled2::Unknown => println!("Unknown"),
+                                CoresEnabled2::Unknown => println!("{}", UNKNOWN),
                                 CoresEnabled2::Count(count) => println!("{}", count),
                                 CoresEnabled2::Reserved => println!("Reserved"),
                             },
@@ -798,11 +801,11 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 if let Some(thread_count) = data.thread_count() {
                     print!("\tThread Count: ");
                     match thread_count {
-                        ThreadCount::Unknown => println!("Unknown"),
+                        ThreadCount::Unknown => println!("{}", UNKNOWN),
                         ThreadCount::Count(count) => println!("{}", count),
                         ThreadCount::SeeThreadCount2 => match data.thread_count_2() {
                             Some(thread_count_2) => match thread_count_2 {
-                                ThreadCount2::Unknown => println!("Unknown"),
+                                ThreadCount2::Unknown => println!("{}", UNKNOWN),
                                 ThreadCount2::Count(count) => println!("{}", count),
                                 ThreadCount2::Reserved => println!("Reserved"),
                             },
@@ -930,7 +933,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                             CacheOperationalMode::WriteBack => "Write Back",
                             CacheOperationalMode::VariesWithMemoryAddress =>
                                 "Varies WithMemory Address",
-                            CacheOperationalMode::Unknown => "Unknown",
+                            CacheOperationalMode::Unknown => UNKNOWN,
                         }
                     );
                     println!(
@@ -939,7 +942,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                             CacheLocation::Internal => "Internal",
                             CacheLocation::External => "External",
                             CacheLocation::Reserved => "Reserved",
-                            CacheLocation::Unknown => "Unknown",
+                            CacheLocation::Unknown => UNKNOWN,
                         }
                     );
                 }
@@ -1092,7 +1095,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     if let Some(attributes) = data.attributes() {
                         print!("\tRank: ");
                         match attributes & 0x0F == 0 {
-                            true => println!("Unknown"),
+                            true => println!("{}", UNKNOWN),
                             false => println!("{}", attributes),
                         }
                     }
@@ -1251,7 +1254,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 if data.parts().header.struct_type() >= 128 {
                     println!("OEM-specific");
                 } else {
-                    println!("Unknown");
+                    println!("{}", UNKNOWN);
                 }
             }
         }
@@ -1315,8 +1318,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         }
         fn dmi_chassis_state(state: ChassisStateData) -> String {
             match state.value {
-                ChassisState::Other => "Other".to_string(),
-                ChassisState::Unknown => "Unknown".to_string(),
+                ChassisState::Other => OTHER.to_string(),
+                ChassisState::Unknown => UNKNOWN.to_string(),
                 ChassisState::Safe => "Safe".to_string(),
                 ChassisState::Warning => "Warning".to_string(),
                 ChassisState::Critical => "Critical".to_string(),
@@ -1327,8 +1330,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
 
         fn dmi_processor_type(processor_type: ProcessorTypeData) -> String {
             match processor_type.value {
-                ProcessorType::Other => "Other".to_string(),
-                ProcessorType::Unknown => "Unknown".to_string(),
+                ProcessorType::Other => OTHER.to_string(),
+                ProcessorType::Unknown => UNKNOWN.to_string(),
                 ProcessorType::CentralProcessor => "Central Processor".to_string(),
                 ProcessorType::MathProcessor => "Math Processor".to_string(),
                 ProcessorType::DspProcessor => "DSP Processor".to_string(),
@@ -1338,8 +1341,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         }
         fn dmi_processor_family(processor_family: ProcessorFamily, raw: u16) -> String {
             let print = match processor_family {
-                ProcessorFamily::Other => "Other",
-                ProcessorFamily::Unknown => "Unknown",
+                ProcessorFamily::Other => OTHER,
+                ProcessorFamily::Unknown => UNKNOWN,
                 ProcessorFamily::I8086 => "8086",
                 ProcessorFamily::I80286 => "80286",
                 ProcessorFamily::Intel386Processor => "80386",
@@ -1577,12 +1580,12 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
 
         fn dmi_processor_upgrade(processor_upgrade: ProcessorUpgradeData) -> String {
             let print = match processor_upgrade.value {
-                ProcessorUpgrade::Other => "Other",
-                ProcessorUpgrade::Unknown => "Unknown",
+                ProcessorUpgrade::Other => OTHER,
+                ProcessorUpgrade::Unknown => UNKNOWN,
                 ProcessorUpgrade::DaughterBoard => "Daughter Board",
                 ProcessorUpgrade::ZIFSocket => "ZIF Socket",
                 ProcessorUpgrade::ReplaceablePiggyBack => "Replaceable Piggy Back",
-                ProcessorUpgrade::NoUpgrade => "None",
+                ProcessorUpgrade::NoUpgrade => NONE,
                 ProcessorUpgrade::LIFSocket => "LIF Socket",
                 ProcessorUpgrade::Slot1 => "Slot 1",
                 ProcessorUpgrade::Slot2 => "Slot 2",
@@ -1966,9 +1969,9 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             error_detecting_method: ErrorDetectingMethodData,
         ) -> String {
             let print = match error_detecting_method.value {
-                ErrorDetectingMethod::Other => "Other",
-                ErrorDetectingMethod::Unknown => "Unknown",
-                ErrorDetectingMethod::NoErrorDetection => "None",
+                ErrorDetectingMethod::Other => OTHER,
+                ErrorDetectingMethod::Unknown => UNKNOWN,
+                ErrorDetectingMethod::NoErrorDetection => NONE,
                 ErrorDetectingMethod::Parity8Bit => "8-bit Parity",
                 ErrorDetectingMethod::Ecc32Bit => "32-bit ECC",
                 ErrorDetectingMethod::Ecc64Bit => "64-bit ECC",
@@ -2014,8 +2017,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         }
         fn dmi_memory_controller_interleave(interleave: InterleaveSupportData) -> String {
             let print = match interleave.value {
-                InterleaveSupport::Other => "Other",
-                InterleaveSupport::Unknown => "Unknown",
+                InterleaveSupport::Other => OTHER,
+                InterleaveSupport::Unknown => UNKNOWN,
                 InterleaveSupport::OneWay => "One-way Interleave",
                 InterleaveSupport::TwoWay => "Two-way Interleave",
                 InterleaveSupport::FourWay => "Four-way Interleave",
@@ -2057,10 +2060,10 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             } else {
                 let mut vec = Vec::new();
                 if memory_types.other() {
-                    vec.push("Other")
+                    vec.push(OTHER)
                 }
                 if memory_types.unknown() {
-                    vec.push("Unknown")
+                    vec.push(UNKNOWN)
                 }
                 if memory_types.standard() {
                     vec.push("Standard")
@@ -2119,7 +2122,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         fn dmi_memory_module_connections(bank_connections: u8) {
             print!("\tBank Connections: ");
             if bank_connections == 0xFF {
-                println!("None");
+                println!("{}", NONE);
             } else if bank_connections & 0xF0 == 0xF0 {
                 println!("{}", bank_connections & 0x0F);
             } else if bank_connections & 0x0F == 0x0F {
@@ -2131,7 +2134,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         fn dmi_memory_module_speed(attr: &str, speed: u8) {
             print!("\t{}: ", attr);
             if speed == 0 {
-                println!("Unknown");
+                println!("{}", UNKNOWN);
             } else {
                 println!("{} ns", speed);
             }
@@ -2271,9 +2274,9 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             } else {
                 let mut vec = Vec::new();
                 if types.other() {
-                    vec.push("Other")
+                    vec.push(OTHER)
                 } else if types.unknown() {
-                    vec.push("Unknown")
+                    vec.push(UNKNOWN)
                 } else if types.non_burst() {
                     vec.push("Non-burst")
                 } else if types.pipeline_burst() {
@@ -2305,9 +2308,9 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         }
         fn dmi_cache_ec_type(ec_type: ErrorCorrectionTypeData) -> String {
             let print = match ec_type.value {
-                ErrorCorrectionType::Other => "Other",
-                ErrorCorrectionType::Unknown => "Unknown",
-                ErrorCorrectionType::NoCorrection => "None",
+                ErrorCorrectionType::Other => OTHER,
+                ErrorCorrectionType::Unknown => UNKNOWN,
+                ErrorCorrectionType::NoCorrection => NONE,
                 ErrorCorrectionType::Parity => "Parity",
                 ErrorCorrectionType::SingleBitEcc => "Single-bit ECC",
                 ErrorCorrectionType::MultiBitEcc => "Multi-bit ECC",
@@ -2320,8 +2323,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         }
         fn dmi_cache_type(cache_type: SystemCacheTypeData) -> String {
             let print = match cache_type.value {
-                SystemCacheType::Other => "Other",
-                SystemCacheType::Unknown => "Unknown",
+                SystemCacheType::Other => OTHER,
+                SystemCacheType::Unknown => UNKNOWN,
                 SystemCacheType::Instruction => "Instruction",
                 SystemCacheType::Data => "Data",
                 SystemCacheType::Unified => "Unified",
@@ -2334,8 +2337,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         }
         fn dmi_cache_associativity(associativity: CacheAssociativityData) -> String {
             let print = match associativity.value {
-                CacheAssociativity::Other => "Other",
-                CacheAssociativity::Unknown => "Unknown",
+                CacheAssociativity::Other => OTHER,
+                CacheAssociativity::Unknown => UNKNOWN,
                 CacheAssociativity::DirectMapped => "Direct Mapped",
                 CacheAssociativity::SetAssociative2Way => "2-way Set-associative",
                 CacheAssociativity::SetAssociative4Way => "4-way Set-associative",
@@ -2366,7 +2369,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         fn dmi_memory_device_width(attr: &str, width: u16) {
             print!("\t{}: ", attr);
             match width == 0xFFFF || width == 0 {
-                true => println!("Unknown"),
+                true => println!("{}", UNKNOWN),
                 false => println!("{} bits", width),
             }
         }
@@ -2374,7 +2377,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             print!("\tSize: ");
             match size {
                 MemorySize::NotInstalled => println!("No Module Installed"),
-                MemorySize::Unknown => println!("Unknown"),
+                MemorySize::Unknown => println!("{}", UNKNOWN),
                 MemorySize::SeeExtendedSize => {
                     println!("Error, extended Size does not exist.")
                 }
@@ -2384,8 +2387,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         }
         fn dmi_memory_device_form_factor(form_factor: MemoryFormFactorData) -> String {
             let print = match form_factor.value {
-                MemoryFormFactor::Other => "Other",
-                MemoryFormFactor::Unknown => "Unknown",
+                MemoryFormFactor::Other => OTHER,
+                MemoryFormFactor::Unknown => UNKNOWN,
                 MemoryFormFactor::Simm => "SIMM",
                 MemoryFormFactor::Sip => "SIP",
                 MemoryFormFactor::Chip => "Chip",
@@ -2410,15 +2413,15 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         fn dmi_memory_device_set(device_set: u8) {
             print!("\tSet: ");
             match device_set {
-                0 => println!("None"),
-                0xFF => println!("Unknown"),
+                0 => println!("{}", NONE),
+                0xFF => println!("{}", UNKNOWN),
                 val => println!("{}", val),
             }
         }
         fn dmi_memory_device_type(memory_type: MemoryDeviceTypeData) -> String {
             let print = match memory_type.value {
-                MemoryDeviceType::Other => "Other",
-                MemoryDeviceType::Unknown => "Unknown",
+                MemoryDeviceType::Other => OTHER,
+                MemoryDeviceType::Unknown => UNKNOWN,
                 MemoryDeviceType::Dram => "DRAM",
                 MemoryDeviceType::Edram => "EDRAM",
                 MemoryDeviceType::Vram => "VRAM",
@@ -2459,13 +2462,13 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         fn dmi_memory_device_type_detail(type_detail: MemoryTypeDetails) {
             print!("\tType Detail: ");
             if type_detail.raw & 0xFFFE == 0 {
-                println!("None");
+                println!("{}", NONE);
             } else {
                 let mut vec = Vec::new();
                 if type_detail.other() {
-                    vec.push("Other")
+                    vec.push(OTHER)
                 } else if type_detail.unknown() {
-                    vec.push("Unknown")
+                    vec.push(UNKNOWN)
                 } else if type_detail.fast_paged() {
                     vec.push("Fast-paged")
                 } else if type_detail.static_column() {
@@ -2494,7 +2497,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             let val_opt = match (speed_short, speed_long) {
                 (Some(short), Some(long)) => {
                     match short {
-                        MemorySpeed::Unknown => Some("Unknown".to_string()),
+                        MemorySpeed::Unknown => Some(UNKNOWN.to_string()),
                         MemorySpeed::SeeExtendedSpeed => {
                             // Bit 31 is reserved for future use and must be set to 0
                             let mts = long & 0x7FFFFFFFu32;
@@ -2504,7 +2507,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     }
                 }
                 (Some(short), None) => match short {
-                    MemorySpeed::Unknown => Some("Unknown".to_string()),
+                    MemorySpeed::Unknown => Some(UNKNOWN.to_string()),
                     MemorySpeed::SeeExtendedSpeed => {
                         Some("Error, extended speed required but not present".to_string())
                     }
@@ -2531,8 +2534,8 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         fn dmi_memory_technology(technology: MemoryDeviceTechnologyData) {
             print!("\tMemory Technology: ");
             let print = match technology.value {
-                MemoryDeviceTechnology::Other => "Other",
-                MemoryDeviceTechnology::Unknown => "Unknown",
+                MemoryDeviceTechnology::Other => OTHER,
+                MemoryDeviceTechnology::Unknown => UNKNOWN,
                 MemoryDeviceTechnology::Dram => "DRAM",
                 MemoryDeviceTechnology::NvdimmN => "NVDIMM-N",
                 MemoryDeviceTechnology::NvdimmF => "NVDIMM-F",
@@ -2554,9 +2557,9 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             } else {
                 let mut vec = Vec::new();
                 if mode.other() {
-                    vec.push("Other")
+                    vec.push(OTHER)
                 } else if mode.unknown() {
-                    vec.push("Unknown")
+                    vec.push(UNKNOWN)
                 } else if mode.volatile_memory() {
                     vec.push("Volatile memory")
                 } else if mode.byte_accessible_persistent_memory() {
@@ -2579,14 +2582,14 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         fn dmi_memory_manufacturer_id(attr: &str, id: u16) {
             print!("\t{}: ", attr);
             match id == 0 {
-                true => println!("Unknown"),
+                true => println!("{}", UNKNOWN),
                 false => println!("Bank {}, Hex {:#04X}", (id & 0x7F) + 1, id >> 8),
             }
         }
         fn dmi_memory_product_id(attr: &str, id: u16) {
             print!("\t{}: ", attr);
             match id == 0 {
-                true => println!("Unknown"),
+                true => println!("{}", UNKNOWN),
                 false => println!("{:#06X}", id),
             }
         }
