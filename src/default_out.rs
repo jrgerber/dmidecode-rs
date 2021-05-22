@@ -1245,45 +1245,12 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             DefinedStruct::MemoryArrayMappedAddress(data) => {
                 println!("Memory Array Mapped Address");
 
-                // Convert a 32-bit address in kB to a 64-bit address in bytes
-                // Shift left 10 multiplies by 1024 (kB to bytes)
-                // The 10 zeros this produces are replaced with 1's (0x3FF) if the original
-                // value ended in a 1 (a way of binary rounding).
-                let address_32_kb_to_64_bytes = |address: u32| -> u64 {
-                    let address_64 = (address as u64) << 10;
-                    match address | 1 == address {
-                        true => address_64 + 0x3FFu64,
-                        false => address_64,
-                    }
-                };
-
-                let starting_address =
-                    match (data.starting_address(), data.extended_starting_address()) {
-                        (Some(address), Some(extended_address)) => match address == 0xFFFFFFFF {
-                            true => Some(extended_address),
-                            false => Some(address_32_kb_to_64_bytes(address)),
-                        },
-                        (Some(address), None) => Some(address_32_kb_to_64_bytes(address)),
-                        _ => None,
-                    };
-
-                let ending_address = match (data.ending_address(), data.extended_ending_address()) {
-                    (Some(address), Some(extended_address)) => match address == 0xFFFFFFFF {
-                        true => Some(extended_address),
-                        false => Some(address_32_kb_to_64_bytes(address)),
-                    },
-                    (Some(address), None) => Some(address_32_kb_to_64_bytes(address)),
-                    _ => None,
-                };
-
-                match (starting_address, ending_address) {
-                    (Some(start), Some(end)) => {
-                        println!("\tStarting Address: {:#018X}", start);
-                        println!("\tEnding Address: {:#018X}", end);
-                        dmi_mapped_address_extended_size(start, end);
-                    }
-                    _ => (),
-                }
+                dmi_starting_ending_addresses(
+                    data.starting_address(),
+                    data.extended_starting_address(),
+                    data.ending_address(),
+                    data.extended_ending_address(),
+                );
 
                 if !quiet {
                     if let Some(handle) = data.physical_memory_array_handle() {
@@ -1296,6 +1263,36 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::MemoryDeviceMappedAddress(data) => {
                 println!("Memory Device Mapped Address");
+
+                dmi_starting_ending_addresses(
+                    data.starting_address(),
+                    data.extended_starting_address(),
+                    data.ending_address(),
+                    data.extended_ending_address(),
+                );
+
+                if !quiet {
+                    if let Some(memory_device_handle) = data.memory_device_handle() {
+                        println!("\tPhysical Device Handle: {:#06X}", *memory_device_handle);
+                    }
+                    if let Some(memory_array_mapped_address_handle) =
+                        data.memory_array_mapped_address_handle()
+                    {
+                        println!(
+                            "\tMemory Array Mapped Address Handle: {:#06X}",
+                            *memory_array_mapped_address_handle
+                        );
+                    }
+                }
+                if let Some(partition_row_position) = data.partition_row_position() {
+                    dmi_mapped_address_row_position(partition_row_position);
+                }
+                if let Some(interleave_position) = data.interleave_position() {
+                    dmi_mapped_address_interleave_position(interleave_position);
+                }
+                if let Some(interleaved_data_depth) = data.interleaved_data_depth() {
+                    dmi_mapped_address_interleaved_data_depth(interleaved_data_depth);
+                }
             }
             DefinedStruct::BuiltInPointingDevice(data) => {
                 println!("Built-in Pointing Device");
@@ -2860,6 +2857,77 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             match print == "" {
                 true => format!("{} ({})", OUT_OF_SPEC, memory_error_correction.raw),
                 false => print.to_string(),
+            }
+        }
+        fn dmi_starting_ending_addresses(
+            starting: Option<u32>,
+            extended_starting: Option<u64>,
+            ending: Option<u32>,
+            extended_ending: Option<u64>,
+        ) {
+            // Convert a 32-bit address in kB to a 64-bit address in bytes
+            // Shift left 10 multiplies by 1024 (kB to bytes)
+            // The 10 zeros this produces are replaced with 1's (0x3FF) if the original
+            // value ended in a 1 (a way of binary rounding).
+            let address_32_kb_to_64_bytes = |address: u32| -> u64 {
+                let address_64 = (address as u64) << 10;
+                match address | 1 == address {
+                    true => address_64 + 0x3FFu64,
+                    false => address_64,
+                }
+            };
+
+            let starting_address = match (starting, extended_starting) {
+                (Some(address), Some(extended_address)) => match address == 0xFFFFFFFF {
+                    true => Some(extended_address),
+                    false => Some(address_32_kb_to_64_bytes(address)),
+                },
+                (Some(address), None) => Some(address_32_kb_to_64_bytes(address)),
+                _ => None,
+            };
+
+            let ending_address = match (ending, extended_ending) {
+                (Some(address), Some(extended_address)) => match address == 0xFFFFFFFF {
+                    true => Some(extended_address),
+                    false => Some(address_32_kb_to_64_bytes(address)),
+                },
+                (Some(address), None) => Some(address_32_kb_to_64_bytes(address)),
+                _ => None,
+            };
+
+            match (starting_address, ending_address) {
+                (Some(start), Some(end)) => {
+                    println!("\tStarting Address: {:#018X}", start);
+                    println!("\tEnding Address: {:#018X}", end);
+                    dmi_mapped_address_extended_size(start, end);
+                }
+                _ => (),
+            }
+        }
+        fn dmi_mapped_address_row_position(position: u8) {
+            print!("\tPartition Row Position: ");
+            match position {
+                0 => println!("{}", OUT_OF_SPEC),
+                0xFF => println!("{}", UNKNOWN),
+                _ => println!("{}", position),
+            }
+        }
+        fn dmi_mapped_address_interleave_position(position: u8) {
+            if position != 0 {
+                print!("\tInterleave Position: ");
+                match position {
+                    0xFF => println!("{}", UNKNOWN),
+                    _ => println!("{}", position),
+                }
+            }
+        }
+        fn dmi_mapped_address_interleaved_data_depth(position: u8) {
+            if position != 0 {
+                print!("\tInterleaved Data Depth: ");
+                match position {
+                    0xFF => println!("{}", UNKNOWN),
+                    _ => println!("{}", position),
+                }
             }
         }
     }
