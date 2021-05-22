@@ -1305,6 +1305,32 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::HardwareSecurity(data) => {
                 println!("Hardware Security");
+                if let Some(hardware_security_settings) = data.hardware_security_settings() {
+                    println!(
+                        "\tPower-On Password Status: {}",
+                        dmi_hardware_security_status(
+                            hardware_security_settings.power_on_password_status
+                        )
+                    );
+                    println!(
+                        "\tKeyboard Password Status: {}",
+                        dmi_hardware_security_status(
+                            hardware_security_settings.keyboard_password_status
+                        )
+                    );
+                    println!(
+                        "\tAdministrator Password Status: {}",
+                        dmi_hardware_security_status(
+                            hardware_security_settings.administrator_password_status
+                        )
+                    );
+                    println!(
+                        "\tFront Panel Reset Status: {}",
+                        dmi_hardware_security_status(
+                            hardware_security_settings.front_panel_reset_status
+                        )
+                    );
+                }
             }
             DefinedStruct::SystemPowerControls(data) => {
                 println!("System Power Controls");
@@ -1366,10 +1392,10 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             DefinedStruct::ProcessorAdditionalInformation(data) => {
                 println!("Processor Additional Information");
             }
-            DefinedStruct::Inactive(data) => {
+            DefinedStruct::Inactive(_) => {
                 println!("Inactive");
             }
-            DefinedStruct::EndOfTable(data) => {
+            DefinedStruct::EndOfTable(_) => {
                 println!("End Of Table");
             }
             DefinedStruct::Undefined(data) => {
@@ -2929,6 +2955,15 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                     _ => println!("{}", position),
                 }
             }
+        }
+        fn dmi_hardware_security_status(status: HardwareSecurityStatus) -> String {
+            match status {
+                HardwareSecurityStatus::Disabled => "Disabled",
+                HardwareSecurityStatus::Enabled => "Enabled",
+                HardwareSecurityStatus::NotImplemented => "Not Implemented",
+                HardwareSecurityStatus::Unknown => UNKNOWN,
+            }
+            .to_string()
         }
     }
 }
