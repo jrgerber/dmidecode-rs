@@ -993,6 +993,9 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::OemStrings(data) => {
                 println!("OEM Strings");
+                for oem_string in data.oem_strings().into_iter().enumerate() {
+                    println!("\tString {}: {}", oem_string.0, oem_string.1);
+                }
             }
             DefinedStruct::SystemConfigurationOptions(data) => {
                 println!("System Configuration Options");
