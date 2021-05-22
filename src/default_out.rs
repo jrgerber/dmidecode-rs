@@ -1334,6 +1334,39 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::SystemPowerControls(data) => {
                 println!("System Power Controls");
+                match (
+                    data.next_scheduled_power_on_month(),
+                    data.next_scheduled_power_on_day_of_month(),
+                    data.next_scheduled_power_on_hour(),
+                    data.next_scheduled_power_on_minute(),
+                    data.next_scheduled_power_on_second(),
+                ) {
+                    (Some(month), Some(day), Some(hour), Some(minute), Some(second)) => {
+                        let mut time = String::new();
+                        match dmi_bcd_range(month, 0x0, 0x12) {
+                            true => time.push_str(format!("{:04X}", month).as_str()),
+                            false => time.push_str("*"),
+                        }
+                        match dmi_bcd_range(day, 0x0, 0x31) {
+                            true => time.push_str(format!("-{:04X}", day).as_str()),
+                            false => time.push_str("-*"),
+                        }
+                        match dmi_bcd_range(hour, 0x0, 0x23) {
+                            true => time.push_str(format!(" {:04X}", hour).as_str()),
+                            false => time.push_str(" *"),
+                        }
+                        match dmi_bcd_range(minute, 0x0, 0x59) {
+                            true => time.push_str(format!(":{:04X}", minute).as_str()),
+                            false => time.push_str(":*"),
+                        }
+                        match dmi_bcd_range(second, 0x0, 0x59) {
+                            true => time.push_str(format!(":{:04X}", second).as_str()),
+                            false => time.push_str(":*"),
+                        }
+                        println!("\tNext Scheduled Power-on: {}", time);
+                    }
+                    _ => (),
+                }
             }
             DefinedStruct::VoltageProbe(data) => {
                 println!("Voltage Probe");
@@ -2964,6 +2997,15 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                 HardwareSecurityStatus::Unknown => UNKNOWN,
             }
             .to_string()
+        }
+        fn dmi_bcd_range(value: u8, low: u8, high: u8) -> bool {
+            if value > 0x99 || (value & 0x0F) > 0x09 {
+                false
+            } else if value < low || value > high {
+                false
+            } else {
+                true
+            }
         }
     }
 }
