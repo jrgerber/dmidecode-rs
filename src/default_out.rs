@@ -1008,6 +1008,52 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             }
             DefinedStruct::PhysicalMemoryArray(data) => {
                 println!("Physical Memory Array");
+                if let Some(location) = data.location() {
+                    println!("\tLocation: {}", dmi_memory_array_location(location));
+                }
+                if let Some(usage) = data.usage() {
+                    println!("\tUse: {}", dmi_memory_array_use(usage));
+                }
+                if let Some(memory_error_correction) = data.memory_error_correction() {
+                    println!(
+                        "\tError Correction Type: {}",
+                        dmi_memory_array_ec_type(memory_error_correction)
+                    );
+                }
+                if let Some(maximum_capacity) = data.maximum_capacity() {
+                    const MAXIMUM_CAPACITY: &str = "Maximum Capacity";
+                    match maximum_capacity {
+                        MaximumMemoryCapacity::Kilobytes(capacity_kb) => {
+                            dmi_print_memory_size(MAXIMUM_CAPACITY, capacity_kb as u64, true)
+                        }
+                        MaximumMemoryCapacity::SeeExtendedMaximumCapacity => {
+                            match data.extended_maximum_capacity() {
+                                Some(capacity_bytes) => {
+                                    dmi_print_memory_size(MAXIMUM_CAPACITY, capacity_bytes, false)
+                                }
+                                None => println!("\t{}: {}", MAXIMUM_CAPACITY, UNKNOWN),
+                            }
+                        }
+                    }
+                }
+                if !quiet {
+                    if let Some(memory_error_information_handle) =
+                        data.memory_error_information_handle()
+                    {
+                        print!("\tError Information Handle: ");
+                        match memory_error_information_handle {
+                            0xFFFE => println!("Not Provided"),
+                            0xFFFF => println!("No Error"),
+                            val => println!("{:#06X}", val),
+                        }
+
+                        // TODO: Use this method instead once the library returns a Handle
+                        // dmi_memory_array_error_handle(memory_error_information_handle);
+                    }
+                }
+                if let Some(number_of_memory_devices) = data.number_of_memory_devices() {
+                    println!("\tNumber Of Devices: {}", number_of_memory_devices);
+                }
             }
             DefinedStruct::MemoryDevice(data) => {
                 println!("Memory Device");
@@ -2756,6 +2802,64 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
             match start >= end {
                 true => println!("\t{}: Invalid", ATTR),
                 false => dmi_print_memory_size(ATTR, end - start + 1, false),
+            }
+        }
+        fn dmi_memory_array_location(location: MemoryArrayLocationData) -> String {
+            let print = match location.value {
+                MemoryArrayLocation::Other => OTHER,
+                MemoryArrayLocation::Unknown => UNKNOWN,
+                MemoryArrayLocation::SystemBoardOrMotherboard => "System Board Or Motherboard",
+                MemoryArrayLocation::IsaAddOnCard => "ISA Add-on Card",
+                MemoryArrayLocation::EisaAddOnCard => "EISA Add-on Card",
+                MemoryArrayLocation::PciAddOnCard => "PCI Add-on Card",
+                MemoryArrayLocation::McaAddOnCard => "MCA Add-on Card",
+                MemoryArrayLocation::PcmciaAddOnCard => "PCMCIA Add-on Card",
+                MemoryArrayLocation::ProprietaryAddOnCard => "Proprietary Add-on Card",
+                MemoryArrayLocation::NuBus => "NuBus",
+                MemoryArrayLocation::PC98C20AddOnCard => "PC-98/C20 Add-on Card",
+                MemoryArrayLocation::PC98C24AddOnCard => "PC-98/C24 Add-on Card",
+                MemoryArrayLocation::PC98EAddOnCard => "PC-98/E Add-on Card",
+                MemoryArrayLocation::PC98LocalBusAddOnCard => "PC-98/Local Bus Add-on Card",
+                MemoryArrayLocation::CxlFlexbus10AddOnCard => "CXL Flexbus 1.0",
+                MemoryArrayLocation::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, location.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_array_use(usage: MemoryArrayUseData) -> String {
+            let print = match usage.value {
+                MemoryArrayUse::Other => OTHER,
+                MemoryArrayUse::Unknown => UNKNOWN,
+                MemoryArrayUse::SystemMemory => "System Memory",
+                MemoryArrayUse::VideoMemory => "Video Memory",
+                MemoryArrayUse::FlashMemory => "Flash Memory",
+                MemoryArrayUse::NonVolatileRam => "Non-volatile RAM",
+                MemoryArrayUse::CacheMemory => "Cache Memory",
+                MemoryArrayUse::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, usage.raw),
+                false => print.to_string(),
+            }
+        }
+        fn dmi_memory_array_ec_type(
+            memory_error_correction: MemoryArrayErrorCorrectionData,
+        ) -> String {
+            let print = match memory_error_correction.value {
+                MemoryArrayErrorCorrection::Other => OTHER,
+                MemoryArrayErrorCorrection::Unknown => UNKNOWN,
+                MemoryArrayErrorCorrection::NoCorrection => NONE,
+                MemoryArrayErrorCorrection::Parity => "Parity",
+                MemoryArrayErrorCorrection::SingleBitEcc => "Single-bit ECC",
+                MemoryArrayErrorCorrection::MultiBitEcc => "Multi-bit ECC",
+                MemoryArrayErrorCorrection::Crc => "CRC",
+                MemoryArrayErrorCorrection::None => "",
+            };
+            match print == "" {
+                true => format!("{} ({})", OUT_OF_SPEC, memory_error_correction.raw),
+                false => print.to_string(),
             }
         }
     }
