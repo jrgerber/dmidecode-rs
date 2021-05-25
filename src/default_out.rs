@@ -1284,6 +1284,82 @@ pub fn dump_defined_struct(
         }
         DefinedStruct::SystemReset(data) => {
             println!("System Reset");
+            if let Some(capabilities) = data.capabilities() {
+                println!(
+                    "\tStatus: {}",
+                    match capabilities.reset_enabled() {
+                        true => "Enabled",
+                        false => "Disabled",
+                    }
+                );
+
+                let has_watchdog_timer = capabilities.has_watchdog_timer();
+                println!(
+                    "\tWatchdog Timer: {}",
+                    match has_watchdog_timer {
+                        true => "Present",
+                        false => "Not Present",
+                    }
+                );
+
+                if has_watchdog_timer {
+                    println!(
+                        "\tBoot Option: {}",
+                        match capabilities.boot_option() {
+                            BootOption::Reserved => OUT_OF_SPEC,
+                            BootOption::OperatingSystem => "Operating System",
+                            BootOption::SystemUtilities => "System Utilities",
+                            BootOption::DoNotReboot => "Do Not Reboot",
+                        }
+                    );
+
+                    println!(
+                        "\tBoot Option On Limit: {}",
+                        match capabilities.boot_option_on_limit() {
+                            BootOptionOnLimit::Reserved => OUT_OF_SPEC,
+                            BootOptionOnLimit::OperatingSystem => "Operating System",
+                            BootOptionOnLimit::SystemUtilities => "System Utilities",
+                            BootOptionOnLimit::DoNotReboot => "Do Not Reboot",
+                        }
+                    );
+
+                    if let Some(reset_count) = data.reset_count() {
+                        print!("\tReset Count:");
+                        match reset_count {
+                            ResetCount::Count(count) => println!("{}", count),
+                            ResetCount::Unknown => println!("{}", OUT_OF_SPEC),
+                        }
+                    }
+
+                    if let Some(reset_limit) = data.reset_limit() {
+                        print!("\tReset Limit:");
+                        match reset_limit {
+                            ResetLimit::Count(count) => println!("{}", count),
+                            ResetLimit::Unknown => println!("{}", OUT_OF_SPEC),
+                        }
+                    }
+
+                    if let Some(timer_interval) = data.timer_interval() {
+                        print!("\tTimer Interval:");
+                        match timer_interval {
+                            TimerInterval::Minutes(minutes) => println!("{}", minutes),
+                            TimerInterval::Unknown => println!("{}", OUT_OF_SPEC),
+                        }
+                    }
+
+                    if let Some(timeout) = data.timeout() {
+                        print!("\tTimeout:");
+                        match timeout {
+                            Timeout::Minutes(minutes) => println!("{}", minutes),
+                            Timeout::Unknown => println!("{}", OUT_OF_SPEC),
+                        }
+                    }
+                }
+            }
+            /*
+            dmi_system_reset_timer("Timer Interval", WORD(data + 0x09));
+            dmi_system_reset_timer("Timeout", WORD(data + 0x0B));
+             */
         }
         DefinedStruct::HardwareSecurity(data) => {
             println!("Hardware Security");
