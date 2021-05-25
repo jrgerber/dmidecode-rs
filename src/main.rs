@@ -9,6 +9,7 @@
 mod platform;
 
 mod default_out;
+mod dmifn;
 mod dmiopt;
 mod error;
 
