@@ -99,7 +99,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (None, None, Some(bios_types), None, None, false, false, false, false) => {
             print_dmidecode_version();
             println!("{}", smbios_data.1);
-            BiosType::parse_and_display(bios_types, &smbios_data.0);
+            BiosType::parse_and_display(bios_types, &smbios_data.0, opt.quiet);
         }
         // opt.handle, -H, --handle HANDLE    Only display the entry of given handle
         (None, None, None, Some(handle), None, false, false, false, false) => {
