@@ -1,4 +1,4 @@
-use crate::default_out::dump_defined_struct;
+use crate::default_out::dump_undefined_struct;
 use crate::error::BiosParseError;
 use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
@@ -224,7 +224,7 @@ impl BiosType {
                 true => first = false,
                 false => println!(),
             }
-            dump_defined_struct(&undefined_struct.defined_struct(), data.version, quiet);
+            dump_undefined_struct(&undefined_struct, data.version, quiet);
         }
     }
 }

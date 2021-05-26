@@ -33,26 +33,23 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
                             PNP is supported
         */
         println!();
-        println!(
-            "Handle {:#06X}, DMI type {}, {} bytes",
-            *undefined_struct.header.handle(),
-            undefined_struct.header.struct_type(),
-            undefined_struct.fields.len()
-        );
-        dump_defined_struct(
-            &undefined_struct.defined_struct(),
-            smbios_data.version,
-            quiet,
-        );
+
+        dump_undefined_struct(&undefined_struct, smbios_data.version, quiet);
     }
 }
 
-pub fn dump_defined_struct(
-    defined_struct: &DefinedStruct<'_>,
+pub fn dump_undefined_struct(
+    undefined_struct: &UndefinedStruct,
     bios_version: Option<SMBiosVersion>,
     quiet: bool,
 ) {
-    match defined_struct {
+    println!(
+        "Handle {:#06X}, DMI type {}, {} bytes",
+        *undefined_struct.header.handle(),
+        undefined_struct.header.struct_type(),
+        undefined_struct.fields.len()
+    );
+    match undefined_struct.defined_struct() {
         DefinedStruct::Information(data) => {
             println!("BIOS Information");
             if let Some(vendor) = data.vendor() {
