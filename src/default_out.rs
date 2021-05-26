@@ -967,6 +967,33 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::PortConnectorInformation(data) => {
             println!("Port Connector Information");
+            if let Some(internal_reference_designator) = data.internal_reference_designator() {
+                println!(
+                    "\tInternal Reference Designator: {}",
+                    internal_reference_designator
+                );
+            }
+            if let Some(internal_connector_type) = data.internal_connector_type() {
+                println!(
+                    "\tInternal Connector Type: {}",
+                    dmi_port_connector_type(&internal_connector_type)
+                );
+            }
+            if let Some(external_reference_designator) = data.external_reference_designator() {
+                println!(
+                    "\tExternal Reference Designator: {}",
+                    external_reference_designator
+                );
+            }
+            if let Some(external_connector_type) = data.external_connector_type() {
+                println!(
+                    "\tExternal Connector Type: {}",
+                    dmi_port_connector_type(&external_connector_type)
+                );
+            }
+            if let Some(port_type) = data.port_type() {
+                println!("\tPort Type: {}", dmi_port_type(&port_type));
+            }
         }
         DefinedStruct::SystemSlot(data) => {
             println!("System Slot Information");
