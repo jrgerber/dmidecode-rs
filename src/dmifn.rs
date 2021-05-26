@@ -1563,3 +1563,34 @@ pub fn dmi_bcd_range(value: u8, low: u8, high: u8) -> bool {
         true
     }
 }
+pub fn dmi_system_boot_status(boot_status_data: &SystemBootStatusData<'_>) -> String {
+    let print = match boot_status_data.system_boot_status() {
+        SystemBootStatus::NoErrors => "No errors detected",
+        SystemBootStatus::NoBootableMedia => "No bootable media",
+        SystemBootStatus::NormalOSFailedToLoad => "Operating system failed to load",
+        SystemBootStatus::FirmwareDetectedFailure => "Firmware-detected hardware failure",
+        SystemBootStatus::OSDetectedFailure => "Operating system-detected hardware failure",
+        SystemBootStatus::UserRequestedBoot => "User-requested boot",
+        SystemBootStatus::SystemSecurityViolation => "System security violation",
+        SystemBootStatus::PreviouslyRequestedImage => "Previously-requested image",
+        SystemBootStatus::SystemWatchdogTimerExpired => "System watchdog timer expired",
+        SystemBootStatus::None => "",
+    };
+
+    match print == "" {
+        true => match boot_status_data.raw.len() == 0 {
+            true => OUT_OF_SPEC.to_string(),
+            false => {
+                let byte = boot_status_data.raw[0];
+                if byte >= 128u8 && byte <= 191u8 {
+                    "OEM-specific".to_string()
+                } else if byte >= 192u8 {
+                    "Product-specific".to_string()
+                } else {
+                    OUT_OF_SPEC.to_string()
+                }
+            }
+        },
+        false => format!("{}", print),
+    }
+}

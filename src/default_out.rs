@@ -1327,7 +1327,7 @@ pub fn dump_defined_struct(
                         print!("\tReset Count:");
                         match reset_count {
                             ResetCount::Count(count) => println!("{}", count),
-                            ResetCount::Unknown => println!("{}", OUT_OF_SPEC),
+                            ResetCount::Unknown => println!("{}", UNKNOWN),
                         }
                     }
 
@@ -1335,31 +1335,27 @@ pub fn dump_defined_struct(
                         print!("\tReset Limit:");
                         match reset_limit {
                             ResetLimit::Count(count) => println!("{}", count),
-                            ResetLimit::Unknown => println!("{}", OUT_OF_SPEC),
+                            ResetLimit::Unknown => println!("{}", UNKNOWN),
                         }
                     }
 
                     if let Some(timer_interval) = data.timer_interval() {
                         print!("\tTimer Interval:");
                         match timer_interval {
-                            TimerInterval::Minutes(minutes) => println!("{}", minutes),
-                            TimerInterval::Unknown => println!("{}", OUT_OF_SPEC),
+                            TimerInterval::Minutes(minutes) => println!("{} min", minutes),
+                            TimerInterval::Unknown => println!("{}", UNKNOWN),
                         }
                     }
 
                     if let Some(timeout) = data.timeout() {
                         print!("\tTimeout:");
                         match timeout {
-                            Timeout::Minutes(minutes) => println!("{}", minutes),
-                            Timeout::Unknown => println!("{}", OUT_OF_SPEC),
+                            Timeout::Minutes(minutes) => println!("{} min", minutes),
+                            Timeout::Unknown => println!("{}", UNKNOWN),
                         }
                     }
                 }
             }
-            /*
-            dmi_system_reset_timer("Timer Interval", WORD(data + 0x09));
-            dmi_system_reset_timer("Timeout", WORD(data + 0x0B));
-             */
         }
         DefinedStruct::HardwareSecurity(data) => {
             println!("Hardware Security");
@@ -1446,6 +1442,9 @@ pub fn dump_defined_struct(
         }
         DefinedStruct::SystemBootInformation(data) => {
             println!("System Boot Information");
+            if let Some(boot_status_data) = data.boot_status_data() {
+                println!("\tStatus: {}", dmi_system_boot_status(&boot_status_data));
+            }
         }
         DefinedStruct::MemoryErrorInformation64Bit(data) => {
             println!("64-bit Memory Error Information");
