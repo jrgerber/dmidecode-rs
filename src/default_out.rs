@@ -1080,7 +1080,26 @@ pub fn dump_undefined_struct(
             }
         }
         DefinedStruct::OnBoardDeviceInformation(data) => {
-            println!("On Board Devices Information");
+            let count = data.number_of_devices();
+            for onboard_device in data.onboard_device_iterator().enumerate() {
+                match count == 1 {
+                    true => println!("On Board Device Information"),
+                    false => println!("On Board Device {} Information", onboard_device.0 + 1),
+                }
+                if let Some(device_type) = onboard_device.1.device_type() {
+                    println!("\tType: {}", dmi_on_board_devices_type(&device_type));
+                    println!(
+                        "\tStatus: {}",
+                        match device_type.status() {
+                            DeviceStatus::Enabled => "Enabled",
+                            DeviceStatus::Disabled => "Disabled",
+                        }
+                    );
+                }
+                if let Some(description) = onboard_device.1.description() {
+                    println!("\tDescription: {}", description);
+                }
+            }
         }
         DefinedStruct::OemStrings(data) => {
             println!("OEM Strings");

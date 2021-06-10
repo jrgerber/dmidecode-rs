@@ -2039,3 +2039,22 @@ pub fn dmi_slot_segment_bus_func(
         )
     }
 }
+pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
+    let print = match &device_type.type_of_device() {
+        TypeOfDevice::Other => OTHER,
+        TypeOfDevice::Unknown => UNKNOWN,
+        TypeOfDevice::Video => "Video",
+        TypeOfDevice::ScsiController => "SCSI Controller",
+        TypeOfDevice::Ethernet => "Ethernet",
+        TypeOfDevice::TokenRing => "Token Ring",
+        TypeOfDevice::Sound => "Sound",
+        TypeOfDevice::PataController => "PATA Controller",
+        TypeOfDevice::SataController => "SATA Controller",
+        TypeOfDevice::SasController => "SAS Controller",
+        TypeOfDevice::None => "",
+    };
+    match print == "" {
+        true => format!("{} ({})", OUT_OF_SPEC, &device_type.raw & 0x7F),
+        false => print.to_string(),
+    }
+}
