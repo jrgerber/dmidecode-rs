@@ -1070,7 +1070,7 @@ pub fn dump_undefined_struct(
                     .unwrap_or_default();
                 println!(
                     "\tPeer Device {}: {:04x}:{:02x}:{:02x}.{:x} (Width {})",
-                    slot_peer_group.0,
+                    slot_peer_group.0 + 1,
                     slot_peer_group.1.segment_group_number().unwrap_or_default(),
                     slot_peer_group.1.bus_number().unwrap_or_default(),
                     device_function_number >> 3,
