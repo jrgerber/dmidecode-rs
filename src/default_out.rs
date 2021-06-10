@@ -1119,6 +1119,36 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::LanguageInformation(data) => {
             println!("BIOS Language Information");
+            let two_one_version = SMBiosVersion {
+                major: 2,
+                minor: 1,
+                revision: 0,
+            };
+            if let Some(version) = bios_version {
+                if version >= two_one_version {
+                    if let Some(flags) = data.flags() {
+                        println!(
+                            "\tLanguage Description Format: {}",
+                            match flags.language_format() {
+                                LanguageFormat::Abbreviated => "Abbreviated",
+                                LanguageFormat::Long => "Long",
+                            }
+                        );
+                    }
+                }
+            }
+            if let Some(number_of_installable_languages) = data.number_of_installable_languages() {
+                println!(
+                    "\tIntallable Languages: {}",
+                    number_of_installable_languages
+                );
+            }
+            for installable_language in data.installable_langauges() {
+                println!("\t\t{}", installable_language);
+            }
+            if let Some(current_language) = data.current_language() {
+                println!("\tCurrently Installed Language: {}", current_language);
+            }
         }
         DefinedStruct::GroupAssociations(data) => {
             println!("Group Associations");
