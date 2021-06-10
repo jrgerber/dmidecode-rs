@@ -1,3 +1,5 @@
+use std::u16::MAX;
+
 use crate::dmifn::*;
 use smbioslib::*;
 
@@ -997,6 +999,85 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::SystemSlot(data) => {
             println!("System Slot Information");
+            if let Some(slot_designation) = data.slot_designation() {
+                println!("\tDesignation: {}", slot_designation);
+            }
+            match (data.slot_data_bus_width(), data.system_slot_type()) {
+                (Some(slot_data_bus_width), Some(system_slot_type)) => {
+                    println!(
+                        "\tType: {} {}",
+                        dmi_slot_bus_width(&slot_data_bus_width),
+                        dmi_slot_type(&system_slot_type)
+                    );
+                }
+                _ => (),
+            }
+            if let Some(current_usage) = data.current_usage() {
+                println!(
+                    "\tCurrent Usage: {}",
+                    dmi_slot_current_usage(&current_usage)
+                );
+            }
+            if let Some(slot_length) = data.slot_length() {
+                println!("\tSlot Length: {}", dmi_slot_length(&slot_length));
+            }
+            match (data.slot_id(), data.system_slot_type()) {
+                (Some(slot_id), Some(slot_type)) => match slot_type.value {
+                    SystemSlotType::Mca => println!("\tID: {}", slot_id.byte_0()),
+                    SystemSlotType::Isa => println!("\tID: {}", slot_id.byte_0()),
+                    SystemSlotType::Pci => println!("\tID: {}", slot_id.byte_0()),
+                    SystemSlotType::Agp(_) => println!("\tID: {}", slot_id.byte_0()),
+                    SystemSlotType::PciX => println!("\tID: {}", slot_id.byte_0()),
+                    SystemSlotType::PciExpress(_, _) => println!("\tID: {}", slot_id.byte_0()),
+                    SystemSlotType::Pcmcia => println!(
+                        "\tID: Adapter {}, Socket {}",
+                        slot_id.byte_0(),
+                        slot_id.byte_1()
+                    ),
+                    _ => (),
+                },
+                _ => (),
+            }
+            dmi_slot_characteristics(
+                "Characteristics",
+                &data.slot_characteristics_1(),
+                &data.slot_characteristics_2(),
+            );
+            match (
+                data.segment_group_number(),
+                data.bus_number(),
+                data.device_function_number(),
+            ) {
+                (Some(segment_group_number), Some(bus_number), Some(device_function_number)) => {
+                    dmi_slot_segment_bus_func(
+                        segment_group_number,
+                        bus_number,
+                        device_function_number,
+                    );
+                }
+                _ => (),
+            }
+            if let Some(data_bus_width) = data.data_bus_width() {
+                println!("\tData Bus Width: {}", data_bus_width);
+            }
+            if let Some(peer_group_count) = data.peer_group_count() {
+                println!("\tPeer Devices: {}", peer_group_count);
+            }
+            for slot_peer_group in data.peer_group_iterator().enumerate() {
+                let device_function_number = slot_peer_group
+                    .1
+                    .device_function_number()
+                    .unwrap_or_default();
+                println!(
+                    "\tPeer Device {}: {:04x}:{:02x}:{:02x}.{:x} (Width {})",
+                    slot_peer_group.0,
+                    slot_peer_group.1.segment_group_number().unwrap_or_default(),
+                    slot_peer_group.1.bus_number().unwrap_or_default(),
+                    device_function_number >> 3,
+                    device_function_number & 0x07,
+                    slot_peer_group.1.data_bus_width().unwrap_or_default()
+                );
+            }
         }
         DefinedStruct::OnBoardDeviceInformation(data) => {
             println!("On Board Devices Information");

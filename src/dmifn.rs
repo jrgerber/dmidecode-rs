@@ -1695,3 +1695,347 @@ pub fn dmi_port_type(port_type_data: &PortInformationPortTypeData) -> String {
         false => print.to_string(),
     }
 }
+pub fn dmi_slot_bus_width(width: &SlotWidthData) -> String {
+    let print = match width.value {
+        SlotWidth::Other => OTHER,
+        SlotWidth::Unknown => UNKNOWN,
+        SlotWidth::Bit8 => "8-bit",
+        SlotWidth::Bit16 => "16-bit",
+        SlotWidth::Bit32 => "32-bit",
+        SlotWidth::Bit64 => "64-bit",
+        SlotWidth::Bit128 => "128-bit",
+        SlotWidth::X1 => "x1",
+        SlotWidth::X2 => "x2",
+        SlotWidth::X4 => "x4",
+        SlotWidth::X8 => "x8",
+        SlotWidth::X12 => "x12",
+        SlotWidth::X16 => "x16",
+        SlotWidth::X32 => "x32",
+        SlotWidth::None => "",
+    };
+    match print == "" {
+        true => format!("{} ({})", OUT_OF_SPEC, width.raw),
+        false => print.to_string(),
+    }
+}
+pub fn dmi_slot_type(system_slot_type: &SystemSlotTypeData) -> String {
+    let print = match &system_slot_type.value {
+        SystemSlotType::Other => OTHER,
+        SystemSlotType::Unknown => UNKNOWN,
+        SystemSlotType::Isa => "ISA",
+        SystemSlotType::Mca => "MCA",
+        SystemSlotType::Eisa => "EISA",
+        SystemSlotType::Pci => "PCI",
+        SystemSlotType::Pcmcia => "PC Card (PCMCIA)",
+        SystemSlotType::VlVesa => "VLB",
+        SystemSlotType::Proprietary => "Proprietary",
+        SystemSlotType::ProcessorCardSlot => "Processor Card",
+        SystemSlotType::ProprietaryMemoryCardSlot => "Proprietary Memory Card",
+        SystemSlotType::IORiserCardSlot => "I/O Riser Card",
+        SystemSlotType::NuBus => "NuBus",
+        SystemSlotType::Pci66MhzCapable => "PCI-66",
+        SystemSlotType::Agp(width) => match width {
+            AgpSlotWidth::X1 => "AGP",
+            AgpSlotWidth::X2 => "AGP 2x",
+            AgpSlotWidth::X4 => "AGP 4x",
+            AgpSlotWidth::X8 => "AGP 8x",
+        },
+        SystemSlotType::Mxm(slot_type) => match slot_type {
+            MXMSlotType::MxmTypeI => "MXM Type I",
+            MXMSlotType::MxmTypeII => "MXM Type II",
+            MXMSlotType::MxmTypeIIIStandard => "MXM Type III",
+            MXMSlotType::MxmTypeIIIHE => "MXM Type III-HE",
+            MXMSlotType::MxmTypeIV => "MXM Type IV",
+            MXMSlotType::Mxm3TypeA => "MXM 3.0 Type A",
+            MXMSlotType::Mxm3TypeB => "MXM 3.0 Type B",
+        },
+        SystemSlotType::PciX => "PCI-X",
+        SystemSlotType::M2(slot_type) => match slot_type {
+            M2SlotType::M2Socket1DP => "M.2 Socket 1-DP",
+            M2SlotType::M2Socket1SD => "M.2 Socket 1-SD",
+            M2SlotType::M2Socket2 => "M.2 Socket 2",
+            M2SlotType::M2Socket3 => "M.2 Socket 3",
+        },
+        SystemSlotType::OcpNic30SmallFormFactor => "OCP NIC 3.0 Small Form Factor (SFF)",
+        SystemSlotType::OcpNic30LargeFormFactor => "OCP NIC 3.0 Large Form Factor (LFF)",
+        SystemSlotType::OcpNicPriorTo30 => "OCP NIC Prior to 3.0",
+        SystemSlotType::CxlFlexbus1 => "CXL FLexbus 1.0",
+        SystemSlotType::PC98C20 => "PC-98/C20",
+        SystemSlotType::PC98C24 => "PC-98/C24",
+        SystemSlotType::PC98E => "PC-98/E",
+        SystemSlotType::PC98LocalBus => "PC-98/Local Bus",
+        SystemSlotType::PC98Card => "PC-98/Card",
+        SystemSlotType::PciExpress(generation, width) => match (generation, width) {
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::UndefinedSlotWidth) => {
+                "PCI Express"
+            }
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::X1) => "PCI Express x1",
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::X2) => "PCI Express x2",
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::X4) => "PCI Express x4",
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::X8) => "PCI Express x8",
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::X16) => "PCI Express x16",
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::Sff8639) => "",
+            (
+                PciExpressGeneration::PCIExpressGen1,
+                PciExpressSlotWidth::PciExpressMini52WithKeepouts,
+            ) => "",
+            (
+                PciExpressGeneration::PCIExpressGen1,
+                PciExpressSlotWidth::PciExpressMini52WithoutKeepouts,
+            ) => "",
+            (PciExpressGeneration::PCIExpressGen1, PciExpressSlotWidth::PciExpressMini76) => "",
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::UndefinedSlotWidth) => {
+                "PCI Express 2"
+            }
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::X1) => "PCI Express 2 x1",
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::X2) => "PCI Express 2 x2",
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::X4) => "PCI Express 2 x4",
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::X8) => "PCI Express 2 x8",
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::X16) => "PCI Express 2 x16",
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::Sff8639) => {
+                "PCI Express 2 SFF-8639 (U.2)"
+            }
+            (
+                PciExpressGeneration::PCIExpressGen2,
+                PciExpressSlotWidth::PciExpressMini52WithKeepouts,
+            ) => "",
+            (
+                PciExpressGeneration::PCIExpressGen2,
+                PciExpressSlotWidth::PciExpressMini52WithoutKeepouts,
+            ) => "",
+            (PciExpressGeneration::PCIExpressGen2, PciExpressSlotWidth::PciExpressMini76) => "",
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::UndefinedSlotWidth) => {
+                "PCI Express 3"
+            }
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::X1) => "PCI Express 3 x1",
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::X2) => "PCI Express 3 x2",
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::X4) => "PCI Express 3 x4",
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::X8) => "PCI Express 3 x8",
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::X16) => "PCI Express 3 x16",
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::Sff8639) => {
+                "PCI Express 3 SFF-8639 (U.2)"
+            }
+            (
+                PciExpressGeneration::PCIExpressGen3,
+                PciExpressSlotWidth::PciExpressMini52WithKeepouts,
+            ) => "",
+            (
+                PciExpressGeneration::PCIExpressGen3,
+                PciExpressSlotWidth::PciExpressMini52WithoutKeepouts,
+            ) => "",
+            (PciExpressGeneration::PCIExpressGen3, PciExpressSlotWidth::PciExpressMini76) => "",
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::UndefinedSlotWidth) => {
+                "PCI Express 4"
+            }
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::X1) => "PCI Express 4 x1",
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::X2) => "PCI Express 4 x2",
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::X4) => "PCI Express 4 x4",
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::X8) => "PCI Express 4 x8",
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::X16) => "PCI Express 4 x16",
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::Sff8639) => {
+                "PCI Express 4 SFF-8639 (U.2)"
+            }
+            (
+                PciExpressGeneration::PCIExpressGen4,
+                PciExpressSlotWidth::PciExpressMini52WithKeepouts,
+            ) => "",
+            (
+                PciExpressGeneration::PCIExpressGen4,
+                PciExpressSlotWidth::PciExpressMini52WithoutKeepouts,
+            ) => "",
+            (PciExpressGeneration::PCIExpressGen4, PciExpressSlotWidth::PciExpressMini76) => "",
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::UndefinedSlotWidth) => {
+                "PCI Express 5"
+            }
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::X1) => "PCI Express 5 x1",
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::X2) => "PCI Express 5 x2",
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::X4) => "PCI Express 5 x4",
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::X8) => "PCI Express 5 x8",
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::X16) => "PCI Express 5 x16",
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::Sff8639) => {
+                "PCI Express 5 SFF-8639 (U.2)"
+            }
+            (
+                PciExpressGeneration::PCIExpressGen5,
+                PciExpressSlotWidth::PciExpressMini52WithKeepouts,
+            ) => "",
+            (
+                PciExpressGeneration::PCIExpressGen5,
+                PciExpressSlotWidth::PciExpressMini52WithoutKeepouts,
+            ) => "",
+            (PciExpressGeneration::PCIExpressGen5, PciExpressSlotWidth::PciExpressMini76) => "",
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::UndefinedSlotWidth) => {
+                "PCI Express 6+"
+            }
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::X1) => "",
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::X2) => "",
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::X4) => "",
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::X8) => "",
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::X16) => "",
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::Sff8639) => "",
+            (
+                PciExpressGeneration::PCIExpressGen6,
+                PciExpressSlotWidth::PciExpressMini52WithKeepouts,
+            ) => "",
+            (
+                PciExpressGeneration::PCIExpressGen6,
+                PciExpressSlotWidth::PciExpressMini52WithoutKeepouts,
+            ) => "",
+            (PciExpressGeneration::PCIExpressGen6, PciExpressSlotWidth::PciExpressMini76) => "",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::UndefinedSlotWidth) => "",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::X1) => "",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::X2) => "",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::X4) => "",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::X8) => "",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::X16) => "",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::Sff8639) => "",
+            (
+                PciExpressGeneration::Undefined,
+                PciExpressSlotWidth::PciExpressMini52WithKeepouts,
+            ) => "PCI Express Mini 52-pin with bottom-side keep-outs",
+            (
+                PciExpressGeneration::Undefined,
+                PciExpressSlotWidth::PciExpressMini52WithoutKeepouts,
+            ) => "PCI Express Mini 52-pin without bottom-side keep-outs",
+            (PciExpressGeneration::Undefined, PciExpressSlotWidth::PciExpressMini76) => {
+                "PCI Express Mini 76-pin"
+            }
+        },
+        SystemSlotType::EnterpriseAndDataCenter1UE1 => "EDSFF E1",
+        SystemSlotType::EnterpriseAndDataCenter3InE3 => "EDSFF E3",
+        SystemSlotType::None => "",
+    };
+    match print == "" {
+        true => format!("{} ({})", OUT_OF_SPEC, system_slot_type.raw),
+        false => print.to_string(),
+    }
+}
+pub fn dmi_slot_current_usage(current_usage: &SlotCurrentUsageData) -> String {
+    let print = match current_usage.value {
+        SlotCurrentUsage::Other => OTHER,
+        SlotCurrentUsage::Unknown => UNKNOWN,
+        SlotCurrentUsage::Available => "Available",
+        SlotCurrentUsage::InUse => "In Use",
+        SlotCurrentUsage::Unavailable => "Unavailable",
+        SlotCurrentUsage::None => "",
+    };
+    match print == "" {
+        true => format!("{} ({})", OUT_OF_SPEC, current_usage.raw),
+        false => print.to_string(),
+    }
+}
+pub fn dmi_slot_length(slot_length: &SlotLengthData) -> String {
+    let print = match slot_length.value {
+        SlotLength::Other => OTHER,
+        SlotLength::Unknown => UNKNOWN,
+        SlotLength::ShortLength => "Short",
+        SlotLength::LongLength => "Long",
+        SlotLength::DriveFormFactor25 => "2.5\" drive form factor",
+        SlotLength::DriveFormFactor35 => "3.5\" drive form factor",
+        SlotLength::None => "",
+    };
+    match print == "" {
+        true => format!("{} ({})", OUT_OF_SPEC, slot_length.raw),
+        false => print.to_string(),
+    }
+}
+pub fn dmi_slot_characteristics(
+    attr: &str,
+    characteristics1: &Option<SystemSlotCharacteristics1>,
+    characteristics2: &Option<SystemSlotCharacteristics2>,
+) {
+    match (&characteristics1, &characteristics2) {
+        (Some(c1), None) => {
+            if c1.unknown() {
+                println!("\t{}: Unknown", attr);
+                return;
+            } else if c1.raw & 0xFE == 0 {
+                println!("\t{}: None", attr);
+                return;
+            }
+        }
+        (Some(c1), Some(c2)) => {
+            if c1.unknown() {
+                println!("\t{}: Unknown", attr);
+                return;
+            } else if c1.raw & 0xFE == 0 && c2.raw & 0x07 == 0 {
+                println!("\t{}: None", attr);
+                return;
+            }
+        }
+        _ => return,
+    }
+
+    println!("\t{}:", attr);
+
+    match &characteristics1 {
+        Some(c1) => {
+            if c1.provides5_volts() {
+                println!("\t\t5.0 V is provided");
+            }
+            if c1.provides33_volts() {
+                println!("\t\t3.3 V is provided");
+            }
+            if c1.shared() {
+                println!("\t\tOpening is shared");
+            }
+            if c1.supports_pc_card16() {
+                println!("\t\tPC Card-16 is supported");
+            }
+            if c1.supports_card_bus() {
+                println!("\t\tCardbus is supported");
+            }
+            if c1.supports_zoom_video() {
+                println!("\t\tZoom Video is supported");
+            }
+            if c1.supports_modem_ring_resume() {
+                println!("\t\tModem ring resume is supported");
+            }
+        }
+        None => (),
+    }
+    match &characteristics2 {
+        Some(c2) => {
+            if c2.supports_power_management_event() {
+                println!("\t\tPME signal is supported");
+            }
+            if c2.supports_hot_plug_devices() {
+                println!("\t\tHot-plug devices are supported");
+            }
+            if c2.supports_smbus_signal() {
+                println!("\t\tSMBus signal is supported");
+            }
+            if c2.supports_bifurcation() {
+                println!("\t\tPCIe slot bifurcation is supported");
+            }
+            if c2.supports_suprise_removal() {
+                println!("\t\tAsync/surprise removal is supported");
+            }
+            if c2.flexbus_slot_cxl10_capable() {
+                println!("\t\tFlexbus slot, CXL 1.0 capable");
+            }
+            if c2.flexbus_slot_cxl20_capable() {
+                println!("\t\tFlexbus slot, CXL 2.0 capable");
+            }
+        }
+        None => (),
+    }
+}
+pub fn dmi_slot_segment_bus_func(
+    segment_group_number: u16,
+    bus_number: u8,
+    device_function_number: u8,
+) {
+    if !(segment_group_number == u16::MAX
+        && bus_number == u8::MAX
+        && device_function_number == u8::MAX)
+    {
+        println!(
+            "\tBus Address: {:04x}:{:02x}:{:02x}.{:x}",
+            segment_group_number,
+            bus_number,
+            device_function_number >> 3,
+            device_function_number & 0x7
+        )
+    }
+}
