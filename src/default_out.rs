@@ -1104,11 +1104,18 @@ pub fn dump_undefined_struct(
         DefinedStruct::OemStrings(data) => {
             println!("OEM Strings");
             for oem_string in data.oem_strings().into_iter().enumerate() {
-                println!("\tString {}: {}", oem_string.0, oem_string.1);
+                println!("\tString {}: {}", oem_string.0 + 1, oem_string.1);
             }
         }
         DefinedStruct::SystemConfigurationOptions(data) => {
             println!("System Configuration Options");
+            for configuration_option in data.configuration_strings().into_iter().enumerate() {
+                println!(
+                    "\tOption {}: {}",
+                    configuration_option.0 + 1,
+                    configuration_option.1
+                );
+            }
         }
         DefinedStruct::LanguageInformation(data) => {
             println!("BIOS Language Information");
