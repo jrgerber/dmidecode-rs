@@ -2010,6 +2010,36 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::ManagementDeviceThresholdData(data) => {
             println!("Management Device Threshold Data");
+            if let Some(threshold) = data.lower_threshold_non_critical() {
+                if threshold != 0x8000 {
+                    println!("\tLower Non-critical Threshold: {}", threshold);
+                }
+            }
+            if let Some(threshold) = data.upper_threshold_non_critical() {
+                if threshold != 0x8000 {
+                    println!("\tUpper Non-critical Threshold: {}", threshold);
+                }
+            }
+            if let Some(threshold) = data.lower_threshold_critical() {
+                if threshold != 0x8000 {
+                    println!("\tLower Critical Threshold: {}", threshold);
+                }
+            }
+            if let Some(threshold) = data.upper_threshold_critical() {
+                if threshold != 0x8000 {
+                    println!("\tUpper Critical Threshold: {}", threshold);
+                }
+            }
+            if let Some(threshold) = data.lower_threshold_non_recoverable() {
+                if threshold != 0x8000 {
+                    println!("\tLower Non-recoverable Threshold: {}", threshold);
+                }
+            }
+            if let Some(threshold) = data.upper_threshold_non_recoverable() {
+                if threshold != 0x8000 {
+                    println!("\tUpper Non-recoverable Threshold: {}", threshold);
+                }
+            }
         }
         DefinedStruct::MemoryChannel(data) => {
             println!("Memory Channel");
