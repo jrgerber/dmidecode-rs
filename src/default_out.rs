@@ -1807,6 +1807,40 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::TemperatureProbe(data) => {
             println!("Temperature Probe");
+            if let Some(description) = data.description() {
+                println!("\tDescription: {}", description);
+            }
+            if let Some(location_and_status) = data.location_and_status() {
+                println!(
+                    "\tLocation: {}",
+                    dmi_temperature_probe_location(&location_and_status.location())
+                );
+                println!(
+                    "\tStatus: {}",
+                    dmi_temperature_probe_status(&location_and_status.status())
+                );
+            }
+            if let Some(maximum_value) = data.maximum_value() {
+                dmi_temperature_probe_value("Maximum Value", &maximum_value);
+            }
+            if let Some(minimum_value) = data.minimum_value() {
+                dmi_temperature_probe_value("Minimum Value", &minimum_value);
+            }
+            if let Some(resolution) = data.resolution() {
+                dmi_temperature_probe_resolution(&resolution);
+            }
+            if let Some(tolerance) = data.tolerance() {
+                dmi_temperature_probe_value("Tolerance", &tolerance);
+            }
+            if let Some(accuracy) = data.accuracy() {
+                dmi_temperature_probe_accuracy(&accuracy);
+            }
+            if let Some(oem_defined) = data.oem_defined() {
+                println!("\tOEM-specific Information: {:#10X}", oem_defined);
+            }
+            if let Some(nominal_value) = data.nominal_value() {
+                dmi_temperature_probe_value("Nominal Value", &nominal_value);
+            }
         }
         DefinedStruct::ElectricalCurrentProbe(data) => {
             println!("Electrical Current Probe");

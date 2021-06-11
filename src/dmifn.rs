@@ -2379,3 +2379,76 @@ pub fn dmi_cooling_device_speed(speed: u16) {
         false => println!("{} rpm", speed),
     }
 }
+pub fn dmi_temperature_probe_location(location: &TemperatureProbeLocation) -> String {
+    let print = match location {
+        TemperatureProbeLocation::Other => OTHER,
+        TemperatureProbeLocation::Unknown => UNKNOWN,
+        TemperatureProbeLocation::Processor => "Processor",
+        TemperatureProbeLocation::Disk => "Disk",
+        TemperatureProbeLocation::PeripheralBay => "Peripheral Bay",
+        TemperatureProbeLocation::SystemManagementModule => "System Management Module",
+        TemperatureProbeLocation::Motherboard => "Motherboard",
+        TemperatureProbeLocation::MemoryModule => "Memory Module",
+        TemperatureProbeLocation::ProcessorModule => "Processor Module",
+        TemperatureProbeLocation::PowerUnit => "Power Unit",
+        TemperatureProbeLocation::AddInCard => "Add-in Card",
+        TemperatureProbeLocation::FrontPanelBoard => "Front Panel Board",
+        TemperatureProbeLocation::BackPanelBoard => "Back Panel Board",
+        TemperatureProbeLocation::PowerSystemBoard => "Power System Board",
+        TemperatureProbeLocation::DriveBackPlane => "Drive Back Plane",
+        TemperatureProbeLocation::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_temperature_probe_status(status: &TemperatureProbeStatus) -> String {
+    let print = match status {
+        TemperatureProbeStatus::Other => OTHER,
+        TemperatureProbeStatus::Unknown => UNKNOWN,
+        TemperatureProbeStatus::OK => "OK",
+        TemperatureProbeStatus::NonCritical => "Non-critical",
+        TemperatureProbeStatus::Critical => "Critical",
+        TemperatureProbeStatus::NonRecoverable => "Non-recoverable",
+        TemperatureProbeStatus::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_temperature_probe_value(attr: &str, probe_value: &ProbeTemperature) {
+    print!("\t{} ", attr);
+    match probe_value {
+        ProbeTemperature::OneTenthDegreesC(tenths) => {
+            let degrees = (*tenths as f32) / 10f32;
+            println!("{:.1} deg C", degrees);
+        }
+        ProbeTemperature::Unknown => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_temperature_probe_resolution(resolution: &TemperatureProbeResolution) {
+    print!("\tResolution: ");
+    match resolution {
+        TemperatureProbeResolution::OneOneThousandthDegreesC(thousandths) => {
+            let degrees = (*thousandths as f32) / 1000f32;
+            println!("{:.3} deg C", degrees);
+        }
+        TemperatureProbeResolution::Unknown => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_temperature_probe_accuracy(accuracy: &TemperatureProbeAccuracy) {
+    print!("\tAccuracy: ");
+    match accuracy {
+        TemperatureProbeAccuracy::OneOneHundredthDegreesC(hundredths) => {
+            let percent = (*hundredths as f32) / 100f32;
+            println!("{:.2}%", percent);
+        }
+        TemperatureProbeAccuracy::Unknown => println!("{}", UNKNOWN),
+    }
+}
