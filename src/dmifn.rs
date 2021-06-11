@@ -2039,6 +2039,23 @@ pub fn dmi_slot_segment_bus_func(
         )
     }
 }
+pub fn dmi_slot_segment_bus_func2(
+    segment_group_number: &SegmentGroupNumber,
+    bus_number: &BusNumber,
+    device_function_number: &DeviceFunctionNumber,
+) {
+    match (segment_group_number, bus_number, device_function_number) {
+        (
+            SegmentGroupNumber::Number(sgn),
+            BusNumber::Number(bn),
+            DeviceFunctionNumber::Number { device, function },
+        ) => println!(
+            "\tBus Address: {:04x}:{:02x}:{:02x}.{:x}",
+            sgn, bn, device, function
+        ),
+        _ => (),
+    }
+}
 pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
     let print = match &device_type.type_of_device() {
         TypeOfDevice::Other => OTHER,

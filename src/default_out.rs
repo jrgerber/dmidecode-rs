@@ -2258,6 +2258,36 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::OnboardDevicesExtendedInformation(data) => {
             println!("Onboard Device");
+            if let Some(reference_designation) = data.reference_designation() {
+                println!("\tReference Designation: {}", reference_designation);
+            }
+            if let Some(device_type) = data.device_type() {
+                println!("\tType: {}", dmi_on_board_devices_type(&device_type));
+                println!(
+                    "\tStatus: {}",
+                    match device_type.status() {
+                        DeviceStatus::Enabled => "Enabled",
+                        DeviceStatus::Disabled => "Disabled",
+                    }
+                )
+            }
+            if let Some(device_type_instance) = data.device_type_instance() {
+                println!("\tType Instance: {}", device_type_instance);
+            }
+            match (
+                data.segment_group_number(),
+                data.bus_number(),
+                data.device_function_number(),
+            ) {
+                (Some(segment_group_number), Some(bus_number), Some(device_function_number)) => {
+                    dmi_slot_segment_bus_func2(
+                        &segment_group_number,
+                        &bus_number,
+                        &device_function_number,
+                    );
+                }
+                _ => (),
+            }
         }
         DefinedStruct::ManagementControllerHostInterface(data) => {
             println!("Management Controller Host Interface");
