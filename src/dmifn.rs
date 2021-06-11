@@ -2263,3 +2263,73 @@ pub fn dmi_battery_maximum_error(error: u8) {
         false => println!("{}%", error),
     }
 }
+pub fn dmi_voltage_probe_location(location: &VoltageProbeLocation) -> String {
+    let print = match location {
+        VoltageProbeLocation::Other => OTHER,
+        VoltageProbeLocation::Unknown => UNKNOWN,
+        VoltageProbeLocation::Processor => "Processor",
+        VoltageProbeLocation::Disk => "Disk",
+        VoltageProbeLocation::PeripheralBay => "Peripheral Bay",
+        VoltageProbeLocation::SystemManagementModule => "System Management Module",
+        VoltageProbeLocation::Motherboard => "Motherboard",
+        VoltageProbeLocation::MemoryModule => "Memory Module",
+        VoltageProbeLocation::ProcessorModule => "Processor Module",
+        VoltageProbeLocation::PowerUnit => "Power Unit",
+        VoltageProbeLocation::AddInCard => "Add-in Card",
+        VoltageProbeLocation::None => "",
+        _ => "", // TODO: smbios-lib contains extra/invalid values, once fixed, remove this
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_probe_status(status: &VoltageProbeStatus) -> String {
+    let print = match status {
+        VoltageProbeStatus::Other => OTHER,
+        VoltageProbeStatus::Unknown => UNKNOWN,
+        VoltageProbeStatus::OK => "OK",
+        VoltageProbeStatus::NonCritical => "Non-critical",
+        VoltageProbeStatus::Critical => "Critical",
+        VoltageProbeStatus::NonRecoverable => "Non-recoverable",
+        VoltageProbeStatus::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_voltage_probe_value(attr: &str, probe_value: &ProbeVoltage) {
+    print!("\t{} ", attr);
+    match probe_value {
+        ProbeVoltage::Millivolts(millivolts) => {
+            let volts = (*millivolts as f32) / 1000f32;
+            println!("{:.3} V", volts);
+        }
+        ProbeVoltage::Unknown => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_voltage_probe_resolution(resolution: &VoltageProbeResolution) {
+    print!("\tResolution: ");
+    match resolution {
+        VoltageProbeResolution::TenthsOfMillivolts(tenths) => {
+            let millivolts = (*tenths as f32) / 10f32;
+            println!("{:.1} mV", millivolts);
+        }
+        VoltageProbeResolution::Unknown => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_probe_accuracy(accuracy: &VoltageProbeAccuracy) {
+    print!("\tAccuracy: ");
+    match accuracy {
+        VoltageProbeAccuracy::OneOneHundredthPercent(hundredths) => {
+            let percent = (*hundredths as f32) / 100f32;
+            println!("{:.2}%", percent);
+        }
+        VoltageProbeAccuracy::Unknown => println!("{}", UNKNOWN),
+    }
+}
