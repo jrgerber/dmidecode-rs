@@ -1,5 +1,3 @@
-use std::u16::MAX;
-
 use crate::dmifn::*;
 use smbioslib::*;
 
@@ -1173,6 +1171,82 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::EventLog(data) => {
             println!("System Event Log");
+            if let Some(log_area_length) = data.log_area_length() {
+                println!("\tArea Length: {}", log_area_length);
+            }
+            match (data.log_header_start_offset(), data.log_data_start_offset()) {
+                (Some(log_header_start_offset), Some(log_data_start_offset)) => {
+                    println!("\tHeader Start Offset: {:#06X}", log_header_start_offset);
+                    let length = log_data_start_offset - log_header_start_offset;
+                    if length > 0 {
+                        println!(
+                            "\tHeader Length: {} {}",
+                            length,
+                            match length == 1 {
+                                true => "byte",
+                                false => "bytes",
+                            }
+                        );
+                    }
+                    println!("\tData Start Offset: {:#06X}", log_data_start_offset);
+                }
+                _ => (),
+            }
+            if let Some(access_method) = data.access_method() {
+                println!("\tAccess Method: {}", dmi_event_log_method(&access_method));
+            }
+            match (data.access_method(), data.access_method_address()) {
+                (Some(access_method), Some(access_method_address)) => {
+                    dmi_event_log_address(&access_method, access_method_address)
+                }
+                _ => (),
+            }
+            if let Some(log_status) = data.log_status() {
+                println!(
+                    "\tStatus: {}, {}",
+                    match log_status.log_area_valid() {
+                        true => "Valid",
+                        false => "Invalid",
+                    },
+                    match log_status.log_area_full() {
+                        true => "Full",
+                        false => "Not Full",
+                    }
+                );
+            }
+            if let Some(log_change_token) = data.log_change_token() {
+                println!("\tChange Token: {:#10X}", log_change_token);
+            }
+            if let Some(log_header_format) = data.log_header_format() {
+                println!(
+                    "\tHeader Format: {}",
+                    dmi_event_log_header_type(&log_header_format)
+                );
+            }
+            if let Some(number_of_supported_log_type_descriptors) =
+                data.number_of_supported_log_type_descriptors()
+            {
+                println!(
+                    "\tSupported Log Type Descriptors: {}",
+                    number_of_supported_log_type_descriptors
+                );
+            }
+            if let Some(type_descriptors) = data.type_descriptors() {
+                for type_descriptor in type_descriptors.into_iter().enumerate() {
+                    println!(
+                        "\tDescriptor {}: {}",
+                        type_descriptor.0,
+                        dmi_event_log_descriptor_type(&type_descriptor.1.log_type())
+                    );
+                    println!(
+                        "\tData Format {}: {}",
+                        type_descriptor.0,
+                        dmi_event_log_descriptor_format(
+                            &type_descriptor.1.variable_data_format_type()
+                        )
+                    );
+                }
+            }
         }
         DefinedStruct::PhysicalMemoryArray(data) => {
             println!("Physical Memory Array");

@@ -2058,3 +2058,122 @@ pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
         false => print.to_string(),
     }
 }
+pub fn dmi_event_log_method(access_method: &AccessMethodData) -> String {
+    let print = match access_method.value {
+        AccessMethod::IndexedIO18Bit => "Indexed I/O, one 8-bit index port, one 8-bit data port",
+        AccessMethod::IndexedIO28Bit => "Indexed I/O, two 8-bit index ports, one 8-bit data port",
+        AccessMethod::IndexedIO116Bit => "Indexed I/O, one 16-bit index port, one 8-bit data port",
+        AccessMethod::MemoryMapped32Bit => "Memory-mapped physical 32-bit address",
+        AccessMethod::GeneralPurposeNonVolatile => "General-purpose non-volatile data functions",
+        AccessMethod::None => "",
+    };
+    match print == "" {
+        true => {
+            if access_method.raw >= 0x80 {
+                format!("OEM-specific ({})", access_method.raw)
+            } else {
+                format!("{} ({})", OUT_OF_SPEC, access_method.raw)
+            }
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_event_log_address(access_method: &AccessMethodData, address: u32) {
+    let print_indexed = |addr: u32| {
+        let bytes = address.to_le_bytes();
+        let index = u16::from_le_bytes(bytes[0..2].try_into().expect("u16 is two bytes"));
+        let data = u16::from_le_bytes(bytes[2..4].try_into().expect("u16 is two bytes"));
+        println!("\tAccess Address: Index {:#06X}, Data {:#06X}", index, data);
+    };
+    match access_method.value {
+        AccessMethod::IndexedIO18Bit => print_indexed(address),
+        AccessMethod::IndexedIO28Bit => print_indexed(address),
+        AccessMethod::IndexedIO116Bit => print_indexed(address),
+        AccessMethod::MemoryMapped32Bit => println!("\tAccess Address: {:#10X}", address),
+        AccessMethod::GeneralPurposeNonVolatile => {
+            println!("\tAccess Address: {:#06X}", address & u16::MAX as u32)
+        }
+        AccessMethod::None => println!("\tAccess Address: Unknown"),
+    };
+}
+pub fn dmi_event_log_header_type(header_format: &HeaderFormatData) -> String {
+    let print = match header_format.value {
+        HeaderFormat::NoHeader => "No Header",
+        HeaderFormat::Type1LogHeader => "Type 1",
+        HeaderFormat::None => "",
+    };
+    match print == "" {
+        true => {
+            if header_format.raw >= 0x80 {
+                format!("OEM-specific ({})", header_format.raw)
+            } else {
+                format!("{} ({})", OUT_OF_SPEC, header_format.raw)
+            }
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_event_log_descriptor_type(log_type: &LogTypeData) -> String {
+    let print = match log_type.value {
+        LogType::SingleBitEccMemoryError => "Single-bit ECC memory error",
+        LogType::MultiBitEccMemoryError => "Multi-bit ECC memory error",
+        LogType::ParityMemoryError => "Parity memory error",
+        LogType::BusTimeOut => "Bus timeout",
+        LogType::IOChannelCheck => "I/O channel block",
+        LogType::SoftwareNmi => "Software NMI",
+        LogType::PostMemoryResize => "POST memory resize",
+        LogType::PostError => "POST error",
+        LogType::PciParityError => "PCI parity error",
+        LogType::PciSystemError => "PCI system error",
+        LogType::CpuFailure => "CPU failure",
+        LogType::EisaFailSafeTimerTimeout => "EISA failsafe timer timeout",
+        LogType::CorrectableMemoryLogDisabled => "Correctable memory log disabled",
+        LogType::LoggingDisabledForSpecificEventType => "Logging disabled",
+        LogType::Reserved0F => "Reserved (0x0F)",
+        LogType::SystemLimitExceeded => "System limit exceeded",
+        LogType::AsyncHardwareTimerExpired => "Asynchronous hardware timer expired",
+        LogType::SystemConfigurationInformation => "System configuration information",
+        LogType::HardDiskInformation => "Hard disk information",
+        LogType::SystemReconfigured => "System reconfigured",
+        LogType::UncorrectableCpuComplexError => "Uncorrectable CPU-complex error",
+        LogType::LogAreaReset => "Log area reset/cleared",
+        LogType::SystemBoot => "System boot",
+        LogType::None => "",
+    };
+    match print == "" {
+        true => {
+            if log_type.raw >= 0x80 && log_type.raw <= 0xFE {
+                format!("OEM-specific ({})", log_type.raw)
+            } else if log_type.raw == 0xFF {
+                format!("End of log")
+            } else {
+                format!("{} ({})", OUT_OF_SPEC, log_type.raw)
+            }
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_event_log_descriptor_format(data: &VariableDataFormatTypeData) -> String {
+    let print = match data.value {
+        VariableDataFormatType::NoStandardFormat => NONE,
+        VariableDataFormatType::Handle => "Handle",
+        VariableDataFormatType::MultipleEvent => "Multiple-event",
+        VariableDataFormatType::MultipleEventHandle => "Multiple-event handle",
+        VariableDataFormatType::PostResultsBitmap => "POST results bitmap",
+        VariableDataFormatType::SystemManagementType => "System management",
+        VariableDataFormatType::MultipleEventSystemManagementType => {
+            "Multiple-event system management"
+        }
+        VariableDataFormatType::None => "",
+    };
+    match print == "" {
+        true => {
+            if data.raw >= 0x80 {
+                format!("OEM-specific ({})", data.raw)
+            } else {
+                format!("{} ({})", OUT_OF_SPEC, data.raw)
+            }
+        }
+        false => print.to_string(),
+    }
+}
