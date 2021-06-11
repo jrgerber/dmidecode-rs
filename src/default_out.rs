@@ -2129,11 +2129,99 @@ pub fn dump_undefined_struct(
                 _ => (),
             }
             if let Some(interrupt_number) = data.interrupt_number() {
-                println!("\tInterrupt Number: {}", interrupt_number);
+                if interrupt_number != 0 {
+                    println!("\tInterrupt Number: {}", interrupt_number);
+                }
             }
         }
         DefinedStruct::SystemPowerSupply(data) => {
             println!("System Power Supply");
+            if let Some(power_unit_group) = data.power_unit_group() {
+                println!("\tPower Unit Group: {}", power_unit_group);
+            }
+            if let Some(location) = data.location() {
+                println!("\tLocation: {}", location);
+            }
+            if let Some(device_name) = data.device_name() {
+                println!("\tName: {}", device_name);
+            }
+            if let Some(manufacturer) = data.manufacturer() {
+                println!("\tManufacturer: {}", manufacturer);
+            }
+            if let Some(serial_number) = data.serial_number() {
+                println!("\tSerial Number: {}", serial_number);
+            }
+            if let Some(asset_tag_number) = data.asset_tag_number() {
+                println!("\tAsset Tag: {}", asset_tag_number);
+            }
+            if let Some(model_part_number) = data.model_part_number() {
+                println!("\tModel Part Number: {}", model_part_number);
+            }
+            if let Some(revision_level) = data.revision_level() {
+                println!("\tRevision: {}", revision_level);
+            }
+            if let Some(max_power_capacity) = data.max_power_capacity() {
+                dmi_power_supply_power(&max_power_capacity);
+            }
+            if let Some(power_supply_characteristics) = data.power_supply_characteristics() {
+                print!("\tStatus: ");
+                match power_supply_characteristics.is_present() {
+                    true => println!(
+                        "Present, {}",
+                        dmi_power_supply_status(
+                            &power_supply_characteristics.power_supply_status()
+                        )
+                    ),
+                    false => println!("Not Present"),
+                }
+                println!(
+                    "\tType: {}",
+                    dmi_power_supply_type(&power_supply_characteristics.power_supply_type())
+                );
+                println!(
+                    "\tInput Voltage Range Switching: {}",
+                    dmi_power_supply_range_switching(
+                        &power_supply_characteristics.input_voltage_range_switching()
+                    )
+                );
+                println!(
+                    "\tPlugged: {}",
+                    match power_supply_characteristics.unplugged_from_wall() {
+                        true => "No",
+                        false => "Yes",
+                    }
+                );
+                println!(
+                    "\tHot Replaceable: {}",
+                    match power_supply_characteristics.hot_replaceable() {
+                        true => "Yes",
+                        false => "No",
+                    }
+                );
+            }
+            if !quiet {
+                if let Some(input_voltage_probe_handle) = data.input_voltage_probe_handle() {
+                    if *input_voltage_probe_handle != u16::MAX {
+                        println!(
+                            "\tInput Voltage Probe Handle: {:#06X}",
+                            *input_voltage_probe_handle
+                        );
+                    }
+                }
+                if let Some(cooling_device_handle) = data.cooling_device_handle() {
+                    if *cooling_device_handle != u16::MAX {
+                        println!("\tCooling Device Handle: {:#06X}", *cooling_device_handle);
+                    }
+                }
+                if let Some(input_current_probe_handle) = data.input_current_probe_handle() {
+                    if *input_current_probe_handle != u16::MAX {
+                        println!(
+                            "\tInput Current Probe Handle: {:#06X}",
+                            *input_current_probe_handle
+                        );
+                    }
+                }
+            }
         }
         DefinedStruct::AdditionalInformation(data) => {
             println!("Additional Information");

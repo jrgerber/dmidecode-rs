@@ -2651,3 +2651,54 @@ pub fn dmi_ipmi_register_spacing(register_spacing: &RegisterSpacing) -> String {
     }
     .to_string()
 }
+pub fn dmi_power_supply_power(capacity: &MaxPowerCapacity) {
+    print!("\tMax Power Capacity: ");
+    match capacity {
+        MaxPowerCapacity::Watts(watts) => println!("{} W", watts),
+        MaxPowerCapacity::Unknown => println!("Unknown"),
+    };
+}
+pub fn dmi_power_supply_status(status: &PowerSupplyStatus) -> String {
+    let print = match status {
+        PowerSupplyStatus::Other => OTHER,
+        PowerSupplyStatus::Unknown => UNKNOWN,
+        PowerSupplyStatus::OK => "OK",
+        PowerSupplyStatus::NonCritical => "Non-critical",
+        PowerSupplyStatus::Critical => "Critical",
+        PowerSupplyStatus::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_power_supply_type(supply_type: &PowerSupplyType) -> String {
+    match supply_type {
+        PowerSupplyType::Other => OTHER,
+        PowerSupplyType::Unknown => UNKNOWN,
+        PowerSupplyType::Linear => "Linear",
+        PowerSupplyType::Switching => "Switching",
+        PowerSupplyType::Battery => "Battery",
+        PowerSupplyType::Ups => "UPS",
+        PowerSupplyType::Converter => "Converter",
+        PowerSupplyType::Regulator => "Regulator",
+        PowerSupplyType::None => OUT_OF_SPEC,
+    }
+    .to_string()
+}
+pub fn dmi_power_supply_range_switching(
+    input_voltage_range_switching: &InputVoltageRangeSwitching,
+) -> String {
+    match input_voltage_range_switching {
+        InputVoltageRangeSwitching::Other => OTHER,
+        InputVoltageRangeSwitching::Unknown => UNKNOWN,
+        InputVoltageRangeSwitching::Manual => "Manual",
+        InputVoltageRangeSwitching::AutoSwitch => "Auto-switch",
+        InputVoltageRangeSwitching::WideRange => "Wide Range",
+        InputVoltageRangeSwitching::NotApplicable => "N/A",
+        InputVoltageRangeSwitching::None => OUT_OF_SPEC,
+    }
+    .to_string()
+}
