@@ -1,5 +1,3 @@
-use std::convert::TryInto;
-
 use crate::dmifn::*;
 use smbioslib::*;
 
@@ -1942,6 +1940,33 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::MemoryErrorInformation64Bit(data) => {
             println!("64-bit Memory Error Information");
+            if let Some(error_type) = data.error_type() {
+                println!("\tType: {}", dmi_memory_error_type(error_type));
+            }
+            if let Some(error_granularity) = data.error_granularity() {
+                println!(
+                    "\tGranularity: {}",
+                    dmi_memory_error_granularity(error_granularity)
+                );
+            }
+            if let Some(error_operation) = data.error_operation() {
+                println!(
+                    "\tOperation: {}",
+                    dmi_memory_error_operation(error_operation)
+                );
+            }
+            if let Some(vendor_syndrome) = data.vendor_syndrome() {
+                dmi_memory_error_syndrome(vendor_syndrome);
+            }
+            if let Some(memory_array_error_address) = data.memory_array_error_address() {
+                dmi_64bit_memory_error_address("Memory Array Address", memory_array_error_address);
+            }
+            if let Some(device_error_address) = data.device_error_address() {
+                dmi_64bit_memory_error_address("Device Address", device_error_address);
+            }
+            if let Some(error_resolution) = data.error_resolution() {
+                dmi_32bit_memory_error_address("Resolution", error_resolution);
+            }
         }
         DefinedStruct::ManagementDevice(data) => {
             println!("Management Device");

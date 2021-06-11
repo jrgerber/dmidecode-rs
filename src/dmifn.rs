@@ -2521,3 +2521,10 @@ pub fn dmi_current_probe_accuracy(accuracy: u16) {
         true => println!("{}", UNKNOWN),
     }
 }
+pub fn dmi_64bit_memory_error_address(attr: &str, address: u64) {
+    print!("\t{}: ", attr);
+    match address == 0x80000000_00000000u64 {
+        true => println!("{}", UNKNOWN),
+        false => println!("{:#18X}", address),
+    }
+}
