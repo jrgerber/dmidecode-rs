@@ -2070,6 +2070,67 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::IpmiDeviceInformation(data) => {
             println!("IPMI Device Information");
+            if let Some(interface_type) = data.interface_type() {
+                println!(
+                    "\tInterface Type: {}",
+                    dmi_ipmi_interface_type(&interface_type)
+                );
+            }
+            if let Some(ipmi_specification_revision) = data.ipmi_specification_revision() {
+                println!(
+                    "\tSpecification Version: {}.{}",
+                    ipmi_specification_revision >> 4,
+                    ipmi_specification_revision & 0x0F
+                );
+            }
+            if let Some(i2c_target_address) = data.i2c_target_address() {
+                println!("\tI2C Slave Address: {:#04x}", i2c_target_address >> 1);
+            }
+            if let Some(nvstorage_device_address) = data.nvstorage_device_address() {
+                print!("\tNV Storage Device Address: ");
+                match nvstorage_device_address == u8::MAX {
+                    true => println!("Not Present"),
+                    false => println!("{}", nvstorage_device_address),
+                }
+            }
+            match (data.interface_type(), data.base_address()) {
+                (Some(interface_type), Some(base_address)) => {
+                    dmi_ipmi_base_address(
+                        &interface_type,
+                        base_address,
+                        &data.base_address_modifier(),
+                    );
+                }
+                _ => (),
+            }
+            match (data.interface_type(), data.base_address_modifier()) {
+                (Some(interface_type), Some(base_address_modifier)) => {
+                    if interface_type.value != IpmiInterfaceType::SMBusSystemInterface {
+                        println!(
+                            "\tRegister Spacing: {}",
+                            dmi_ipmi_register_spacing(&base_address_modifier.register_spacing)
+                        );
+                        println!(
+                            "\tInterrupt Polarity: {}",
+                            match &base_address_modifier.interrupt_polarity {
+                                InterruptPolarity::ActiveHigh => "Active High",
+                                InterruptPolarity::ActiveLow => "Active Low",
+                            }
+                        );
+                        println!(
+                            "\tInterrupt Trigger Mode: {}",
+                            match &base_address_modifier.interrupt_trigger_mode {
+                                InterruptTriggerMode::Level => "Level",
+                                InterruptTriggerMode::Edge => "Edge",
+                            }
+                        );
+                    }
+                }
+                _ => (),
+            }
+            if let Some(interrupt_number) = data.interrupt_number() {
+                println!("\tInterrupt Number: {}", interrupt_number);
+            }
         }
         DefinedStruct::SystemPowerSupply(data) => {
             println!("System Power Supply");

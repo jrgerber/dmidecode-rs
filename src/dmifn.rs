@@ -2079,16 +2079,16 @@ pub fn dmi_event_log_method(access_method: &AccessMethodData) -> String {
     }
 }
 pub fn dmi_event_log_address(access_method: &AccessMethodData, address: u32) {
-    let print_indexed = |addr: u32| {
+    let print_indexed = || {
         let bytes = address.to_le_bytes();
         let index = u16::from_le_bytes(bytes[0..2].try_into().expect("u16 is two bytes"));
         let data = u16::from_le_bytes(bytes[2..4].try_into().expect("u16 is two bytes"));
         println!("\tAccess Address: Index {:#06X}, Data {:#06X}", index, data);
     };
     match access_method.value {
-        AccessMethod::IndexedIO18Bit => print_indexed(address),
-        AccessMethod::IndexedIO28Bit => print_indexed(address),
-        AccessMethod::IndexedIO116Bit => print_indexed(address),
+        AccessMethod::IndexedIO18Bit => print_indexed(),
+        AccessMethod::IndexedIO28Bit => print_indexed(),
+        AccessMethod::IndexedIO116Bit => print_indexed(),
         AccessMethod::MemoryMapped32Bit => println!("\tAccess Address: {:#10X}", address),
         AccessMethod::GeneralPurposeNonVolatile => {
             println!("\tAccess Address: {:#06X}", address & u16::MAX as u32)
@@ -2584,4 +2584,70 @@ pub fn dmi_memory_channel_type(channel_type: &MemoryChannelTypeData) -> String {
         }
         false => print.to_string(),
     }
+}
+pub fn dmi_ipmi_interface_type(interface_type: &IpmiInterfaceTypeData) -> String {
+    let print = match interface_type.value {
+        IpmiInterfaceType::Unknown => UNKNOWN,
+        IpmiInterfaceType::KeyboardControllerStyle => "KCS (Keyboard Control Style)",
+        IpmiInterfaceType::ServerManagementInterfaceChip => {
+            "SMIC (Server Management Interface Chip)"
+        }
+        IpmiInterfaceType::BlockTransfer => "BT (Block Transfer)",
+        IpmiInterfaceType::SMBusSystemInterface => "SSIF (SMBus System Interface)",
+        IpmiInterfaceType::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, interface_type.raw)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_ipmi_base_address(
+    interface_type: &IpmiInterfaceTypeData,
+    base_address: u64,
+    base_address_modifier: &Option<BaseAddressModifier>,
+) {
+    print!("\tBase Address: ");
+    match interface_type.value {
+        IpmiInterfaceType::SMBusSystemInterface => {
+            let bytes = base_address.to_ne_bytes();
+            println!("{:#04X} (SMBus)", bytes[0] >> 1);
+        }
+        _ => {
+            let zero = AddressBit::Zero;
+            let address_bit = if let Some(modifier) = &base_address_modifier {
+                &modifier.ls_address_bit
+            } else {
+                &zero
+            };
+
+            // If the least-significant bit of the field is a 1, the address is in
+            // I/O space; otherwise, the address is memory-mapped.
+            let memory_type = match base_address & 1 == 1 {
+                true => "I/O",
+                false => "Memory-mapped",
+            };
+
+            // Strip off the least-significant bit
+            let address_stripped = base_address & (u64::MAX - 1);
+
+            // Add back the least-significant bit if it is specified via the base address modifier
+            let actual_address = match address_bit {
+                AddressBit::Zero => address_stripped,
+                AddressBit::One => address_stripped | 1,
+            };
+
+            println!("{:#18X} ({})", actual_address, memory_type);
+        }
+    }
+}
+pub fn dmi_ipmi_register_spacing(register_spacing: &RegisterSpacing) -> String {
+    match register_spacing {
+        RegisterSpacing::BoundaryByte => "Successive Byte Boundaries",
+        RegisterSpacing::Boundary32Bit => "32-bit Boundaries",
+        RegisterSpacing::Boundary16Bit => "16-byte Boundaries",
+        RegisterSpacing::None => OUT_OF_SPEC,
+    }
+    .to_string()
 }
