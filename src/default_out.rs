@@ -1988,6 +1988,25 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::ManagementDeviceComponent(data) => {
             println!("Management Device Component");
+            if let Some(description) = data.description() {
+                println!("\tDescription: {}", description);
+            }
+            if !quiet {
+                if let Some(management_device_handle) = data.management_device_handle() {
+                    println!(
+                        "\tManagement Device Handle: {:#06X}",
+                        *management_device_handle
+                    );
+                }
+                if let Some(component_handle) = data.component_handle() {
+                    println!("\tComponent Handle: {:#06X}", *component_handle);
+                }
+                if let Some(threshold_handle) = data.threshold_handle() {
+                    if *threshold_handle != u16::MAX {
+                        println!("\tThreshold Handle: {:#06X}", *threshold_handle);
+                    }
+                }
+            }
         }
         DefinedStruct::ManagementDeviceThresholdData(data) => {
             println!("Management Device Threshold Data");
