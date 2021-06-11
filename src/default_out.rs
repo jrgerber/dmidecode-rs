@@ -2043,6 +2043,30 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::MemoryChannel(data) => {
             println!("Memory Channel");
+            if let Some(channel_type) = data.channel_type() {
+                println!("\tType: {}", dmi_memory_channel_type(&channel_type));
+            }
+            if let Some(maximum_channel_load) = data.maximum_channel_load() {
+                println!("\tMaximal Load: {}", maximum_channel_load);
+            }
+            if let Some(memory_device_count) = data.memory_device_count() {
+                println!("\tDevices: {}", memory_device_count);
+            }
+            for channel_device in data.load_handle_pairs_iterator().enumerate() {
+                println!(
+                    "\tDevice {} Load: {}",
+                    channel_device.0,
+                    channel_device.1.load().unwrap_or_default()
+                );
+                if !quiet {
+                    if let Some(handle_value) = channel_device.1.handle() {
+                        println!(
+                            "\tDevice {} Handle: {:#06X}",
+                            channel_device.0, *handle_value
+                        );
+                    }
+                }
+            }
         }
         DefinedStruct::IpmiDeviceInformation(data) => {
             println!("IPMI Device Information");

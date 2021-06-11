@@ -2570,3 +2570,18 @@ pub fn dmi_management_device_address_type(
         false => print.to_string(),
     }
 }
+pub fn dmi_memory_channel_type(channel_type: &MemoryChannelTypeData) -> String {
+    let print = match channel_type.value {
+        MemoryChannelType::Other => OTHER,
+        MemoryChannelType::Unknown => UNKNOWN,
+        MemoryChannelType::RamBus => "RamBus",
+        MemoryChannelType::SyncLink => "SyncLink",
+        MemoryChannelType::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, channel_type.raw)
+        }
+        false => print.to_string(),
+    }
+}
