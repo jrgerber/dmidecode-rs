@@ -1152,6 +1152,24 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::GroupAssociations(data) => {
             println!("Group Associations");
+            if let Some(group_name) = data.group_name() {
+                println!("\tName: {}", group_name);
+            }
+            if let Some(number_of_items) = data.number_of_items() {
+                println!("\tItems: {}", number_of_items);
+            }
+            for item in data.item_iterator() {
+                match (item.item_handle(), item.struct_type()) {
+                    (Some(handle), Some(struct_type)) => {
+                        println!(
+                            "\t\t{:#06X} {}",
+                            *handle,
+                            dmi_smbios_structure_type(struct_type)
+                        );
+                    }
+                    _ => (),
+                }
+            }
         }
         DefinedStruct::EventLog(data) => {
             println!("System Event Log");
