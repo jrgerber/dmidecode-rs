@@ -1774,6 +1774,36 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::CoolingDevice(data) => {
             println!("Cooling Device");
+            if !quiet {
+                if let Some(temperature_probe_handle) = data.temperature_probe_handle() {
+                    println!(
+                        "\tTemperature Probe Handle: {:#06X}",
+                        *temperature_probe_handle
+                    );
+                }
+            }
+            if let Some(device_type_and_status) = data.device_type_and_status() {
+                println!(
+                    "\tType: {}",
+                    dmi_cooling_device_type(&device_type_and_status.device_type)
+                );
+                println!(
+                    "\tStatus: {}",
+                    dmi_cooling_device_status(&device_type_and_status.device_status)
+                );
+            }
+            if let Some(cooling_unit_group) = data.cooling_unit_group() {
+                println!("\tCooling Unit Group: {}", cooling_unit_group);
+            }
+            if let Some(oem_defined) = data.oem_defined() {
+                println!("\tOEM-specific Information: {:#10X}", oem_defined);
+            }
+            if let Some(nominal_speed) = data.nominal_speed() {
+                dmi_cooling_device_speed(nominal_speed);
+            }
+            if let Some(description) = data.description() {
+                println!("\tDescription: {}", description);
+            }
         }
         DefinedStruct::TemperatureProbe(data) => {
             println!("Temperature Probe");

@@ -2333,3 +2333,49 @@ pub fn dmi_probe_accuracy(accuracy: &VoltageProbeAccuracy) {
         VoltageProbeAccuracy::Unknown => println!("{}", UNKNOWN),
     }
 }
+pub fn dmi_cooling_device_type(cooling_device_type: &CoolingDeviceType) -> String {
+    let print = match cooling_device_type {
+        CoolingDeviceType::Other => OTHER,
+        CoolingDeviceType::Unknown => UNKNOWN,
+        CoolingDeviceType::Fan => "Fan",
+        CoolingDeviceType::CentrifugalBlower => "Centrifugal Blower",
+        CoolingDeviceType::ChipFan => "Chip Fan",
+        CoolingDeviceType::CabinetFan => "Cabinet Fan",
+        CoolingDeviceType::PowerSupplyFan => "Power Supply Fan",
+        CoolingDeviceType::HeatPipe => "Heat Pipe",
+        CoolingDeviceType::IntegratedRefrigeration => "Integrated Refrigeration",
+        CoolingDeviceType::ActiveCooling => "Active Cooling",
+        CoolingDeviceType::PassiveCooling => "Passive Cooling",
+        CoolingDeviceType::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_cooling_device_status(status: &CoolingDeviceStatus) -> String {
+    let print = match status {
+        CoolingDeviceStatus::Other => OTHER,
+        CoolingDeviceStatus::Unknown => UNKNOWN,
+        CoolingDeviceStatus::OK => "OK",
+        CoolingDeviceStatus::NonCritical => "Non-critical",
+        CoolingDeviceStatus::Critical => "Critical",
+        CoolingDeviceStatus::NonRecoverable => "Non-recoverable",
+        CoolingDeviceStatus::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_cooling_device_speed(speed: u16) {
+    print!("\tNominal Speed: ");
+    match speed == 0x8000 {
+        true => println!("Unknown Or Non-rotating"),
+        false => println!("{} rpm", speed),
+    }
+}
