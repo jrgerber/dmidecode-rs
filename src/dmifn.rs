@@ -2177,3 +2177,45 @@ pub fn dmi_event_log_descriptor_format(data: &VariableDataFormatTypeData) -> Str
         false => print.to_string(),
     }
 }
+pub fn dmi_pointing_device_type(device_type: &PointingDeviceTypeData) -> String {
+    let print = match device_type.value {
+        PointingDeviceType::Other => OTHER,
+        PointingDeviceType::Unknown => UNKNOWN,
+        PointingDeviceType::Mouse => "Mouse",
+        PointingDeviceType::TrackBall => "Track Ball",
+        PointingDeviceType::TrackPoint => "Track Point",
+        PointingDeviceType::GlidePoint => "Glide Point",
+        PointingDeviceType::TouchPad => "Touch Pad",
+        PointingDeviceType::TouchScreen => "Touch Screen",
+        PointingDeviceType::OpticalSensor => "Optical Sensor",
+        PointingDeviceType::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, device_type.raw)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_pointing_device_interface(interface: &PointingDeviceInterfaceData) -> String {
+    let print = match interface.value {
+        PointingDeviceInterface::Other => OTHER,
+        PointingDeviceInterface::Unknown => UNKNOWN,
+        PointingDeviceInterface::Serial => "Serial",
+        PointingDeviceInterface::PS2 => "PS/2",
+        PointingDeviceInterface::Infrared => "Infrared",
+        PointingDeviceInterface::HpHil => "HIP-HIL",
+        PointingDeviceInterface::BusMouse => "Bus Mouse",
+        PointingDeviceInterface::Adb => "ADB (Apple Desktop Bus)",
+        PointingDeviceInterface::BusMouseDB9 => "Bus Mouse DB-9",
+        PointingDeviceInterface::BusMouseMicroDin => "Bus Mouse Micro DIN",
+        PointingDeviceInterface::USB => "USB",
+        PointingDeviceInterface::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, interface.raw)
+        }
+        false => print.to_string(),
+    }
+}

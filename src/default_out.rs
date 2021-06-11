@@ -1531,6 +1531,15 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::BuiltInPointingDevice(data) => {
             println!("Built-in Pointing Device");
+            if let Some(device_type) = data.device_type() {
+                println!("\tType: {}", dmi_pointing_device_type(&device_type));
+            }
+            if let Some(interface) = data.interface() {
+                println!("\tInterface: {}", dmi_pointing_device_interface(&interface));
+            }
+            if let Some(number_of_buttons) = data.number_of_buttons() {
+                println!("\tButtons: {}", number_of_buttons);
+            }
         }
         DefinedStruct::PortableBattery(data) => {
             println!("Portable Battery");
