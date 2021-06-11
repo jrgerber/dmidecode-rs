@@ -1881,6 +1881,25 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::OutOfBandRemoteAccess(data) => {
             println!("Out-of-band Remote Access");
+            if let Some(manufacturer_name) = data.manufacturer_name() {
+                println!("\tManufacturer Name: {}", manufacturer_name);
+            }
+            if let Some(connections) = data.connections() {
+                println!(
+                    "\tInbound Connection: {}",
+                    match connections.inbound_connection_enabled() {
+                        true => "Enabled",
+                        false => "Disabled",
+                    }
+                );
+                println!(
+                    "\tOutbound Connection: {}",
+                    match connections.outbound_connection_enabled() {
+                        true => "Enabled",
+                        false => "Disabled",
+                    }
+                );
+            }
         }
         DefinedStruct::BisEntryPoint(data) => {
             println!("Boot Integrity Services Entry Point");
