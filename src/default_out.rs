@@ -1970,6 +1970,21 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::ManagementDevice(data) => {
             println!("Management Device");
+            if let Some(description) = data.description() {
+                println!("\tDescription: {}", description);
+            }
+            if let Some(device_type) = data.device_type() {
+                println!("\tType: {}", dmi_management_device_type(&device_type));
+            }
+            if let Some(address) = data.address() {
+                println!("\tAddress: {:#10X}", address);
+            }
+            if let Some(address_type) = data.address_type() {
+                println!(
+                    "\tAddress Type: {}",
+                    dmi_management_device_address_type(&address_type)
+                );
+            }
         }
         DefinedStruct::ManagementDeviceComponent(data) => {
             println!("Management Device Component");

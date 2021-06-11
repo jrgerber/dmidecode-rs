@@ -2528,3 +2528,45 @@ pub fn dmi_64bit_memory_error_address(attr: &str, address: u64) {
         false => println!("{:#18X}", address),
     }
 }
+pub fn dmi_management_device_type(device_type: &ManagementDeviceTypeData) -> String {
+    let print = match device_type.value {
+        ManagementDeviceType::Other => OTHER,
+        ManagementDeviceType::Unknown => UNKNOWN,
+        ManagementDeviceType::NationalSemiconductorLM75 => "LM75",
+        ManagementDeviceType::NationalSemiconductorLM78 => "LM78",
+        ManagementDeviceType::NationalSemiconductorLM79 => "LM79",
+        ManagementDeviceType::NationalSemiconductorLM80 => "LM80",
+        ManagementDeviceType::NationalSemiconductorLM81 => "LM81",
+        ManagementDeviceType::AnalogDevicesADM9240 => "ADM9240",
+        ManagementDeviceType::DallasSemiconductorDS1780 => "DS1780",
+        ManagementDeviceType::Maxim1617 => "MAX1617",
+        ManagementDeviceType::GenesysGL518SM => "GL518SM",
+        ManagementDeviceType::WinbondW83781D => "W83781D",
+        ManagementDeviceType::HoltekHT82H791 => "HT82H791",
+        ManagementDeviceType::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, device_type.raw)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_management_device_address_type(
+    address_type: &ManagementDeviceAddressTypeData,
+) -> String {
+    let print = match address_type.value {
+        ManagementDeviceAddressType::Other => OTHER,
+        ManagementDeviceAddressType::Unknown => UNKNOWN,
+        ManagementDeviceAddressType::IOPort => "I/O Port",
+        ManagementDeviceAddressType::Memory => "Memory",
+        ManagementDeviceAddressType::SMBus => "SMBus",
+        ManagementDeviceAddressType::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, address_type.raw)
+        }
+        false => print.to_string(),
+    }
+}
