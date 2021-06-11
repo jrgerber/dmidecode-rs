@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::dmifn::*;
 use smbioslib::*;
 
@@ -2224,7 +2226,35 @@ pub fn dump_undefined_struct(
             }
         }
         DefinedStruct::AdditionalInformation(data) => {
-            println!("Additional Information");
+            if !quiet {
+                for entry in data.entry_iterator().enumerate() {
+                    println!("Additional Information {}", entry.0);
+                    if let Some(referenced_handle) = entry.1.referenced_handle() {
+                        println!("\tReferenced Handle: {:#06x}", *referenced_handle);
+                    }
+                    if let Some(referenced_offset) = entry.1.referenced_offset() {
+                        println!("\tReferenced Offset: {:#04x}", referenced_offset);
+                    }
+                    if let Some(string) = entry.1.string() {
+                        println!("\tString: {}", string);
+                    }
+                    if let Some(value) = entry.1.value() {
+                        print!("\tValue: ");
+                        match value.len() {
+                            1 => println!("{:#04x}", value[0]),
+                            2 => println!(
+                                "{:#06x}",
+                                u16::from_le_bytes(value[0..2].try_into().expect("u16 is 2 bytes"))
+                            ),
+                            4 => println!(
+                                "{:#10x}",
+                                u32::from_le_bytes(value[0..4].try_into().expect("u32 is 4 bytes"))
+                            ),
+                            _ => println!("Unexpected size"),
+                        }
+                    }
+                }
+            }
         }
         DefinedStruct::OnboardDevicesExtendedInformation(data) => {
             println!("Onboard Device");
