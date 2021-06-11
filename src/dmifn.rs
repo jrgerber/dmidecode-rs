@@ -2505,8 +2505,8 @@ pub fn dmi_current_probe_resolution(resolution: u16) {
     print!("\tResolution: ");
     match resolution == 0x8000 {
         false => {
-            let mA = (resolution as f32) / 10f32;
-            println!("{:.1} mA", mA);
+            let ma = (resolution as f32) / 10f32;
+            println!("{:.1} mA", ma);
         }
         true => println!("{}", UNKNOWN),
     }

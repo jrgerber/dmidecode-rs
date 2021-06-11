@@ -1,3 +1,5 @@
+use std::convert::TryInto;
+
 use crate::dmifn::*;
 use smbioslib::*;
 
@@ -1903,6 +1905,34 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::BisEntryPoint(data) => {
             println!("Boot Integrity Services Entry Point");
+
+            // BIS has a checksum field that ensures the structure adds to 0.
+            // Sum all bytes in the structure, then check if the value is 0.
+            let struct_sum = data
+                .parts()
+                .fields
+                .iter()
+                .fold(0u8, |acc, x| acc.wrapping_add(*x));
+
+            println!(
+                "\tChecksum: {}",
+                match struct_sum == 0 {
+                    true => "OK",
+                    false => "Invalid",
+                }
+            );
+
+            if let Some(bis_entry_16) = data.bis_entry_16() {
+                let segment = bis_entry_16 >> 16;
+                let offset = bis_entry_16 & u16::MAX as u32;
+                println!(
+                    "\t16-bit Entry Point Address: {:04X}:{:04X}",
+                    segment, offset
+                );
+            }
+            if let Some(bis_entry_32) = data.bis_entry_32() {
+                println!("\t32-bit Entry Point Address: {:#10X}", bis_entry_32);
+            }
         }
         DefinedStruct::SystemBootInformation(data) => {
             println!("System Boot Information");
