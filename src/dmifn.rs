@@ -2452,3 +2452,72 @@ pub fn dmi_temperature_probe_accuracy(accuracy: &TemperatureProbeAccuracy) {
         TemperatureProbeAccuracy::Unknown => println!("{}", UNKNOWN),
     }
 }
+pub fn dmi_current_probe_location(location: &CurrentProbeLocation) -> String {
+    let print = match location {
+        CurrentProbeLocation::Other => OTHER,
+        CurrentProbeLocation::Unknown => UNKNOWN,
+        CurrentProbeLocation::Processor => "Processor",
+        CurrentProbeLocation::Disk => "Disk",
+        CurrentProbeLocation::PeripheralBay => "Peripheral Bay",
+        CurrentProbeLocation::SystemManagementModule => "System Management Module",
+        CurrentProbeLocation::Motherboard => "Motherboard",
+        CurrentProbeLocation::MemoryModule => "Memory Module",
+        CurrentProbeLocation::ProcessorModule => "Processor Module",
+        CurrentProbeLocation::PowerUnit => "Power Unit",
+        CurrentProbeLocation::AddInCard => "Add-in Card",
+        CurrentProbeLocation::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_current_probe_status(status: &CurrentProbeStatus) -> String {
+    let print = match status {
+        CurrentProbeStatus::Other => OTHER,
+        CurrentProbeStatus::Unknown => UNKNOWN,
+        CurrentProbeStatus::OK => "OK",
+        CurrentProbeStatus::NonCritical => "Non-critical",
+        CurrentProbeStatus::Critical => "Critical",
+        CurrentProbeStatus::NonRecoverable => "Non-recoverable",
+        CurrentProbeStatus::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{}", OUT_OF_SPEC)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_current_probe_value(attr: &str, probe_value: u16) {
+    print!("\t{} ", attr);
+    match probe_value == 0x8000 {
+        false => {
+            let amps = (probe_value as f32) / 1000f32;
+            println!("{:.3} A", amps);
+        }
+        true => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_current_probe_resolution(resolution: u16) {
+    print!("\tResolution: ");
+    match resolution == 0x8000 {
+        false => {
+            let mA = (resolution as f32) / 10f32;
+            println!("{:.1} mA", mA);
+        }
+        true => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_current_probe_accuracy(accuracy: u16) {
+    print!("\tAccuracy: ");
+    match accuracy == 0x8000 {
+        false => {
+            let percent = (accuracy as f32) / 100f32;
+            println!("{:.2}%", percent);
+        }
+        true => println!("{}", UNKNOWN),
+    }
+}
