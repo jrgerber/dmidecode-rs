@@ -2219,3 +2219,47 @@ pub fn dmi_pointing_device_interface(interface: &PointingDeviceInterfaceData) ->
         false => print.to_string(),
     }
 }
+pub fn dmi_battery_chemistry(chemistry: &PortableBatteryDeviceChemistryData) -> String {
+    let print = match chemistry.value {
+        PortableBatteryDeviceChemistry::Other => OTHER,
+        PortableBatteryDeviceChemistry::Unknown => UNKNOWN,
+        PortableBatteryDeviceChemistry::LeadAcit => "Lead Acid",
+        PortableBatteryDeviceChemistry::NickelCadmium => "Nickel Cadmium",
+        PortableBatteryDeviceChemistry::NickelMetalHydride => "Nickel Metal Hydride",
+        PortableBatteryDeviceChemistry::LithiumIon => "Lithium Ion",
+        PortableBatteryDeviceChemistry::ZincAir => "Zinc Air",
+        PortableBatteryDeviceChemistry::LithiumPolymer => "Lithium Polymer",
+        PortableBatteryDeviceChemistry::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, chemistry.raw)
+        }
+        false => print.to_string(),
+    }
+}
+pub fn dmi_battery_capacity(capacity: &PortableBatteryDesignCapacity, multiplier: u8) {
+    print!("\tDesign Capacity: ");
+    match capacity {
+        PortableBatteryDesignCapacity::MilliWattHours(mwh) => {
+            println!("{} mwh", mwh * multiplier as u16)
+        }
+        PortableBatteryDesignCapacity::Unknown => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_battery_voltage(voltage: &PortableBatteryDesignVoltage) {
+    print!("\tDesign Voltage: ");
+    match voltage {
+        PortableBatteryDesignVoltage::MilliVolts(mv) => {
+            println!("{} mV", mv)
+        }
+        PortableBatteryDesignVoltage::Unknown => println!("{}", UNKNOWN),
+    }
+}
+pub fn dmi_battery_maximum_error(error: u8) {
+    print!("\tMaximum Error: ");
+    match error == 0xFF {
+        true => println!("{}", UNKNOWN),
+        false => println!("{}%", error),
+    }
+}

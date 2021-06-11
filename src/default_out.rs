@@ -1543,6 +1543,57 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::PortableBattery(data) => {
             println!("Portable Battery");
+            if let Some(location) = data.location() {
+                println!("\tLocation: {}", location);
+            }
+            if let Some(manufacturer) = data.manufacturer() {
+                println!("\tManufacturer: {}", manufacturer);
+            }
+            if let Some(manufacture_date) = data.manufacture_date() {
+                println!("Manufacture Date: {}", manufacture_date);
+            }
+            if let Some(serial_number) = data.serial_number() {
+                println!("\tSerial Number: {}", serial_number);
+            }
+            if let Some(device_name) = data.device_name() {
+                println!("\tName: {}", device_name);
+            }
+            if let Some(device_chemistry) = data.device_chemistry() {
+                println!("\tChemistry: {}", dmi_battery_chemistry(&device_chemistry));
+            }
+            match (data.design_capacity(), data.design_capacity_multiplier()) {
+                (Some(design_capacity), None) => dmi_battery_capacity(&design_capacity, 1u8),
+                (Some(design_capacity), Some(design_capacity_multiplier)) => {
+                    dmi_battery_capacity(&design_capacity, design_capacity_multiplier)
+                }
+                _ => (),
+            }
+            if let Some(design_voltage) = data.design_voltage() {
+                dmi_battery_voltage(&design_voltage);
+            }
+            if let Some(sbds_version_number) = data.sbds_version_number() {
+                println!("\tSBDS Version: {}", sbds_version_number);
+            }
+            if let Some(maximum_error_in_battery_data) = data.maximum_error_in_battery_data() {
+                dmi_battery_maximum_error(maximum_error_in_battery_data);
+            }
+            if let Some(sbds_serial_number) = data.sbds_serial_number() {
+                println!("\tSBDS Serial Number {:#06X}", sbds_serial_number);
+            }
+            if let Some(sbds_manufacture_date) = data.sbds_manufacture_date() {
+                println!(
+                    "\tSBDS Manufacture Date: {}-{:02}-{:02}",
+                    1900 + (sbds_manufacture_date >> 9),
+                    (sbds_manufacture_date >> 5) & 0x0F,
+                    sbds_manufacture_date & 0x1F
+                );
+            }
+            if let Some(sbds_device_chemistry) = data.sbds_device_chemistry() {
+                println!("\tSBDS Chemistry: {}", sbds_device_chemistry);
+            }
+            if let Some(oem_specific) = data.oem_specific() {
+                println!("\tOEM-specific Information: {}", oem_specific);
+            }
         }
         DefinedStruct::SystemReset(data) => {
             println!("System Reset");
