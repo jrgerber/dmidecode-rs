@@ -2291,9 +2291,91 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::ManagementControllerHostInterface(data) => {
             println!("Management Controller Host Interface");
+            let three_two_version = SMBiosVersion {
+                major: 3,
+                minor: 2,
+                revision: 0,
+            };
+            if let Some(version) = bios_version {
+                if version < three_two_version {
+                    if let Some(interface_type) = data.interface_type() {
+                        println!(
+                            "\tInterface Type: {}",
+                            dmi_management_controller_host_type(&interface_type)
+                        );
+                        // If interface type = OEM, the first four bytes are the vendor ID (MSB first), as assigned by the Internet Assigned Numbers Authority (IANA)
+                        if interface_type.value == HostInterfaceType::OemDefined {
+                            /* TODO: interface_type_specific_data() is private and should be public
+                            if let Some(interface_type_specific_data) =
+                                data.interface_type_specific_data()
+                            {
+                                if interface_type_specific_data.len() >= 4 {
+                                    let vendor_id = u32::from_le_bytes(
+                                        interface_type_specific_data[0..4]
+                                            .try_into()
+                                            .expect("u32 is 4 bytes"),
+                                    );
+                                    println!("\tVendor ID: {:#10X}", vendor_id);
+                                }
+                            }
+                             */
+                        }
+                    }
+                } else {
+                    // dmi_parse_controller_structure(&data);
+                }
+            }
         }
         DefinedStruct::TpmDevice(data) => {
             println!("TPM Device");
+            if let Some(vendor_id) = data.vendor_id() {
+                dmi_tpm_vendor_id(&vendor_id);
+            }
+            match (data.major_spec_version(), data.minor_spec_version()) {
+                (Some(major_spec_version), Some(minor_spec_version)) => {
+                    println!(
+                        "\tSpecification Version: {}.{}",
+                        major_spec_version, minor_spec_version
+                    );
+                    if let Some(firmware_version_1) = data.firmware_version_1() {
+                        match major_spec_version {
+                            0x01 => {
+                                /*
+                                 * We skip the first 2 bytes, which are
+                                 * redundant with the above, and uncoded
+                                 * in a silly way.
+                                 */
+                                let bytes = firmware_version_1.to_le_bytes();
+                                println!("\tFirmware Revision: {}.{}", bytes[2], bytes[3]);
+                            }
+                            0x02 => {
+                                println!(
+                                    "\tFirmware Revision: {}.{}",
+                                    firmware_version_1 >> 16,
+                                    firmware_version_1 & u16::MAX as u32
+                                );
+                            }
+                            _ => (),
+                        }
+                    }
+                    /*
+                     * We skip the next 4 bytes (firmware_version_2), as their
+                     * format is not standardized and their
+                     * usefulness seems limited anyway.
+                     */
+                }
+                _ => (),
+            }
+            if let Some(description) = data.description() {
+                println!("\tDescription: {}", description);
+            }
+            if let Some(characteristics) = data.characteristics() {
+                println!("\tCharacteristics:");
+                dmi_tpm_characteristics(&characteristics);
+            }
+            if let Some(oem_defined) = data.oem_defined() {
+                println!("\tOEM-specific Information: {:#10X}", oem_defined);
+            }
         }
         DefinedStruct::ProcessorAdditionalInformation(data) => {
             println!("Processor Additional Information");

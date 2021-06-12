@@ -2628,7 +2628,7 @@ pub fn dmi_ipmi_base_address(
     print!("\tBase Address: ");
     match interface_type.value {
         IpmiInterfaceType::SMBusSystemInterface => {
-            let bytes = base_address.to_ne_bytes();
+            let bytes = base_address.to_le_bytes();
             println!("{:#04X} (SMBus)", bytes[0] >> 1);
         }
         _ => {
@@ -2718,4 +2718,54 @@ pub fn dmi_power_supply_range_switching(
         InputVoltageRangeSwitching::None => OUT_OF_SPEC,
     }
     .to_string()
+}
+pub fn dmi_management_controller_host_type(host_type: &HostInterfaceTypeData) -> String {
+    let print = match host_type.value {
+        HostInterfaceType::KeyboardControllerStyle => "KCS: Keyboard Controller Style",
+        HostInterfaceType::Uart8250 => "8250 UART Register Compatible",
+        HostInterfaceType::Uart16450 => "16450 UART Register Compatible",
+        HostInterfaceType::Uart16550 => "16550/16550A UART Register Compatible",
+        HostInterfaceType::Uart16650 => "16650/16650A UART Register Compatible",
+        HostInterfaceType::Uart16750 => "16750/16750A UART Register Compatible",
+        HostInterfaceType::Uart16850 => "16850/16850A UART Register Compatible",
+        HostInterfaceType::NetworkHostInterface => "Network",
+        HostInterfaceType::OemDefined => "OEM",
+        HostInterfaceType::None => "",
+    };
+    match print == "" {
+        true => match host_type.raw <= 0x3F {
+            true => format!("{}", "MCTP"),
+            false => format!("{} ({})", OUT_OF_SPEC, host_type.raw),
+        },
+        false => print.to_string(),
+    }
+}
+pub fn dmi_tpm_vendor_id(vendor_id: &VendorId<'_>) {
+    let vendor_id_string: String = vendor_id
+        .array
+        .iter()
+        .take_while(|&&not_zero| not_zero != 0u8)
+        .map(
+            |&ascii_filter| match ascii_filter < 32 || ascii_filter >= 127 {
+                true => '.',
+                false => ascii_filter as char,
+            },
+        )
+        .collect();
+    println!("\tVendor ID: {}", vendor_id_string);
+}
+pub fn dmi_tpm_characteristics(characteristics: &TpmDeviceCharacteristics) {
+    if characteristics.not_supported() {
+        println!("\t\tTPM Device characteristics not supported");
+        return;
+    }
+    if characteristics.family_configurable_via_firmware() {
+        println!("\t\tFamily configurable via firmware update");
+    }
+    if characteristics.family_configurable_via_software() {
+        println!("\t\tFamily configurable via platform software support");
+    }
+    if characteristics.family_configurable_via_oem() {
+        println!("\t\tFamily configurable via OEM proprietary mechanism");
+    }
 }
