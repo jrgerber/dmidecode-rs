@@ -2276,7 +2276,6 @@ pub fn dmi_voltage_probe_location(location: &VoltageProbeLocation) -> String {
         VoltageProbeLocation::PowerUnit => "Power Unit",
         VoltageProbeLocation::AddInCard => "Add-in Card",
         VoltageProbeLocation::None => "",
-        _ => "", // TODO: smbios-lib contains extra/invalid values, once fixed, remove this
     };
     match print == "" {
         true => {
