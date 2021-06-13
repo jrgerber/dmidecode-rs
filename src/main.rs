@@ -8,9 +8,12 @@
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 mod platform;
 
+mod default_out;
+mod dmifn;
 mod dmiopt;
 mod error;
 
+use default_out::default_dump;
 use dmiopt::{print_dmidecode_version, BiosType, Keyword, Opt};
 use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
@@ -46,7 +49,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         print_dmidecode_version();
         let smbios_data = platform::table_load(&opt)?;
         println!("{}", smbios_data.1);
-        println!("{:#X?}", smbios_data.0);
+        //println!("{:#X?}", smbios_data.0);
+        default_dump(&smbios_data.0, opt.quiet);
         return Ok(());
     }
 
@@ -96,7 +100,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         (None, None, Some(bios_types), None, None, false, false, false, false) => {
             print_dmidecode_version();
             println!("{}", smbios_data.1);
-            BiosType::parse_and_display(bios_types, &smbios_data.0);
+            BiosType::parse_and_display(bios_types, &smbios_data.0, opt.quiet);
         }
         // opt.handle, -H, --handle HANDLE    Only display the entry of given handle
         (None, None, None, Some(handle), None, false, false, false, false) => {
