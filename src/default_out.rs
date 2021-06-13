@@ -2375,7 +2375,7 @@ pub fn dump_undefined_struct(
                 println!("\tOEM-specific Information: {:#10X}", oem_defined);
             }
         }
-        DefinedStruct::ProcessorAdditionalInformation(data) => {
+        DefinedStruct::ProcessorAdditionalInformation(_) => {
             println!("Processor Additional Information");
         }
         DefinedStruct::Inactive(_) => {

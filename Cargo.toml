@@ -1,6 +1,6 @@
 [package]
 name = "dmidecode-rs"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Jeffrey R. Gerber <jeffreygerber@gmail.com>", "Juan Zuluaga <juzuluag@hotmail.com>"]
 edition = "2018"
 
