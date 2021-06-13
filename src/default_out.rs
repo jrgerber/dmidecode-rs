@@ -1050,9 +1050,9 @@ pub fn dump_undefined_struct(
             ) {
                 (Some(segment_group_number), Some(bus_number), Some(device_function_number)) => {
                     dmi_slot_segment_bus_func(
-                        segment_group_number,
-                        bus_number,
-                        device_function_number,
+                        &segment_group_number,
+                        &bus_number,
+                        &device_function_number,
                     );
                 }
                 _ => (),
@@ -1285,7 +1285,7 @@ pub fn dump_undefined_struct(
                     data.memory_error_information_handle()
                 {
                     print!("\tError Information Handle: ");
-                    match memory_error_information_handle {
+                    match *memory_error_information_handle {
                         0xFFFE => println!("Not Provided"),
                         0xFFFF => println!("No Error"),
                         val => println!("{:#06X}", val),
@@ -1326,16 +1326,16 @@ pub fn dump_undefined_struct(
                 (Some(size1), Some(size2)) => match size1 == MemorySize::SeeExtendedSize {
                     true => {
                         print!("\tSize: ");
-                        let masked_size = size2 & 0x7FFFFFFF;
-                        if masked_size == 0 {
-                            println!("0 MB");
-                        } else {
-                            module_present = true;
-                            match (31 - masked_size.leading_zeros()) / 10 {
-                                0 => println!("{} MB", masked_size),
-                                1 => println!("{} GB", masked_size >> 10),
-                                _ => println!("{} TB", masked_size >> 20),
+                        match size2 {
+                            MemorySizeExtended::Megabytes(megabytes) => {
+                                module_present = true;
+                                match (31 - megabytes.leading_zeros()) / 10 {
+                                    0 => println!("{} MB", megabytes),
+                                    1 => println!("{} GB", megabytes >> 10),
+                                    _ => println!("{} TB", megabytes >> 20),
+                                }
                             }
+                            MemorySizeExtended::SeeSize => println!("0 MB"),
                         }
                     }
                     false => {
@@ -1801,7 +1801,7 @@ pub fn dump_undefined_struct(
                 println!("\tOEM-specific Information: {:#10X}", oem_defined);
             }
             if let Some(nominal_speed) = data.nominal_speed() {
-                dmi_cooling_device_speed(nominal_speed);
+                dmi_cooling_device_speed(&nominal_speed);
             }
             if let Some(description) = data.description() {
                 println!("\tDescription: {}", description);
@@ -1860,25 +1860,25 @@ pub fn dump_undefined_struct(
                 );
             }
             if let Some(maximum_value) = data.maximum_value() {
-                dmi_current_probe_value("Maximum Value", maximum_value);
+                dmi_current_probe_value("Maximum Value", &maximum_value);
             }
             if let Some(minimum_value) = data.minimum_value() {
-                dmi_current_probe_value("Minimum Value", minimum_value);
+                dmi_current_probe_value("Minimum Value", &minimum_value);
             }
             if let Some(resolution) = data.resolution() {
-                dmi_current_probe_resolution(resolution);
+                dmi_current_probe_resolution(&resolution);
             }
             if let Some(tolerance) = data.tolerance() {
-                dmi_current_probe_value("Tolerance", tolerance);
+                dmi_current_probe_value("Tolerance", &tolerance);
             }
             if let Some(accuracy) = data.accuracy() {
-                dmi_current_probe_accuracy(accuracy);
+                dmi_current_probe_accuracy(&accuracy);
             }
             if let Some(oem_defined) = data.oem_defined() {
                 println!("\tOEM-specific Information: {:#10X}", oem_defined);
             }
             if let Some(nominal_value) = data.nominal_value() {
-                dmi_current_probe_value("Nominal Value", nominal_value);
+                dmi_current_probe_value("Nominal Value", &nominal_value);
             }
         }
         DefinedStruct::OutOfBandRemoteAccess(data) => {
@@ -2280,7 +2280,7 @@ pub fn dump_undefined_struct(
                 data.device_function_number(),
             ) {
                 (Some(segment_group_number), Some(bus_number), Some(device_function_number)) => {
-                    dmi_slot_segment_bus_func2(
+                    dmi_slot_segment_bus_func(
                         &segment_group_number,
                         &bus_number,
                         &device_function_number,
@@ -2305,7 +2305,6 @@ pub fn dump_undefined_struct(
                         );
                         // If interface type = OEM, the first four bytes are the vendor ID (MSB first), as assigned by the Internet Assigned Numbers Authority (IANA)
                         if interface_type.value == HostInterfaceType::OemDefined {
-                            /* TODO: interface_type_specific_data() is private and should be public
                             if let Some(interface_type_specific_data) =
                                 data.interface_type_specific_data()
                             {
@@ -2318,11 +2317,10 @@ pub fn dump_undefined_struct(
                                     println!("\tVendor ID: {:#10X}", vendor_id);
                                 }
                             }
-                             */
                         }
                     }
                 } else {
-                    // dmi_parse_controller_structure(&data);
+                    dmi_parse_controller_structure(&data);
                 }
             }
         }

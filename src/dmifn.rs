@@ -1,6 +1,7 @@
 use crate::default_out::{NONE, OTHER, OUT_OF_SPEC, UNKNOWN};
 use smbioslib::*;
 use std::convert::TryInto;
+use std::net::IpAddr;
 
 pub fn dmi_smbios_structure_type(code: u8) -> String {
     let description = match code {
@@ -1231,20 +1232,19 @@ pub fn dmi_memory_device_type_detail(type_detail: MemoryTypeDetails) {
 pub fn dmi_memory_device_speed(
     attr: &str,
     speed_short: Option<MemorySpeed>,
-    speed_long: Option<u32>,
+    speed_long: Option<MemorySpeedExtended>,
 ) {
     let val_opt = match (speed_short, speed_long) {
-        (Some(short), Some(long)) => {
-            match short {
-                MemorySpeed::Unknown => Some(UNKNOWN.to_string()),
-                MemorySpeed::SeeExtendedSpeed => {
-                    // Bit 31 is reserved for future use and must be set to 0
-                    let mts = long & 0x7FFFFFFFu32;
-                    Some(format!("{} MT/s", mts))
+        (Some(short), Some(long)) => match short {
+            MemorySpeed::Unknown => Some(UNKNOWN.to_string()),
+            MemorySpeed::SeeExtendedSpeed => match long {
+                MemorySpeedExtended::MTs(mts) => Some(format!("{} MT/s", mts)),
+                MemorySpeedExtended::SeeSpeed => {
+                    Some("Error, extended speed required but set to 0".to_string())
                 }
-                MemorySpeed::MTs(mts) => Some(format!("{} MT/s", mts)),
-            }
-        }
+            },
+            MemorySpeed::MTs(mts) => Some(format!("{} MT/s", mts)),
+        },
         (Some(short), None) => match short {
             MemorySpeed::Unknown => Some(UNKNOWN.to_string()),
             MemorySpeed::SeeExtendedSpeed => {
@@ -2022,24 +2022,6 @@ pub fn dmi_slot_characteristics(
     }
 }
 pub fn dmi_slot_segment_bus_func(
-    segment_group_number: u16,
-    bus_number: u8,
-    device_function_number: u8,
-) {
-    if !(segment_group_number == u16::MAX
-        && bus_number == u8::MAX
-        && device_function_number == u8::MAX)
-    {
-        println!(
-            "\tBus Address: {:04x}:{:02x}:{:02x}.{:x}",
-            segment_group_number,
-            bus_number,
-            device_function_number >> 3,
-            device_function_number & 0x7
-        )
-    }
-}
-pub fn dmi_slot_segment_bus_func2(
     segment_group_number: &SegmentGroupNumber,
     bus_number: &BusNumber,
     device_function_number: &DeviceFunctionNumber,
@@ -2240,7 +2222,7 @@ pub fn dmi_battery_chemistry(chemistry: &PortableBatteryDeviceChemistryData) -> 
     let print = match chemistry.value {
         PortableBatteryDeviceChemistry::Other => OTHER,
         PortableBatteryDeviceChemistry::Unknown => UNKNOWN,
-        PortableBatteryDeviceChemistry::LeadAcit => "Lead Acid",
+        PortableBatteryDeviceChemistry::LeadAcid => "Lead Acid",
         PortableBatteryDeviceChemistry::NickelCadmium => "Nickel Cadmium",
         PortableBatteryDeviceChemistry::NickelMetalHydride => "Nickel Metal Hydride",
         PortableBatteryDeviceChemistry::LithiumIon => "Lithium Ion",
@@ -2389,11 +2371,11 @@ pub fn dmi_cooling_device_status(status: &CoolingDeviceStatus) -> String {
         false => print.to_string(),
     }
 }
-pub fn dmi_cooling_device_speed(speed: u16) {
+pub fn dmi_cooling_device_speed(speed: &RotationalSpeed) {
     print!("\tNominal Speed: ");
-    match speed == 0x8000 {
-        true => println!("Unknown Or Non-rotating"),
-        false => println!("{} rpm", speed),
+    match speed {
+        RotationalSpeed::Rpm(rpm) => println!("{} rpm", *rpm),
+        RotationalSpeed::Unknown => println!("Unknown Or Non-rotating"),
     }
 }
 pub fn dmi_temperature_probe_location(location: &TemperatureProbeLocation) -> String {
@@ -2508,34 +2490,34 @@ pub fn dmi_current_probe_status(status: &CurrentProbeStatus) -> String {
         false => print.to_string(),
     }
 }
-pub fn dmi_current_probe_value(attr: &str, probe_value: u16) {
+pub fn dmi_current_probe_value(attr: &str, probe_value: &ProbeAmperage) {
     print!("\t{} ", attr);
-    match probe_value == 0x8000 {
-        false => {
-            let amps = (probe_value as f32) / 1000f32;
+    match probe_value {
+        ProbeAmperage::Milliamps(milliamps) => {
+            let amps = (*milliamps as f32) / 1000f32;
             println!("{:.3} A", amps);
         }
-        true => println!("{}", UNKNOWN),
+        ProbeAmperage::Unknown => println!("{}", UNKNOWN),
     }
 }
-pub fn dmi_current_probe_resolution(resolution: u16) {
+pub fn dmi_current_probe_resolution(resolution: &CurrentProbeResolution) {
     print!("\tResolution: ");
-    match resolution == 0x8000 {
-        false => {
-            let ma = (resolution as f32) / 10f32;
+    match resolution {
+        CurrentProbeResolution::TenthsOfMilliamps(tenths_milliamps) => {
+            let ma = (*tenths_milliamps as f32) / 10f32;
             println!("{:.1} mA", ma);
         }
-        true => println!("{}", UNKNOWN),
+        CurrentProbeResolution::Unknown => println!("{}", UNKNOWN),
     }
 }
-pub fn dmi_current_probe_accuracy(accuracy: u16) {
+pub fn dmi_current_probe_accuracy(accuracy: &CurrentProbeAccuracy) {
     print!("\tAccuracy: ");
-    match accuracy == 0x8000 {
-        false => {
-            let percent = (accuracy as f32) / 100f32;
+    match accuracy {
+        CurrentProbeAccuracy::OneOneHundredthPercent(one_hudredth_percent) => {
+            let percent = (*one_hudredth_percent as f32) / 100f32;
             println!("{:.2}%", percent);
         }
-        true => println!("{}", UNKNOWN),
+        CurrentProbeAccuracy::Unknown => println!("{}", UNKNOWN),
     }
 }
 pub fn dmi_64bit_memory_error_address(attr: &str, address: u64) {
@@ -2767,5 +2749,266 @@ pub fn dmi_tpm_characteristics(characteristics: &TpmDeviceCharacteristics) {
     }
     if characteristics.family_configurable_via_oem() {
         println!("\t\tFamily configurable via OEM proprietary mechanism");
+    }
+}
+pub fn dmi_parse_controller_structure(data: &SMBiosManagementControllerHostInterface<'_>) {
+    if let Some(interface_type) = data.interface_type() {
+        println!(
+            "\tHost Interface Type: {}",
+            dmi_management_controller_host_type(&interface_type)
+        );
+
+        /*
+         * The following decodes are code for Network interface host types only
+         * As defined in DSP0270
+         */
+        if interface_type.value != HostInterfaceType::NetworkHostInterface {
+            return;
+        }
+
+        if let Some(specific_data) = data.interface_type_specific_data() {
+            let len = specific_data.len();
+            if len > 0 {
+                let device_type = specific_data[0];
+                println!("\tDevice Type: {}", dmi_parse_device_type(device_type));
+
+                match device_type {
+                    0x2 => {
+                        /* USB Device Type - Need at least 4 bytes */
+                        if len >= 5 {
+                            let usbdata = &specific_data[1..];
+                            let id_vendor = u16::from_le_bytes(
+                                usbdata[0..2].try_into().expect("u16 is 2 bytes"),
+                            );
+                            let id_product = u16::from_le_bytes(
+                                usbdata[2..4].try_into().expect("u16 is 2 bytes"),
+                            );
+                            println!("\tidVendor: {:#06x}", id_vendor);
+                            println!("\tidProduct: {:#06x}", id_product);
+                        }
+                    }
+                    0x3 => {
+                        /* PCI Device Type - Need at least 8 bytes */
+                        if len >= 9 {
+                            let pcidata = &specific_data[1..];
+                            let vendor_id = u16::from_le_bytes(
+                                pcidata[0..2].try_into().expect("u16 is 2 bytes"),
+                            );
+                            let device_id = u16::from_le_bytes(
+                                pcidata[2..4].try_into().expect("u16 is 2 bytes"),
+                            );
+                            let sub_vendor_id = u16::from_le_bytes(
+                                pcidata[4..6].try_into().expect("u16 is 2 bytes"),
+                            );
+                            let sub_device_id = u16::from_le_bytes(
+                                pcidata[6..8].try_into().expect("u16 is 2 bytes"),
+                            );
+                            println!("\tVendorID: {:#06x}", vendor_id);
+                            println!("\tDeviceID: {:#06x}", device_id);
+                            println!("\tSubVendorID: {:#06x}", sub_vendor_id);
+                            println!("\tSubDeviceID: {:#06x}", sub_device_id);
+                        }
+                    }
+                    0x4 => {
+                        /* OEM Device Type - Need at least 4 bytes */
+                        if len >= 5 {
+                            let oemdata = &specific_data[1..];
+                            println!(
+                                "\tVendor ID: {:#04x}:{:#04x}:{:#04x}:{:#04x}",
+                                oemdata[0], oemdata[1], oemdata[2], oemdata[3]
+                            );
+                        }
+                    }
+                    _ => (), /* Don't mess with unknown types for now */
+                }
+            }
+        }
+        for protocol_record in data.protocol_record_iterator() {
+            if let Some(protocol_type) = protocol_record.protocol_type() {
+                println!(
+                    "\tProtocol ID: {}",
+                    dmi_protocol_record_type(&protocol_type)
+                );
+                /*
+                 * Don't decode anything other than Redfish for now
+                 * Note 0x4 is Redfish over IP in 7.43.2
+                 * and DSP0270: 8.5
+                 */
+                if protocol_type.value == HostProtocolType::RedfishOverIP {
+                    if let Some(rdata) = protocol_record.protocol_type_specific_data() {
+                        let rlen = rdata.len();
+                        /*
+                         * Ensure that the protocol record is of sufficient length
+                         * For RedFish that means rlen must be at least 91 bytes
+                         * other protcols will need different length checks
+                         */
+                        if rlen >= 91 {
+                            /*
+                             * DSP0270: 8.6: Redfish Over IP Service UUID
+                             */
+                            println!("\tService UUID: {:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}", 
+                                    rdata[3], rdata[2], rdata[1], rdata[0], rdata[5], rdata[4], rdata[7], rdata[6], rdata[8], rdata[9], rdata[10], rdata[11], rdata[12], rdata[13], rdata[14], rdata[15]);
+                            /*
+                             * DSP0270: 8.6: Redfish Over IP Host IP Assignment Type
+                             * Note, using decimal indices here, as the DSP0270
+                             * uses decimal, so as to make it more comparable
+                             */
+                            let assign_val = rdata[16];
+                            println!(
+                                "\tHost IP Assignment Type: {}",
+                                dmi_protocol_assignment_type(assign_val)
+                            );
+                            /* DSP0270: 8.6: Redfish Over IP Host Address format */
+                            let addrtype = rdata[17];
+                            let addrstr = dmi_address_type(addrtype);
+                            println!("\tHost IP Address Format: {}", addrstr);
+                            /* DSP0270: 8.6 IP Assignment types */
+                            /* We only use the Host IP Address and Mask if the assignment type is static */
+                            if assign_val == 0x1 || assign_val == 0x3 {
+                                /* DSP0270: 8.6: the Host IPv[4|6] Address */
+                                println!(
+                                    "\t{} Address: {}",
+                                    addrstr,
+                                    dmi_address_decode(&rdata[18..], addrtype)
+                                );
+                                /* DSP0270: 8.6: Prints the Host IPv[4|6] Mask */
+                                println!(
+                                    "\t{} Mask: {}",
+                                    addrstr,
+                                    dmi_address_decode(&rdata[34..], addrtype)
+                                );
+                            }
+                            /* DSP0270: 8.6: Get the Redfish Service IP Discovery Type */
+                            let assign_val = rdata[50];
+                            /* Redfish Service IP Discovery type mirrors Host IP Assignment type */
+                            println!(
+                                "\tRedfish Service IP Discovery Type: {}",
+                                dmi_protocol_assignment_type(assign_val),
+                            );
+                            /* DSP0270: 8.6: Get the Redfish Service IP Address Format */
+                            let addrtype = rdata[51];
+                            let addrstr = dmi_address_type(addrtype);
+                            println!("\tRedfish Service IP Address Format: {}", addrstr);
+                            if assign_val == 0x1 || assign_val == 0x3 {
+                                /* DSP0270: 8.6: Prints the Redfish IPv[4|6] Service Address */
+                                println!(
+                                    "\t{} Redfish Service Address: {}",
+                                    addrstr,
+                                    dmi_address_decode(&rdata[52..], addrtype)
+                                );
+                                /* DSP0270: 8.6: Prints the Redfish IPv[4|6] Service Mask */
+                                println!(
+                                    "\t{} Redfish Service Mask: {}",
+                                    addrstr,
+                                    dmi_address_decode(&rdata[68..], addrtype)
+                                );
+                                /* DSP0270: 8.6: Redfish vlan and port info */
+                                let port = u16::from_le_bytes(
+                                    rdata[84..86].try_into().expect("u16 is 2 bytes"),
+                                );
+                                let vlan = u32::from_le_bytes(
+                                    rdata[86..90].try_into().expect("u32 is 4 bytes"),
+                                );
+                                println!("\tRedfish Service Port: {}", port);
+                                println!("\tRedfish Service Vlan: {}", vlan);
+                            }
+                            /* DSP0270: 8.6: Redfish host length and name */
+                            let hlen = rdata[90];
+                            /*
+                             * DSP0270: 8.6: The length of the host string + 91 (the minimum
+                             * size of a protocol record) cannot exceed the record length
+                             * (rec[0x1])
+                             */
+                            print!("\tRedfish Service Hostname: ");
+                            match (hlen as usize) + 91 > rlen {
+                                true => println!("{}", OUT_OF_SPEC),
+                                false => {
+                                    let hname: String =
+                                        rdata[91..].into_iter().map(|&i| i as char).collect();
+                                    println!("{}", hname)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn dmi_parse_device_type(device_type: u8) -> String {
+    match device_type {
+        0x2 => "USB".to_string(),
+        0x3 => "PCI/PCIe".to_string(),
+        val => match val >= 0x80 {
+            true => "OEM".to_string(),
+            false => OUT_OF_SPEC.to_string(),
+        },
+    }
+}
+/// 7.43.2: Protocol Record Types
+fn dmi_protocol_record_type(protocol_type: &HostProtocolTypeData) -> String {
+    let print = match protocol_type.value {
+        HostProtocolType::Ipmi => "IPMI",
+        HostProtocolType::Mctp => "MCTP",
+        HostProtocolType::RedfishOverIP => "Redfish over IP",
+        HostProtocolType::OemDefined => "OEM",
+        HostProtocolType::None => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, protocol_type.raw)
+        }
+        false => print.to_string(),
+    }
+}
+/// DSP0270: 8.6: Protocol IP Assignment types
+fn dmi_protocol_assignment_type(assignment_type: u8) -> String {
+    let print = match assignment_type {
+        0x0 => UNKNOWN,
+        0x1 => "Static",
+        0x2 => "DHCP",
+        0x3 => "AutoConf",
+        0x4 => "Host Selected",
+        _ => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, assignment_type)
+        }
+        false => print.to_string(),
+    }
+}
+/// DSP0270: 8.6: Protocol IP Address type
+fn dmi_address_type(address_type: u8) -> String {
+    let print = match address_type {
+        0x0 => UNKNOWN,
+        0x1 => "IPv4",
+        0x2 => "IPv6",
+        _ => "",
+    };
+    match print == "" {
+        true => {
+            format!("{} ({})", OUT_OF_SPEC, address_type)
+        }
+        false => print.to_string(),
+    }
+}
+/// DSP0270: 8.6 Protocol Address decode
+fn dmi_address_decode(data: &[u8], address_type: u8) -> String {
+    match address_type {
+        0x1 =>
+        /* IPv4 */
+        {
+            let addr_bytes: [u8; 4] = data[0..4].try_into().expect("IPV4 is 4 bytes");
+            IpAddr::from(addr_bytes).to_string()
+        }
+        0x2 =>
+        /* IPv6 */
+        {
+            let addr_bytes: [u8; 16] = data[0..16].try_into().expect("IPV6 is 16 bytes");
+            IpAddr::from(addr_bytes).to_string()
+        }
+        _ => format!("{} ({})", OUT_OF_SPEC, address_type),
     }
 }
