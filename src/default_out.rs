@@ -190,9 +190,6 @@ pub fn dump_undefined_struct(
                     if characteristics.printer_services_supported() {
                         println!("\t\tPrinter services are supported (int 17h)");
                     }
-                    if characteristics.printer_services_supported() {
-                        println!("\t\tPrinter services are supported (int 17h)");
-                    }
                     if characteristics.cga_mono_video_services_supported() {
                         println!("\t\tCGA/mono video services are supported (int 10h)");
                     }
@@ -366,7 +363,7 @@ pub fn dump_undefined_struct(
                 println!("\tManufacturer: {}", manufacturer);
             }
             if let Some(product) = data.product() {
-                println!("\tProduct: {}", product);
+                println!("\tProduct Name: {}", product);
             }
             if let Some(version) = data.version() {
                 println!("\tVersion: {}", version);
@@ -396,7 +393,7 @@ pub fn dump_undefined_struct(
                 }
             }
             if let Some(location_in_chassis) = data.location_in_chassis() {
-                println!("\tLocation in Chassis: {}", location_in_chassis);
+                println!("\tLocation In Chassis: {}", location_in_chassis);
             }
             if !quiet {
                 if let Some(chassis_handle) = data.chassis_handle() {
@@ -453,8 +450,8 @@ pub fn dump_undefined_struct(
 
             if !quiet {
                 if let Some(handle_count) = data.number_of_contained_object_handles() {
+                    println!("\tContained Object Handles: {}", handle_count);
                     if handle_count > 0 {
-                        println!("Contained Object Handles: {}", handle_count);
                         for handle in data.contained_object_handle_iterator() {
                             println!("\t\t{:#06X}", handle.0);
                         }
@@ -896,11 +893,11 @@ pub fn dump_undefined_struct(
         DefinedStruct::CacheInformation(data) => {
             println!("Cache Information");
             if let Some(socket_designation) = data.socket_designation() {
-                println!("\t{}", socket_designation);
+                println!("\tSocket Designation: {}", socket_designation);
             }
             if let Some(cache_configuration) = data.cache_configuration() {
                 println!(
-                    "\tConfiguration: {} {} Level {}",
+                    "\tConfiguration: {}, {}, Level {}",
                     match cache_configuration.enabled_at_boot() {
                         true => "Enabled",
                         false => "Disabled",
@@ -1019,7 +1016,7 @@ pub fn dump_undefined_struct(
                 );
             }
             if let Some(slot_length) = data.slot_length() {
-                println!("\tSlot Length: {}", dmi_slot_length(&slot_length));
+                println!("\tLength: {}", dmi_slot_length(&slot_length));
             }
             match (data.slot_id(), data.system_slot_type()) {
                 (Some(slot_id), Some(slot_type)) => match slot_type.value {
@@ -1377,6 +1374,8 @@ pub fn dump_undefined_struct(
                 }
                 if let Some(asset_tag) = data.asset_tag() {
                     println!("\tAsset Tag: {}", asset_tag);
+                } else {
+                    println!("\tAsset Tag: {}", "Not Specified");
                 }
                 if let Some(part_number) = data.part_number() {
                     println!("\tPart Number: {}", part_number);
@@ -1389,7 +1388,7 @@ pub fn dump_undefined_struct(
                     }
                 }
                 dmi_memory_device_speed(
-                    "Configured Speed",
+                    "Configured Memory Speed",
                     data.configured_memory_speed(),
                     data.extended_configured_memory_speed(),
                 );
