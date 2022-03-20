@@ -915,7 +915,7 @@ pub fn dmi_cache_size(attr: &str, size1_opt: Option<u16>, size2_opt: Option<u32>
         (Some(installed_size), None) => {
             // High bit 15 is granularity.  Make it bit 31 to match installed_cache_size_2):
             // 0 == 1K
-            // 1 == 16K
+            // 1 == 64K
             let size_32 = installed_size as u32;
             Some((size_32 & 0x8000u32 << 16) | (size_32 & 0x7FFFu32))
         }
@@ -926,10 +926,10 @@ pub fn dmi_cache_size(attr: &str, size1_opt: Option<u16>, size2_opt: Option<u32>
     if let Some(large) = large_opt {
         // Read bit 31:
         // 0 == 1K
-        // 1 == 16K
+        // 1 == 64K
         // ... then normalize to 1K units.
         let size: u64 = match large & 0x80000000u32 == 0x80000000u32 {
-            true => (large as u64 & 0x7FFFFFFFu64) * 16u64,
+            true => (large as u64 & 0x7FFFFFFFu64) * 64u64,
             false => large as u64,
         };
 
