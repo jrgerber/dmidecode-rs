@@ -2025,12 +2025,23 @@ pub fn dmi_slot_segment_bus_func(
     bus_number: &BusNumber,
     device_function_number: &DeviceFunctionNumber,
 ) {
-    match (segment_group_number, bus_number, device_function_number) {
-        (
-            SegmentGroupNumber::Number(sgn),
-            BusNumber::Number(bn),
-            DeviceFunctionNumber::Number { device, function },
-        ) => println!(
+    let sgn = match segment_group_number {
+        SegmentGroupNumber::SingleSegment => 0u16,
+        SegmentGroupNumber::Number(sgn) => *sgn,
+        SegmentGroupNumber::NotApplicable => return,
+    };
+    let (device, function) = match device_function_number {
+        DeviceFunctionNumber::Number{device, function} => (*device, *function),
+        /* 
+        TODO: When no device is plugged into the slot,the DMI system slots
+        structure returns 0xFF for Device Function Number, offset 10h.
+        dmidecode happliy parses this and will thus output 0000:00:1f.7 for any
+        slots without devices installed. We therefore do the same thing.
+        */
+        DeviceFunctionNumber::NotApplicable => (0x1F, 0x7),
+    };
+    match bus_number {
+        BusNumber::Number(bn) => println!(
             "\tBus Address: {:04x}:{:02x}:{:02x}.{:x}",
             sgn, bn, device, function
         ),
