@@ -450,7 +450,7 @@ pub fn dump_undefined_struct(
 
             if !quiet {
                 if let Some(handle_count) = data.number_of_contained_object_handles() {
-                    println!("Contained Object Handles: {}", handle_count);
+                    println!("\tContained Object Handles: {}", handle_count);
                     if handle_count > 0 {
                         for handle in data.contained_object_handle_iterator() {
                             println!("\t\t{:#06X}", handle.0);
