@@ -408,7 +408,7 @@ pub fn dmi_processor_characteristics(characteristics: ProcessorCharacteristics) 
     if characteristics.raw & 0xFC == 0 {
         println!("\tCharacteristics: None");
     } else {
-        println!("\tCharacteristics: ");
+        println!("\tCharacteristics:");
         if characteristics.unknown() {
             println!("\t\tUnknown");
         }
@@ -416,7 +416,7 @@ pub fn dmi_processor_characteristics(characteristics: ProcessorCharacteristics) 
             println!("\t\t64-bit capable");
         }
         if characteristics.multi_core() {
-            println!("\t\tMulti-core");
+            println!("\t\tMulti-Core");
         }
         if characteristics.hardware_thread() {
             println!("\t\tHardware Thread");
