@@ -2033,7 +2033,7 @@ pub fn dmi_slot_segment_bus_func(
     let (device, function) = match device_function_number {
         DeviceFunctionNumber::Number{device, function} => (*device, *function),
         /* 
-        TODO: When no device is plugged into the slot,the DMI system slots
+        TODO: When no device is plugged into the slot, the DMI system slots
         structure returns 0xFF for Device Function Number, offset 10h.
         dmidecode happliy parses this and will thus output 0000:00:1f.7 for any
         slots without devices installed. We therefore do the same thing.
