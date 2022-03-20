@@ -585,7 +585,7 @@ pub fn dmi_processor_id(data: &SMBiosProcessorInformation<'_>) {
                             eax & 0xF
                         );
                     }
-                    // AMD
+                    // AMD, publication #25481 revision 2.28
                     2 => {
                         println!(
                             "\tSignature: Family {}, Model {}, Stepping {}",
