@@ -585,17 +585,16 @@ pub fn dmi_processor_id(data: &SMBiosProcessorInformation<'_>) {
                             eax & 0xF
                         );
                     }
-                    // AMD
+                    // AMD, publication #25481 revision 2.28
                     2 => {
                         println!(
                             "\tSignature: Family {}, Model {}, Stepping {}",
-                            (eax >> 8)
-                                & 0xF
-                                    + match ((eax >> 8) & 0xF) == 0xF {
-                                        true => (eax >> 20) & 0xFF,
-                                        false => 0,
-                                    },
-                            (eax >> 4) & 0xF
+                            ((eax >> 8) & 0xF)
+                                + match ((eax >> 8) & 0xF) == 0xF {
+                                    true => (eax >> 20) & 0xFF,
+                                    false => 0,
+                                },
+                            ((eax >> 4) & 0xF)
                                 | match ((eax >> 8) & 0xF) == 0xF {
                                     true => (eax >> 12) & 0xF0,
                                     false => 0,
