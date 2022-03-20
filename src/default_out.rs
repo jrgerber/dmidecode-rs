@@ -1139,7 +1139,7 @@ pub fn dump_undefined_struct(
             }
             if let Some(number_of_installable_languages) = data.number_of_installable_languages() {
                 println!(
-                    "\tIntallable Languages: {}",
+                    "\tInstallable Languages: {}",
                     number_of_installable_languages
                 );
             }
