@@ -1121,7 +1121,15 @@ pub fn dmi_memory_device_size(size: MemorySize) {
             println!("Error, extended Size does not exist.")
         }
         MemorySize::Kilobytes(size_kb) => println!("{} kB", size_kb),
-        MemorySize::Megabytes(size_mb) => println!("{} MB", size_mb),
+        MemorySize::Megabytes(size_mb) => {
+            // Values should be at most 32GB - 1MB here, since that is the
+            // cutoff before the Extended Size field is used.
+            if size_mb >= 1024 {
+                println!("{} GB", size_mb / 1024);
+            } else {
+                println!("{} MB", size_mb);
+            }
+        },
     };
 }
 pub fn dmi_memory_device_form_factor(form_factor: MemoryFormFactorData) -> String {
