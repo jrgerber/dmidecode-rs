@@ -1205,18 +1205,51 @@ pub fn dmi_memory_device_type_detail(type_detail: MemoryTypeDetails) {
     } else {
         let mut vec = Vec::new();
         if type_detail.other() {
-            vec.push(OTHER)
-        } else if type_detail.unknown() {
-            vec.push(UNKNOWN)
-        } else if type_detail.fast_paged() {
-            vec.push("Fast-paged")
-        } else if type_detail.static_column() {
-            vec.push("Static Column")
-        } else if type_detail.ram_bus() {
-            vec.push("RAMBus")
-        } else if type_detail.synchronous() {
-            vec.push("Synchronous")
+            vec.push(OTHER);
         }
+        if type_detail.unknown() {
+            vec.push(UNKNOWN);
+        }
+        if type_detail.fast_paged() {
+            vec.push("Fast-paged");
+        }
+        if type_detail.static_column() {
+            vec.push("Static Column");
+        }
+        if type_detail.pseudo_static() {
+            vec.push("Pseudo-static");
+        }
+        if type_detail.ram_bus() {
+            vec.push("RAMBus");
+        }
+        if type_detail.synchronous() {
+            vec.push("Synchronous");
+        }
+        if type_detail.cmos() {
+            vec.push("CMOS");
+        }
+        if type_detail.edo() {
+            vec.push("EDO");
+        }
+        if type_detail.window_dram() {
+            vec.push("Window DRAM");
+        }
+        if type_detail.cache_dram() {
+            vec.push("Cache DRAM");
+        }
+        if type_detail.non_volatile() {
+            vec.push("Non-Volatile");
+        }
+        if type_detail.registered() {
+            vec.push("Registered (Buffered)");
+        }
+        if type_detail.unbuffered() {
+            vec.push("Unbuffered (Unregistered)");
+        }
+        if type_detail.lrdimm() {
+            vec.push("LRDIMM");
+        }
+
         if vec.len() != 0 {
             let mut iter = vec.iter();
             print!("{}", iter.next().unwrap());
