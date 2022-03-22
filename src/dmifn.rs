@@ -2035,7 +2035,7 @@ pub fn dmi_slot_segment_bus_func(
         /* 
         TODO: When no device is plugged into the slot, the DMI system slots
         structure returns 0xFF for Device Function Number, offset 10h.
-        dmidecode happliy parses this and will thus output 0000:00:1f.7 for any
+        dmidecode happily parses this and will thus output 0000:00:1f.7 for any
         slots without devices installed. We therefore do the same thing.
         */
         DeviceFunctionNumber::NotApplicable => (0x1F, 0x7),
