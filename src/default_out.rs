@@ -1141,8 +1141,14 @@ pub fn dump_undefined_struct(
                     number_of_installable_languages
                 );
             }
+            let mut langs_installed = 0;
             for installable_language in data.installable_langauges() {
+                langs_installed += 1;
                 println!("\t\t{}", installable_language);
+            }
+            // TODO: done to preserve behavior of dmidecode
+            for _ in langs_installed..data.number_of_installable_languages().unwrap_or(u8::MAX) {
+                println!("\t\t{}", "<BAD INDEX>");
             }
             if let Some(current_language) = data.current_language() {
                 println!("\tCurrently Installed Language: {}", current_language);
