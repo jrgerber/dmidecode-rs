@@ -909,31 +909,14 @@ pub fn dmi_memory_module_error(error_status: u8) {
         false => println!("{}", print),
     }
 }
-pub fn dmi_cache_size(attr: &str, size1_opt: Option<u16>, size2_opt: Option<u32>) {
-    let large_opt = match (size1_opt, size2_opt) {
-        (Some(installed_size), None) => {
-            // High bit 15 is granularity.  Make it bit 31 to match installed_cache_size_2):
-            // 0 == 1K
-            // 1 == 64K
-            let size_32 = installed_size as u32;
-            Some((size_32 & 0x8000u32 << 16) | (size_32 & 0x7FFFu32))
-        }
-        (Some(_), Some(installed_size_2)) => Some(installed_size_2),
-        _ => None,
+pub fn dmi_cache_size(attr: &str, size1_opt: Option<CacheMemorySize>, size2_opt: Option<CacheMemorySize>) {
+    let size = match (size1_opt, size2_opt) {
+        (Some(CacheMemorySize::Kilobytes(size)), _) => size,
+        (_, Some(CacheMemorySize::Kilobytes(size))) => size,
+        _ => return,
     };
 
-    if let Some(large) = large_opt {
-        // Read bit 31:
-        // 0 == 1K
-        // 1 == 64K
-        // ... then normalize to 1K units.
-        let size: u64 = match large & 0x80000000u32 == 0x80000000u32 {
-            true => (large as u64 & 0x7FFFFFFFu64) * 64u64,
-            false => large as u64,
-        };
-
-        dmi_print_memory_size(attr, size, true);
-    }
+    dmi_print_memory_size(attr, size, true);
 }
 pub fn dmi_print_memory_size(attr: &str, size: u64, shift: bool) {
     // The number 0 has no units, report it as 0 bytes.
