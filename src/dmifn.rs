@@ -912,6 +912,9 @@ pub fn dmi_memory_module_error(error_status: u8) {
 pub fn dmi_cache_size(attr: &str, size1_opt: Option<CacheMemorySize>, size2_opt: Option<CacheMemorySize>) {
     let size = match (size1_opt, size2_opt) {
         (Some(CacheMemorySize::Kilobytes(size)), _) => size,
+        // Preserve behavior of dmidecode if cache size is recorded as 0xFFFF
+        // and dmi table does not include cache size 2
+        (Some(CacheMemorySize::SeeMaximumCacheSize2), None) => 0x7FFF * 64,
         (_, Some(CacheMemorySize::Kilobytes(size))) => size,
         _ => return,
     };
