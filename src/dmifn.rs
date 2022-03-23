@@ -1532,13 +1532,13 @@ pub fn dmi_starting_ending_addresses(
         }
     };
 
-    let starting_address = match (starting, extended_starting) {
+    let (starting_address, using_ext_address) = match (starting, extended_starting) {
         (Some(address), Some(extended_address)) => match address == 0xFFFFFFFF {
-            true => Some(extended_address),
-            false => Some(address_32_kb_to_64_bytes(address)),
+            true => (Some(extended_address), true),
+            false => (Some(address_32_kb_to_64_bytes(address)), false),
         },
-        (Some(address), None) => Some(address_32_kb_to_64_bytes(address)),
-        _ => None,
+        (Some(address), None) => (Some(address_32_kb_to_64_bytes(address)), false),
+        _ => return,
     };
 
     let ending_address = match (ending, extended_ending) {
@@ -1547,16 +1547,28 @@ pub fn dmi_starting_ending_addresses(
             false => Some(address_32_kb_to_64_bytes(address)),
         },
         (Some(address), None) => Some(address_32_kb_to_64_bytes(address)),
-        _ => None,
+        _ => return,
     };
 
-    match (starting_address, ending_address) {
-        (Some(start), Some(end)) => {
-            println!("\tStarting Address: {:#018X}", start);
-            println!("\tEnding Address: {:#018X}", end);
-            dmi_mapped_address_extended_size(start, end);
+    // Dmidecode has different padding on addresses for extended addresses vs standard
+    if using_ext_address {
+        match (starting_address, ending_address) {
+            (Some(start), Some(end)) => {
+                println!("\tStarting Address: {:#018X}", start);
+                println!("\tEnding Address: {:#018X}", end);
+                dmi_mapped_address_extended_size(start, end);
+            }
+            _ => (),
         }
-        _ => (),
+    } else {
+        match (starting_address, ending_address) {
+            (Some(start), Some(end)) => {
+                println!("\tStarting Address: {:#013X}", start);
+                println!("\tEnding Address: {:#013X}", end);
+                dmi_mapped_address_extended_size(start, end);
+            }
+            _ => (),
+        }
     }
 }
 pub fn dmi_mapped_address_row_position(position: u8) {
