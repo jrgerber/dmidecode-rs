@@ -935,77 +935,43 @@ pub fn dmi_cache_size(attr: &str, size1_opt: Option<u16>, size2_opt: Option<u32>
         dmi_print_memory_size(attr, size, true);
     }
 }
-pub fn dmi_print_memory_size(attr: &str, size: u64, shift: bool) {
+fn dmi_print_helper(attr: &str, size: u64, shift: bool) -> String {
     // The number 0 has no units, report it as 0 bytes.
     if size == 0 {
-        println!("\t{}: 0 bytes", attr);
-        return;
+        return format!("\t{}: 0 bytes", attr);
     }
 
-    const U_BYTES: &str = "bytes";
-    const U_KB: &str = "kB";
-    const U_MB: &str = "MB";
-    const U_GB: &str = "GB";
-    const U_TB: &str = "TB";
-    const U_PB: &str = "PB";
-    const U_EB: &str = "EB";
-    const U_ZB: &str = "ZB";
+    const UNITS: [&str; 8] = ["bytes", "kB", "MB", "GB", "TB", "PB", "EB", "ZB"];
+    let mut bytes_buckets = [0; 7];
 
-    // Note: 0n1024 decimal is 0b0100 0000 0000 binary (a 1 with 10 zeros)
-    // byte, kb, MB, etc. are n^1024.
-    let units = match (63 - size.leading_zeros()) / 10 {
-        0 => (
-            size,
-            match shift {
-                true => U_KB,
-                false => U_BYTES,
-            },
-        ),
-        1 => (
-            size >> 10,
-            match shift {
-                true => U_MB,
-                false => U_KB,
-            },
-        ),
-        2 => (
-            size >> 20,
-            match shift {
-                true => U_GB,
-                false => U_MB,
-            },
-        ),
-        3 => (
-            size >> 30,
-            match shift {
-                true => U_TB,
-                false => U_GB,
-            },
-        ),
-        4 => (
-            size >> 40,
-            match shift {
-                true => U_PB,
-                false => U_TB,
-            },
-        ),
-        5 => (
-            size >> 50,
-            match shift {
-                true => U_EB,
-                false => U_PB,
-            },
-        ),
-        _ => (
-            size >> 60,
-            match shift {
-                true => U_ZB,
-                false => U_EB,
-            },
-        ),
+    bytes_buckets[0] = size & 0x3FF; // bytes
+    bytes_buckets[1] = (size >> 10) & 0x3FF; // kB
+    bytes_buckets[2] = (size >> 20) & 0x3FF; // MB
+    bytes_buckets[3] = (size >> 30) & 0x3FF; // GB
+    bytes_buckets[4] = (size >> 40) & 0x3FF; // TB
+    bytes_buckets[5] = (size >> 50) & 0x3FF; // PB
+    bytes_buckets[6] = (size >> 60) & 0x3FF; // EB
+
+    // Find the first bucket where we have at least one of the unit
+    let mut i = 6;
+    while bytes_buckets[i] == 0 {
+        i -= 1;
+    }
+    // If the bucket below the one we found has units, use that as our units
+    let capacity = if i > 0 && bytes_buckets[i - 1] > 0 {
+        i -= 1;
+        bytes_buckets[i] + (bytes_buckets[i + 1] << 10)
+    } else {
+        bytes_buckets[i]
     };
 
-    println!("\t{}: {} {}", attr, units.0, units.1);
+    if shift {
+        i += 1;
+    }
+    format!("\t{}: {} {}", attr, capacity, UNITS[i])
+}
+pub fn dmi_print_memory_size(attr: &str, size: u64, shift: bool) {
+    println!("{}", &dmi_print_helper(attr, size, shift));
 }
 pub fn dmi_cache_types(attr: &str, types: SramTypes, flat: bool) {
     if types.raw & 0x7F == 0 {
@@ -3072,5 +3038,30 @@ fn dmi_address_decode(data: &[u8], address_type: u8) -> String {
             IpAddr::from(addr_bytes).to_string()
         }
         _ => format!("{} ({})", OUT_OF_SPEC, address_type),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::dmifn::dmi_print_helper;
+
+    #[test]
+    pub fn test_units_formatter_happy() {
+        assert_eq!(dmi_print_helper("A", 33554432, true), "\tA: 32 GB");
+        assert_eq!(dmi_print_helper("A", 32768, true), "\tA: 32 MB");
+        assert_eq!(dmi_print_helper("A", 4096, true), "\tA: 4 MB");
+        assert_eq!(dmi_print_helper("A", 16777216, true), "\tA: 16 GB");
+        assert_eq!(dmi_print_helper("A", 134217728, true), "\tA: 128 GB");
+
+        assert_eq!(dmi_print_helper("A", 16384, false), "\tA: 16 kB");
+    }
+
+    #[test]
+    pub fn test_units_formatter_failing() {
+        // We were failing previously when the next tier of units below the most
+        // significant were nonzero. IE: 3.5GB vs 3.0GB. We would incorrectly discard
+        // the less significant units.
+        assert_eq!(dmi_print_helper("A", 3670016, true), "\tA: 3584 MB");
+        assert_eq!(dmi_print_helper("A", 29884416, true), "\tA: 29184 MB");
     }
 }
