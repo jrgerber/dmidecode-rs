@@ -226,6 +226,7 @@ impl BiosType {
             }
             dump_undefined_struct(&undefined_struct, data.version, quiet);
         }
+        println!();
     }
 }
 

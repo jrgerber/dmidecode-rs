@@ -38,6 +38,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
 
         dump_undefined_struct(&undefined_struct, smbios_data.version, quiet);
     }
+    println!();
 }
 
 pub fn dump_undefined_struct(
