@@ -62,14 +62,7 @@ fn table_load_from_sysfs() -> Result<(SMBiosData, String), Error> {
 
             writeln!(
                 &mut output,
-                "Occupying {} bytes maximum.",
-                entry_point.structure_table_maximum_size()
-            )
-            .unwrap();
-
-            writeln!(
-                &mut output,
-                "Table at: {:#010X}.",
+                "Table at {:#010X}.",
                 entry_point.structure_table_address()
             )
             .unwrap();
@@ -101,7 +94,7 @@ fn table_load_from_sysfs() -> Result<(SMBiosData, String), Error> {
 
                     writeln!(
                         &mut output,
-                        "Table at: {:#010X}.",
+                        "Table at {:#010X}.",
                         entry_point.structure_table_address()
                     )
                     .unwrap();
@@ -197,7 +190,7 @@ fn table_load_from_dev_mem(path: &Path) -> Result<(SMBiosData, String), Error> {
         }
     }
 
-    writeln!(&mut output, "Table at: {:#010X}.", structure_table_address).unwrap();
+    writeln!(&mut output, "Table at {:#010X}.", structure_table_address).unwrap();
 
     if structure_table_address + structure_table_length as u64 > RANGE_END {
         return Err(Error::new(
