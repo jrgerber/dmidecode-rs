@@ -127,9 +127,34 @@ fn table_load_from_dev_mem(path: &Path) -> Result<(SMBiosData, String), Error> {
     )
     .unwrap();
 
-    // First try 32 bit entry point
-    match SMBiosEntryPoint32::try_scan_from_file(&mut dev_mem, RANGE_START..=RANGE_END) {
+    // First try 64 bit entry point
+    match SMBiosEntryPoint64::try_scan_from_file(&mut dev_mem, RANGE_START..=RANGE_END) {
         Ok(entry_point) => {
+            structure_table_address = entry_point.structure_table_address();
+            structure_table_length = entry_point.structure_table_maximum_size();
+            version = SMBiosVersion {
+                major: entry_point.major_version(),
+                minor: entry_point.minor_version(),
+                revision: entry_point.docrev(),
+            };
+
+            writeln!(
+                &mut output,
+                "SMBIOS {}.{}.{} present.",
+                entry_point.major_version(),
+                entry_point.minor_version(),
+                entry_point.docrev()
+            )
+            .unwrap();
+        }
+        Err(error) => {
+            // UnexpectedEof means the 32 bit entry point was not found and
+            // the 64 bit entry point can be tried next.  Any other failure we report.
+            if error.kind() != ErrorKind::UnexpectedEof {
+                return Err(error);
+            }
+
+            let entry_point = SMBiosEntryPoint32::try_scan_from_file(&mut dev_mem, RANGE_START..=RANGE_END)?;
             structure_table_address = entry_point.structure_table_address() as u64;
             structure_table_length = entry_point.structure_table_length() as u32;
             version = SMBiosVersion {
@@ -151,40 +176,6 @@ fn table_load_from_dev_mem(path: &Path) -> Result<(SMBiosData, String), Error> {
                 "{} structures occupying {} bytes.",
                 entry_point.number_of_smbios_structures(),
                 entry_point.structure_table_length()
-            )
-            .unwrap();
-        }
-        Err(error) => {
-            // UnexpectedEof means the 32 bit entry point was not found and
-            // the 64 bit entry point can be tried next.  Any other failure we report.
-            if error.kind() != ErrorKind::UnexpectedEof {
-                return Err(error);
-            }
-
-            let entry_point =
-                SMBiosEntryPoint64::try_scan_from_file(&mut dev_mem, RANGE_START..=RANGE_END)?;
-
-            structure_table_address = entry_point.structure_table_address();
-            structure_table_length = entry_point.structure_table_maximum_size();
-            version = SMBiosVersion {
-                major: entry_point.major_version(),
-                minor: entry_point.minor_version(),
-                revision: entry_point.docrev(),
-            };
-
-            writeln!(
-                &mut output,
-                "SMBIOS {}.{}.{} present.",
-                entry_point.major_version(),
-                entry_point.minor_version(),
-                entry_point.docrev()
-            )
-            .unwrap();
-
-            writeln!(
-                &mut output,
-                "Occupying {} bytes maximum.",
-                entry_point.structure_table_maximum_size()
             )
             .unwrap();
         }
