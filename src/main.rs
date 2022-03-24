@@ -45,20 +45,10 @@ use structopt::StructOpt;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
 
-    if opt.has_no_args() {
-        print_dmidecode_version();
-        let smbios_data = platform::table_load(&opt)?;
-        println!("{}", smbios_data.1);
-        //println!("{:#X?}", smbios_data.0);
-        default_dump(&smbios_data.0, opt.quiet);
-        return Ok(());
-    }
-
     // Select an input source, file or device.
-    let smbios_data = if let Some(input) = opt.input {
+    let smbios_data = if let Some(path) = opt.input.as_ref() {
         let mut output = String::new();
 
-        let path = input.as_path();
         writeln!(
             &mut output,
             "Getting SMBIOS data from {}.",
@@ -75,11 +65,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Mutually exclusive output options (only one tuple element is Some()).
     match (
-        opt.keyword,
-        opt.output,
-        opt.bios_types,
-        opt.handle,
-        opt.oem_string,
+        opt.keyword.as_ref(),
+        opt.output.as_ref(),
+        opt.bios_types.as_ref(),
+        opt.handle.as_ref(),
+        opt.oem_string.as_ref(),
         opt.undefined_dump,
         opt.list,
         opt.json_pretty,
@@ -233,8 +223,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         _ => {
             print_dmidecode_version();
-            println!("{}", smbios_data.1);
-            println!("{:#X?}", smbios_data.0)
+            let smbios_data = platform::table_load(&opt)?;
+            print!("{}", smbios_data.1);
+            default_dump(&smbios_data.0, opt.quiet);
         }
     }
 
