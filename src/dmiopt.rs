@@ -368,13 +368,15 @@ impl Keyword {
 
         match self {
             Keyword::BiosVendor => data
-                .find_map(|bios_info: SMBiosInformation<'_>| bios_info.vendor())
+                .find_map(|bios_info: SMBiosInformation<'_>| bios_info.vendor().to_utf8_lossy())
                 .ok_or(BiosParseError::BiosVendorNotFound),
             Keyword::BiosVersion => data
-                .find_map(|bios_info: SMBiosInformation<'_>| bios_info.version())
+                .find_map(|bios_info: SMBiosInformation<'_>| bios_info.version().to_utf8_lossy())
                 .ok_or(BiosParseError::BiosVersionNotFound),
             Keyword::BiosReleaseDate => data
-                .find_map(|bios_info: SMBiosInformation<'_>| bios_info.release_date())
+                .find_map(|bios_info: SMBiosInformation<'_>| {
+                    bios_info.release_date().to_utf8_lossy()
+                })
                 .ok_or(BiosParseError::BiosReleaseDateNotFound),
             Keyword::BiosRevision => data
                 .find_map(|bios_info: SMBiosInformation<'_>| {
@@ -399,16 +401,24 @@ impl Keyword {
                 })
                 .ok_or(BiosParseError::FirmwareRevisionNotFound),
             Keyword::SystemManufacturer => data
-                .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.manufacturer())
+                .find_map(|system_info: SMBiosSystemInformation<'_>| {
+                    system_info.manufacturer().to_utf8_lossy()
+                })
                 .ok_or(BiosParseError::SystemManufacturerNotFound),
             Keyword::SystemProductName => data
-                .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.product_name())
+                .find_map(|system_info: SMBiosSystemInformation<'_>| {
+                    system_info.product_name().to_utf8_lossy()
+                })
                 .ok_or(BiosParseError::SystemProductNameNotFound),
             Keyword::SystemVersion => data
-                .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.version())
+                .find_map(|system_info: SMBiosSystemInformation<'_>| {
+                    system_info.version().to_utf8_lossy()
+                })
                 .ok_or(BiosParseError::SystemVersionNotFound),
             Keyword::SystemSerialNumber => data
-                .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.serial_number())
+                .find_map(|system_info: SMBiosSystemInformation<'_>| {
+                    system_info.serial_number().to_utf8_lossy()
+                })
                 .ok_or(BiosParseError::SystemSerialNumberNotFound),
             Keyword::SystemUuid => {
                 match data.find_map(|system_info: SMBiosSystemInformation<'_>| system_info.uuid()) {
@@ -418,13 +428,19 @@ impl Keyword {
                 }
             }
             Keyword::SystemSkuNumber => data
-                .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.sku_number())
+                .find_map(|system_info: SMBiosSystemInformation<'_>| {
+                    system_info.sku_number().to_utf8_lossy()
+                })
                 .ok_or(BiosParseError::SystemSkuNumberNotFound),
             Keyword::SystemFamily => data
-                .find_map(|system_info: SMBiosSystemInformation<'_>| system_info.family())
+                .find_map(|system_info: SMBiosSystemInformation<'_>| {
+                    system_info.family().to_utf8_lossy()
+                })
                 .ok_or(BiosParseError::SystemFamilyNotFound),
             Keyword::BaseboardManufacturer => data
-                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.manufacturer())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
+                    baseboard_info.manufacturer().to_utf8_lossy()
+                })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
                         if !acc.is_empty() {
@@ -437,7 +453,9 @@ impl Keyword {
                 })
                 .ok_or(BiosParseError::BaseboardManufacturerNotFound),
             Keyword::BaseboardProductName => data
-                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.product())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
+                    baseboard_info.product().to_utf8_lossy()
+                })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
                         if !acc.is_empty() {
@@ -450,7 +468,9 @@ impl Keyword {
                 })
                 .ok_or(BiosParseError::BaseboardProductNameNotFound),
             Keyword::BaseboardVersion => data
-                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.version())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
+                    baseboard_info.version().to_utf8_lossy()
+                })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
                         if !acc.is_empty() {
@@ -464,7 +484,7 @@ impl Keyword {
                 .ok_or(BiosParseError::BaseboardVersionNotFound),
             Keyword::BaseboardSerialNumber => data
                 .map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
-                    baseboard_info.serial_number()
+                    baseboard_info.serial_number().to_utf8_lossy()
                 })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
@@ -478,7 +498,9 @@ impl Keyword {
                 })
                 .ok_or(BiosParseError::BaseboardSerialNumberNotFound),
             Keyword::BaseboardAssetTag => data
-                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| baseboard_info.asset_tag())
+                .map(|baseboard_info: SMBiosBaseboardInformation<'_>| {
+                    baseboard_info.asset_tag().to_utf8_lossy()
+                })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
                         if !acc.is_empty() {
@@ -491,7 +513,9 @@ impl Keyword {
                 })
                 .ok_or(BiosParseError::BaseboardAssetTagNotFound),
             Keyword::ChassisManufacturer => data
-                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.manufacturer())
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
+                    chassis_info.manufacturer().to_utf8_lossy()
+                })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
                         if !acc.is_empty() {
@@ -517,7 +541,9 @@ impl Keyword {
                 })
                 .ok_or(BiosParseError::ChassisTypeNotFound),
             Keyword::ChassisVersion => data
-                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| chassis_info.version())
+                .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
+                    chassis_info.version().to_utf8_lossy()
+                })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
                         if !acc.is_empty() {
@@ -531,7 +557,7 @@ impl Keyword {
                 .ok_or(BiosParseError::ChassisVersionNotFound),
             Keyword::ChassisSerialNumber => data
                 .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
-                    chassis_info.serial_number()
+                    chassis_info.serial_number().to_utf8_lossy()
                 })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
@@ -546,7 +572,7 @@ impl Keyword {
                 .ok_or(BiosParseError::ChassisSerialNumberNotFound),
             Keyword::ChassisAssetTag => data
                 .map(|chassis_info: SMBiosSystemChassisInformation<'_>| {
-                    chassis_info.asset_tag_number()
+                    chassis_info.asset_tag_number().to_utf8_lossy()
                 })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
@@ -589,7 +615,7 @@ impl Keyword {
                 .ok_or(BiosParseError::ProcessorFamilyNotFound),
             Keyword::ProcessorManufacturer => data
                 .map(|processor_info: SMBiosProcessorInformation<'_>| {
-                    processor_info.processor_manufacturer()
+                    processor_info.processor_manufacturer().to_utf8_lossy()
                 })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({
@@ -604,7 +630,7 @@ impl Keyword {
                 .ok_or(BiosParseError::ProcessorManufacturerNotFound),
             Keyword::ProcessorVersion => data
                 .map(|processor_info: SMBiosProcessorInformation<'_>| {
-                    processor_info.processor_version()
+                    processor_info.processor_version().to_utf8_lossy()
                 })
                 .try_fold(String::new(), |mut acc, item| match item {
                     Some(val) => Some({

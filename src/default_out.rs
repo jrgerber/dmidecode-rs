@@ -54,13 +54,13 @@ pub fn dump_undefined_struct(
     match undefined_struct.defined_struct() {
         DefinedStruct::Information(data) => {
             println!("BIOS Information");
-            if let Some(vendor) = data.vendor() {
+            if let Some(vendor) = data.vendor().to_utf8_lossy() {
                 println!("\tVendor: {}", vendor);
             }
-            if let Some(version) = data.version() {
+            if let Some(version) = data.version().to_utf8_lossy() {
                 println!("\tVersion: {}", version);
             }
-            if let Some(release_date) = data.release_date() {
+            if let Some(release_date) = data.release_date().to_utf8_lossy() {
                 println!("\tRelease Date: {}", release_date);
             }
 
@@ -267,16 +267,16 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::SystemInformation(data) => {
             println!("System Information");
-            if let Some(manufacturer) = data.manufacturer() {
+            if let Some(manufacturer) = data.manufacturer().to_utf8_lossy() {
                 println!("\tManufacturer: {}", manufacturer);
             }
-            if let Some(product_name) = data.product_name() {
+            if let Some(product_name) = data.product_name().to_utf8_lossy() {
                 println!("\tProduct Name: {}", product_name);
             }
-            if let Some(version) = data.version() {
+            if let Some(version) = data.version().to_utf8_lossy() {
                 println!("\tVersion: {}", version);
             }
-            if let Some(serial_number) = data.serial_number() {
+            if let Some(serial_number) = data.serial_number().to_utf8_lossy() {
                 println!("\tSerial Number: {}", serial_number);
             }
             if let Some(uuid) = data.uuid() {
@@ -350,28 +350,28 @@ pub fn dump_undefined_struct(
                     }
                 }
             }
-            if let Some(sku_number) = data.sku_number() {
+            if let Some(sku_number) = data.sku_number().to_utf8_lossy() {
                 println!("\tSKU Number: {}", sku_number);
             }
-            if let Some(family) = data.family() {
+            if let Some(family) = data.family().to_utf8_lossy() {
                 println!("\tFamily: {}", family);
             }
         }
         DefinedStruct::BaseBoardInformation(data) => {
             println!("Base Board Information");
-            if let Some(manufacturer) = data.manufacturer() {
+            if let Some(manufacturer) = data.manufacturer().to_utf8_lossy() {
                 println!("\tManufacturer: {}", manufacturer);
             }
-            if let Some(product) = data.product() {
+            if let Some(product) = data.product().to_utf8_lossy() {
                 println!("\tProduct Name: {}", product);
             }
-            if let Some(version) = data.version() {
+            if let Some(version) = data.version().to_utf8_lossy() {
                 println!("\tVersion: {}", version);
             }
-            if let Some(serial_number) = data.serial_number() {
+            if let Some(serial_number) = data.serial_number().to_utf8_lossy() {
                 println!("\tSerial Number: {}", serial_number);
             }
-            if let Some(asset_tag) = data.asset_tag() {
+            if let Some(asset_tag) = data.asset_tag().to_utf8_lossy() {
                 println!("\tAsset Tag: {}", asset_tag);
             }
             if let Some(feature_flags) = data.feature_flags() {
@@ -392,7 +392,7 @@ pub fn dump_undefined_struct(
                     println!("\t\tBoard is hot swappable");
                 }
             }
-            if let Some(location_in_chassis) = data.location_in_chassis() {
+            if let Some(location_in_chassis) = data.location_in_chassis().to_utf8_lossy() {
                 println!("\tLocation In Chassis: {}", location_in_chassis);
             }
             if !quiet {
@@ -461,7 +461,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::SystemChassisInformation(data) => {
             println!("Chassis Information");
-            if let Some(manufacturer) = data.manufacturer() {
+            if let Some(manufacturer) = data.manufacturer().to_utf8_lossy() {
                 println!("\tManufacturer: {}", manufacturer);
             }
             if let Some(chassis_type) = data.chassis_type() {
@@ -519,13 +519,13 @@ pub fn dump_undefined_struct(
                     println!("Not Present");
                 }
             }
-            if let Some(version) = data.version() {
+            if let Some(version) = data.version().to_utf8_lossy() {
                 println!("\tVersion: {}", version);
             }
-            if let Some(serial_number) = data.serial_number() {
+            if let Some(serial_number) = data.serial_number().to_utf8_lossy() {
                 println!("\tSerial Number: {}", serial_number);
             }
-            if let Some(asset_tag_number) = data.asset_tag_number() {
+            if let Some(asset_tag_number) = data.asset_tag_number().to_utf8_lossy() {
                 println!("\tAsset Tag: {}", asset_tag_number);
             }
             if let Some(bootup_state) = data.bootup_state() {
@@ -632,13 +632,13 @@ pub fn dump_undefined_struct(
                     }
                 }
             }
-            if let Some(sku_number) = data.sku_number() {
+            if let Some(sku_number) = data.sku_number().to_utf8_lossy() {
                 println!("\tSKU Number: {}", sku_number);
             }
         }
         DefinedStruct::ProcessorInformation(data) => {
             println!("Processor Information");
-            if let Some(socket_designation) = data.socket_designation() {
+            if let Some(socket_designation) = data.socket_designation().to_utf8_lossy() {
                 println!("\tSocket Designation: {}", socket_designation);
             }
             if let Some(processor_type) = data.processor_type() {
@@ -659,13 +659,13 @@ pub fn dump_undefined_struct(
                     );
                 }
             }
-            if let Some(processor_manufacturer) = data.processor_manufacturer() {
+            if let Some(processor_manufacturer) = data.processor_manufacturer().to_utf8_lossy() {
                 println!("\tManufacturer: {}", processor_manufacturer);
             }
 
             dmi_processor_id(&data);
 
-            if let Some(processor_version) = data.processor_version() {
+            if let Some(processor_version) = data.processor_version().to_utf8_lossy() {
                 println!("\tVersion: {}", processor_version);
             }
             if let Some(voltage) = data.voltage() {
@@ -746,13 +746,13 @@ pub fn dump_undefined_struct(
                     dmi_processor_cache("L3 Cache Handle", handle, "L3", bios_version);
                 }
             }
-            if let Some(serial_number) = data.serial_number() {
+            if let Some(serial_number) = data.serial_number().to_utf8_lossy() {
                 println!("\tSerial Number: {}", serial_number);
             }
-            if let Some(asset_tag) = data.asset_tag() {
+            if let Some(asset_tag) = data.asset_tag().to_utf8_lossy() {
                 println!("\tAsset Tag: {}", asset_tag);
             }
-            if let Some(part_number) = data.part_number() {
+            if let Some(part_number) = data.part_number().to_utf8_lossy() {
                 println!("\tPart Number: {}", part_number);
             }
             if let Some(core_count) = data.core_count() {
@@ -868,7 +868,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::MemoryModuleInformation(data) => {
             println!("Memory Module Information");
-            if let Some(socket_designation) = data.socket_designation() {
+            if let Some(socket_designation) = data.socket_designation().to_utf8_lossy() {
                 println!("\tSocket Designation: {}", socket_designation);
             }
             if let Some(bank_connections) = data.bank_connections() {
@@ -892,7 +892,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::CacheInformation(data) => {
             println!("Cache Information");
-            if let Some(socket_designation) = data.socket_designation() {
+            if let Some(socket_designation) = data.socket_designation().to_utf8_lossy() {
                 println!("\tSocket Designation: {}", socket_designation);
             }
             if let Some(cache_configuration) = data.cache_configuration() {
@@ -966,7 +966,9 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::PortConnectorInformation(data) => {
             println!("Port Connector Information");
-            if let Some(internal_reference_designator) = data.internal_reference_designator() {
+            if let Some(internal_reference_designator) =
+                data.internal_reference_designator().to_utf8_lossy()
+            {
                 println!(
                     "\tInternal Reference Designator: {}",
                     internal_reference_designator
@@ -978,7 +980,9 @@ pub fn dump_undefined_struct(
                     dmi_port_connector_type(&internal_connector_type)
                 );
             }
-            if let Some(external_reference_designator) = data.external_reference_designator() {
+            if let Some(external_reference_designator) =
+                data.external_reference_designator().to_utf8_lossy()
+            {
                 println!(
                     "\tExternal Reference Designator: {}",
                     external_reference_designator
@@ -996,7 +1000,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::SystemSlot(data) => {
             println!("System Slot Information");
-            if let Some(slot_designation) = data.slot_designation() {
+            if let Some(slot_designation) = data.slot_designation().to_utf8_lossy() {
                 println!("\tDesignation: {}", slot_designation);
             }
             match (data.slot_data_bus_width(), data.system_slot_type()) {
@@ -1093,7 +1097,7 @@ pub fn dump_undefined_struct(
                         }
                     );
                 }
-                if let Some(description) = onboard_device.1.description() {
+                if let Some(description) = onboard_device.1.description().to_utf8_lossy() {
                     println!("\tDescription: {}", description);
                 }
             }
@@ -1141,15 +1145,15 @@ pub fn dump_undefined_struct(
                 );
             }
             for installable_language in data.installable_langauges() {
-                println!("\t\t{}", installable_language);
+                println!("\t\t{}", installable_language.to_utf8_lossy());
             }
-            if let Some(current_language) = data.current_language() {
+            if let Some(current_language) = data.current_language().to_utf8_lossy() {
                 println!("\tCurrently Installed Language: {}", current_language);
             }
         }
         DefinedStruct::GroupAssociations(data) => {
             println!("Group Associations");
-            if let Some(group_name) = data.group_name() {
+            if let Some(group_name) = data.group_name().to_utf8_lossy() {
                 println!("\tName: {}", group_name);
             }
             if let Some(number_of_items) = data.number_of_items() {
@@ -1351,10 +1355,10 @@ pub fn dump_undefined_struct(
             if let Some(device_set) = data.device_set() {
                 dmi_memory_device_set(device_set);
             }
-            if let Some(device_locator) = data.device_locator() {
+            if let Some(device_locator) = data.device_locator().to_utf8_lossy() {
                 println!("\tLocator: {}", device_locator);
             }
-            if let Some(bank_locator) = data.bank_locator() {
+            if let Some(bank_locator) = data.bank_locator().to_utf8_lossy() {
                 println!("\tBank Locator: {}", bank_locator);
             }
             if let Some(memory_type) = data.memory_type() {
@@ -1366,18 +1370,18 @@ pub fn dump_undefined_struct(
             // If a module is present, the remaining fields are relevant
             if module_present {
                 dmi_memory_device_speed("Speed", data.speed(), data.extended_speed());
-                if let Some(manufacturer) = data.manufacturer() {
+                if let Some(manufacturer) = data.manufacturer().to_utf8_lossy() {
                     println!("\tManufacturer: {}", manufacturer);
                 }
-                if let Some(serial_number) = data.serial_number() {
+                if let Some(serial_number) = data.serial_number().to_utf8_lossy() {
                     println!("\tSerial Number: {}", serial_number);
                 }
-                if let Some(asset_tag) = data.asset_tag() {
+                if let Some(asset_tag) = data.asset_tag().to_utf8_lossy() {
                     println!("\tAsset Tag: {}", asset_tag);
                 } else {
                     println!("\tAsset Tag: {}", "Not Specified");
                 }
-                if let Some(part_number) = data.part_number() {
+                if let Some(part_number) = data.part_number().to_utf8_lossy() {
                     println!("\tPart Number: {}", part_number);
                 }
                 if let Some(attributes) = data.attributes() {
@@ -1409,7 +1413,7 @@ pub fn dump_undefined_struct(
                 {
                     dmi_memory_operating_mode_capability(memory_operating_mode_capability);
                 }
-                if let Some(firmware_version) = data.firmware_version() {
+                if let Some(firmware_version) = data.firmware_version().to_utf8_lossy() {
                     println!("\tFirmware Version: {}", firmware_version);
                 }
                 if let Some(module_manufacturer_id) = data.module_manufacturer_id() {
@@ -1544,19 +1548,19 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::PortableBattery(data) => {
             println!("Portable Battery");
-            if let Some(location) = data.location() {
+            if let Some(location) = data.location().to_utf8_lossy() {
                 println!("\tLocation: {}", location);
             }
-            if let Some(manufacturer) = data.manufacturer() {
+            if let Some(manufacturer) = data.manufacturer().to_utf8_lossy() {
                 println!("\tManufacturer: {}", manufacturer);
             }
-            if let Some(manufacture_date) = data.manufacture_date() {
+            if let Some(manufacture_date) = data.manufacture_date().to_utf8_lossy() {
                 println!("Manufacture Date: {}", manufacture_date);
             }
-            if let Some(serial_number) = data.serial_number() {
+            if let Some(serial_number) = data.serial_number().to_utf8_lossy() {
                 println!("\tSerial Number: {}", serial_number);
             }
-            if let Some(device_name) = data.device_name() {
+            if let Some(device_name) = data.device_name().to_utf8_lossy() {
                 println!("\tName: {}", device_name);
             }
             if let Some(device_chemistry) = data.device_chemistry() {
@@ -1572,7 +1576,7 @@ pub fn dump_undefined_struct(
             if let Some(design_voltage) = data.design_voltage() {
                 dmi_battery_voltage(&design_voltage);
             }
-            if let Some(sbds_version_number) = data.sbds_version_number() {
+            if let Some(sbds_version_number) = data.sbds_version_number().to_utf8_lossy() {
                 println!("\tSBDS Version: {}", sbds_version_number);
             }
             if let Some(maximum_error_in_battery_data) = data.maximum_error_in_battery_data() {
@@ -1589,7 +1593,7 @@ pub fn dump_undefined_struct(
                     sbds_manufacture_date & 0x1F
                 );
             }
-            if let Some(sbds_device_chemistry) = data.sbds_device_chemistry() {
+            if let Some(sbds_device_chemistry) = data.sbds_device_chemistry().to_utf8_lossy() {
                 println!("\tSBDS Chemistry: {}", sbds_device_chemistry);
             }
             if let Some(oem_specific) = data.oem_specific() {
@@ -1738,7 +1742,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::VoltageProbe(data) => {
             println!("Voltage Probe");
-            if let Some(description) = data.description() {
+            if let Some(description) = data.description().to_utf8_lossy() {
                 println!("\tDescription: {}", description);
             }
             if let Some(location_and_status) = data.location_and_status() {
@@ -1802,13 +1806,13 @@ pub fn dump_undefined_struct(
             if let Some(nominal_speed) = data.nominal_speed() {
                 dmi_cooling_device_speed(&nominal_speed);
             }
-            if let Some(description) = data.description() {
+            if let Some(description) = data.description().to_utf8_lossy() {
                 println!("\tDescription: {}", description);
             }
         }
         DefinedStruct::TemperatureProbe(data) => {
             println!("Temperature Probe");
-            if let Some(description) = data.description() {
+            if let Some(description) = data.description().to_utf8_lossy() {
                 println!("\tDescription: {}", description);
             }
             if let Some(location_and_status) = data.location_and_status() {
@@ -1845,7 +1849,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::ElectricalCurrentProbe(data) => {
             println!("Electrical Current Probe");
-            if let Some(description) = data.description() {
+            if let Some(description) = data.description().to_utf8_lossy() {
                 println!("\tDescription: {}", description);
             }
             if let Some(location_and_status) = data.location_and_status() {
@@ -1882,7 +1886,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::OutOfBandRemoteAccess(data) => {
             println!("Out-of-band Remote Access");
-            if let Some(manufacturer_name) = data.manufacturer_name() {
+            if let Some(manufacturer_name) = data.manufacturer_name().to_utf8_lossy() {
                 println!("\tManufacturer Name: {}", manufacturer_name);
             }
             if let Some(connections) = data.connections() {
@@ -1971,7 +1975,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::ManagementDevice(data) => {
             println!("Management Device");
-            if let Some(description) = data.description() {
+            if let Some(description) = data.description().to_utf8_lossy() {
                 println!("\tDescription: {}", description);
             }
             if let Some(device_type) = data.device_type() {
@@ -1989,7 +1993,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::ManagementDeviceComponent(data) => {
             println!("Management Device Component");
-            if let Some(description) = data.description() {
+            if let Some(description) = data.description().to_utf8_lossy() {
                 println!("\tDescription: {}", description);
             }
             if !quiet {
@@ -2140,25 +2144,25 @@ pub fn dump_undefined_struct(
             if let Some(power_unit_group) = data.power_unit_group() {
                 println!("\tPower Unit Group: {}", power_unit_group);
             }
-            if let Some(location) = data.location() {
+            if let Some(location) = data.location().to_utf8_lossy() {
                 println!("\tLocation: {}", location);
             }
-            if let Some(device_name) = data.device_name() {
+            if let Some(device_name) = data.device_name().to_utf8_lossy() {
                 println!("\tName: {}", device_name);
             }
-            if let Some(manufacturer) = data.manufacturer() {
+            if let Some(manufacturer) = data.manufacturer().to_utf8_lossy() {
                 println!("\tManufacturer: {}", manufacturer);
             }
-            if let Some(serial_number) = data.serial_number() {
+            if let Some(serial_number) = data.serial_number().to_utf8_lossy() {
                 println!("\tSerial Number: {}", serial_number);
             }
-            if let Some(asset_tag_number) = data.asset_tag_number() {
+            if let Some(asset_tag_number) = data.asset_tag_number().to_utf8_lossy() {
                 println!("\tAsset Tag: {}", asset_tag_number);
             }
-            if let Some(model_part_number) = data.model_part_number() {
+            if let Some(model_part_number) = data.model_part_number().to_utf8_lossy() {
                 println!("\tModel Part Number: {}", model_part_number);
             }
-            if let Some(revision_level) = data.revision_level() {
+            if let Some(revision_level) = data.revision_level().to_utf8_lossy() {
                 println!("\tRevision: {}", revision_level);
             }
             if let Some(max_power_capacity) = data.max_power_capacity() {
@@ -2234,7 +2238,7 @@ pub fn dump_undefined_struct(
                     if let Some(referenced_offset) = entry.1.referenced_offset() {
                         println!("\tReferenced Offset: {:#04x}", referenced_offset);
                     }
-                    if let Some(string) = entry.1.string() {
+                    if let Some(string) = entry.1.string().to_utf8_lossy() {
                         println!("\tString: {}", string);
                     }
                     if let Some(value) = entry.1.value() {
@@ -2257,7 +2261,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::OnboardDevicesExtendedInformation(data) => {
             println!("Onboard Device");
-            if let Some(reference_designation) = data.reference_designation() {
+            if let Some(reference_designation) = data.reference_designation().to_utf8_lossy() {
                 println!("\tReference Designation: {}", reference_designation);
             }
             if let Some(device_type) = data.device_type() {
@@ -2363,7 +2367,7 @@ pub fn dump_undefined_struct(
                 }
                 _ => (),
             }
-            if let Some(description) = data.description() {
+            if let Some(description) = data.description().to_utf8_lossy() {
                 println!("\tDescription: {}", description);
             }
             if let Some(characteristics) = data.characteristics() {
@@ -2377,6 +2381,8 @@ pub fn dump_undefined_struct(
         DefinedStruct::ProcessorAdditionalInformation(_) => {
             println!("Processor Additional Information");
         }
+        DefinedStruct::FirmwareInventoryInformation(_) => (),
+        DefinedStruct::StringProperty(_) => (),
         DefinedStruct::Inactive(_) => {
             println!("Inactive");
         }

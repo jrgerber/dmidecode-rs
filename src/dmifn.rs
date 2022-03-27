@@ -378,6 +378,7 @@ pub fn dmi_processor_upgrade(processor_upgrade: ProcessorUpgradeData) -> String 
         ProcessorUpgrade::SocketBGA1528 => "Socket BGA1528",
         ProcessorUpgrade::SocketLGA4189 => "Socket LGA4189",
         ProcessorUpgrade::SocketLGA1200 => "Socket LGA1200",
+        ProcessorUpgrade::SocketLGA4677 => "Socket LGA4677",
         ProcessorUpgrade::None => "",
     };
     match print == "" {
@@ -537,7 +538,7 @@ pub fn dmi_processor_id(data: &SMBiosProcessorInformation<'_>) {
                 // support the CPUID instruction.
                 else if family.0 == ProcessorFamily::Other || family.0 == ProcessorFamily::Unknown
                 {
-                    if let Some(version) = data.processor_version() {
+                    if let Some(version) = data.processor_version().to_utf8_lossy() {
                         match version.as_str() {
                             "Pentium III MMX" => {
                                 sig = 1;
@@ -1129,7 +1130,7 @@ pub fn dmi_memory_device_size(size: MemorySize) {
             } else {
                 println!("{} MB", size_mb);
             }
-        },
+        }
     };
 }
 pub fn dmi_memory_device_form_factor(form_factor: MemoryFormFactorData) -> String {
@@ -2072,8 +2073,8 @@ pub fn dmi_slot_segment_bus_func(
         SegmentGroupNumber::NotApplicable => return,
     };
     let (device, function) = match device_function_number {
-        DeviceFunctionNumber::Number{device, function} => (*device, *function),
-        /* 
+        DeviceFunctionNumber::Number { device, function } => (*device, *function),
+        /*
         TODO: When no device is plugged into the slot, the DMI system slots
         structure returns 0xFF for Device Function Number, offset 10h.
         dmidecode happily parses this and will thus output 0000:00:1f.7 for any
@@ -2101,6 +2102,12 @@ pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
         TypeOfDevice::PataController => "PATA Controller",
         TypeOfDevice::SataController => "SATA Controller",
         TypeOfDevice::SasController => "SAS Controller",
+        TypeOfDevice::WirelessLan => "Wireless LAN",
+        TypeOfDevice::Bluetooth => "Bluetooth",
+        TypeOfDevice::Wwan => "WWAN",
+        TypeOfDevice::Emmc => "eMMC (embedded Milti-Media Controller)",
+        TypeOfDevice::NvmeController => "NVMe Controller",
+        TypeOfDevice::UfsController => "UFS Controller",
         TypeOfDevice::None => "",
     };
     match print == "" {
@@ -2260,6 +2267,8 @@ pub fn dmi_pointing_device_interface(interface: &PointingDeviceInterfaceData) ->
         PointingDeviceInterface::BusMouseDB9 => "Bus Mouse DB-9",
         PointingDeviceInterface::BusMouseMicroDin => "Bus Mouse Micro DIN",
         PointingDeviceInterface::USB => "USB",
+        PointingDeviceInterface::I2C => "I2C",
+        PointingDeviceInterface::SPI => "SPI",
         PointingDeviceInterface::None => "",
     };
     match print == "" {
