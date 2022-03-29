@@ -2106,7 +2106,7 @@ pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
         TypeOfDevice::WirelessLan => "Wireless LAN",
         TypeOfDevice::Bluetooth => "Bluetooth",
         TypeOfDevice::Wwan => "WWAN",
-        TypeOfDevice::Emmc => "eMMC (embedded Milti-Media Controller)",
+        TypeOfDevice::Emmc => "eMMC (embedded Multi-Media Controller)",
         TypeOfDevice::NvmeController => "NVMe Controller",
         TypeOfDevice::UfsController => "UFS Controller",
         TypeOfDevice::None => "",
