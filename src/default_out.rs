@@ -87,6 +87,7 @@ pub fn dump_undefined_struct(
 
             let rom_size = data.extended_rom_size().or(data.rom_size());
             if let Some(rom_size) = rom_size {
+                print!("\tROM Size: ");
                 match rom_size {
                     RomSize::Kilobytes(size) => println!("{} {}", size, KB),
                     RomSize::Megabytes(size) => println!("{} {}", size, MB),
