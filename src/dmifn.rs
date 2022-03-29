@@ -915,25 +915,13 @@ pub fn dmi_cache_size(
     size1_opt: Option<CacheMemorySize>,
     size2_opt: Option<CacheMemorySize>,
 ) {
-    let kb_opt = match (size1_opt, size2_opt) {
-        (None, None) => None,
-        (None, Some(size)) => match size {
+    if let Some(kb) = match size2_opt.or(size1_opt) {
+        Some(size) => match size {
             CacheMemorySize::Kilobytes(kb) => Some(kb),
             CacheMemorySize::SeeCacheSize2 => None,
         },
-        (Some(size), None) => match size {
-            CacheMemorySize::Kilobytes(kb) => Some(kb),
-            CacheMemorySize::SeeCacheSize2 => None,
-        },
-        (Some(size1), Some(size2)) => match (size1, size2) {
-            (CacheMemorySize::Kilobytes(_), CacheMemorySize::Kilobytes(kb2)) => Some(kb2),
-            (CacheMemorySize::Kilobytes(kb), CacheMemorySize::SeeCacheSize2) => Some(kb),
-            (CacheMemorySize::SeeCacheSize2, CacheMemorySize::Kilobytes(kb)) => Some(kb),
-            (CacheMemorySize::SeeCacheSize2, CacheMemorySize::SeeCacheSize2) => None,
-        },
-    };
-
-    if let Some(kb) = kb_opt {
+        None => None,
+    } {
         dmi_print_memory_size(attr, kb, true);
     }
 }
