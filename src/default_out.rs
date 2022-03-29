@@ -85,24 +85,15 @@ pub fn dump_undefined_struct(
                 }
             }
 
-            if let Some(rom_size) = data.rom_size() {
-                if rom_size != 0xFF {
-                    println!("\tROM Size: {} {}", ((rom_size + 1) as u64) << 6, KB);
-                } else {
-                    if let Some(extended_rom_size) = data.extended_rom_size() {
-                        print!("\tROM Size: ");
-                        match extended_rom_size {
-                            ExtendedRomSize::Megabytes(size) => {
-                                println!("{} {}", size, MB);
-                            }
-                            ExtendedRomSize::Gigabytes(size) => {
-                                println!("{} {}", size, GB);
-                            }
-                            ExtendedRomSize::Undefined(size) => {
-                                println!("{} ({})", OUT_OF_SPEC, size);
-                            }
-                        }
-                    }
+            let rom_size = data.extended_rom_size().or(data.rom_size());
+            if let Some(rom_size) = rom_size {
+                match rom_size {
+                    RomSize::Kilobytes(size) => println!("{} {}", size, KB),
+                    RomSize::Megabytes(size) => println!("{} {}", size, MB),
+                    RomSize::Gigabytes(size) => println!("{} {}", size, GB),
+                    RomSize::Undefined(data) => println!("{} ({})", OUT_OF_SPEC, data),
+                    // Spec < 3.1.0
+                    RomSize::SeeExtendedRomSize => println!("{} {}", 16, MB),
                 }
             }
 
