@@ -378,6 +378,7 @@ pub fn dmi_processor_upgrade(processor_upgrade: ProcessorUpgradeData) -> String 
         ProcessorUpgrade::SocketBGA1528 => "Socket BGA1528",
         ProcessorUpgrade::SocketLGA4189 => "Socket LGA4189",
         ProcessorUpgrade::SocketLGA1200 => "Socket LGA1200",
+        ProcessorUpgrade::SocketLGA4677 => "Socket LGA4677",
         ProcessorUpgrade::None => "",
     };
     match print == "" {
@@ -537,7 +538,7 @@ pub fn dmi_processor_id(data: &SMBiosProcessorInformation<'_>) {
                 // support the CPUID instruction.
                 else if family.0 == ProcessorFamily::Other || family.0 == ProcessorFamily::Unknown
                 {
-                    if let Some(version) = data.processor_version() {
+                    if let Some(version) = data.processor_version().to_utf8_lossy() {
                         match version.as_str() {
                             "Pentium III MMX" => {
                                 sig = 1;
@@ -909,30 +910,19 @@ pub fn dmi_memory_module_error(error_status: u8) {
         false => println!("{}", print),
     }
 }
-pub fn dmi_cache_size(attr: &str, size1_opt: Option<u16>, size2_opt: Option<u32>) {
-    let large_opt = match (size1_opt, size2_opt) {
-        (Some(installed_size), None) => {
-            // High bit 15 is granularity.  Make it bit 31 to match installed_cache_size_2):
-            // 0 == 1K
-            // 1 == 64K
-            let size_32 = installed_size as u32;
-            Some((size_32 & 0x8000u32 << 16) | (size_32 & 0x7FFFu32))
-        }
-        (Some(_), Some(installed_size_2)) => Some(installed_size_2),
-        _ => None,
-    };
-
-    if let Some(large) = large_opt {
-        // Read bit 31:
-        // 0 == 1K
-        // 1 == 64K
-        // ... then normalize to 1K units.
-        let size: u64 = match large & 0x80000000u32 == 0x80000000u32 {
-            true => (large as u64 & 0x7FFFFFFFu64) * 64u64,
-            false => large as u64,
-        };
-
-        dmi_print_memory_size(attr, size, true);
+pub fn dmi_cache_size(
+    attr: &str,
+    size1_opt: Option<CacheMemorySize>,
+    size2_opt: Option<CacheMemorySize>,
+) {
+    if let Some(kb) = match size2_opt.or(size1_opt) {
+        Some(size) => match size {
+            CacheMemorySize::Kilobytes(kb) => Some(kb),
+            CacheMemorySize::SeeCacheSize2 => None,
+        },
+        None => None,
+    } {
+        dmi_print_memory_size(attr, kb, true);
     }
 }
 fn dmi_print_helper(attr: &str, size: u64, shift: bool) -> String {
@@ -1095,7 +1085,7 @@ pub fn dmi_memory_device_size(size: MemorySize) {
             } else {
                 println!("{} MB", size_mb);
             }
-        },
+        }
     };
 }
 pub fn dmi_memory_device_form_factor(form_factor: MemoryFormFactorData) -> String {
@@ -2050,8 +2040,8 @@ pub fn dmi_slot_segment_bus_func(
         SegmentGroupNumber::NotApplicable => return,
     };
     let (device, function) = match device_function_number {
-        DeviceFunctionNumber::Number{device, function} => (*device, *function),
-        /* 
+        DeviceFunctionNumber::Number { device, function } => (*device, *function),
+        /*
         TODO: When no device is plugged into the slot, the DMI system slots
         structure returns 0xFF for Device Function Number, offset 10h.
         dmidecode happily parses this and will thus output 0000:00:1f.7 for any
@@ -2079,6 +2069,12 @@ pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
         TypeOfDevice::PataController => "PATA Controller",
         TypeOfDevice::SataController => "SATA Controller",
         TypeOfDevice::SasController => "SAS Controller",
+        TypeOfDevice::WirelessLan => "Wireless LAN",
+        TypeOfDevice::Bluetooth => "Bluetooth",
+        TypeOfDevice::Wwan => "WWAN",
+        TypeOfDevice::Emmc => "eMMC (embedded Multi-Media Controller)",
+        TypeOfDevice::NvmeController => "NVMe Controller",
+        TypeOfDevice::UfsController => "UFS Controller",
         TypeOfDevice::None => "",
     };
     match print == "" {
@@ -2238,6 +2234,8 @@ pub fn dmi_pointing_device_interface(interface: &PointingDeviceInterfaceData) ->
         PointingDeviceInterface::BusMouseDB9 => "Bus Mouse DB-9",
         PointingDeviceInterface::BusMouseMicroDin => "Bus Mouse Micro DIN",
         PointingDeviceInterface::USB => "USB",
+        PointingDeviceInterface::I2C => "I2C",
+        PointingDeviceInterface::SPI => "SPI",
         PointingDeviceInterface::None => "",
     };
     match print == "" {
