@@ -929,7 +929,6 @@ pub fn dump_undefined_struct(
                 );
             }
             dmi_cache_size(
-                // TODO: fix dmi_cache_size logic for the new CacheMemorySize enum
                 "Installed Size",
                 data.installed_size(),
                 data.installed_cache_size_2(),
@@ -1106,7 +1105,11 @@ pub fn dump_undefined_struct(
         DefinedStruct::OemStrings(data) => {
             println!("OEM Strings");
             for oem_string in data.oem_strings().into_iter().enumerate() {
-                println!("\tString {}: {}", oem_string.0 + 1, oem_string.1); // TODO: SMBiosString contains errors that are impossible from this loop, confusing API
+                println!(
+                    "\tString {}: {}",
+                    oem_string.0 + 1,
+                    oem_string.1.to_utf8_lossy().unwrap_or_default(),
+                );
             }
         }
         DefinedStruct::SystemConfigurationOptions(data) => {
@@ -1115,7 +1118,7 @@ pub fn dump_undefined_struct(
                 println!(
                     "\tOption {}: {}",
                     configuration_option.0 + 1,
-                    configuration_option.1 // TODO: SMBiosString contains errors that are impossible from this loop, confusing API
+                    configuration_option.1.to_utf8_lossy().unwrap_or_default(),
                 );
             }
         }
@@ -1146,7 +1149,10 @@ pub fn dump_undefined_struct(
                 );
             }
             for installable_language in data.installable_langauges() {
-                println!("\t\t{}", installable_language); // TODO: SMBiosString contains errors that are impossible from this loop, confusing API
+                println!(
+                    "\t\t{}",
+                    installable_language.to_utf8_lossy().unwrap_or_default(),
+                );
             }
             if let Some(current_language) = data.current_language().to_utf8_lossy() {
                 println!("\tCurrently Installed Language: {}", current_language);

@@ -141,7 +141,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match smbios_data.0.first::<SMBiosOemStrings<'_>>() {
                 Some(v) => {
                     match v.oem_strings().get_string(index).to_utf8_lossy() {
-                        // confusing error, to_utf8_lossy exists by auto-complete but says doesn't exist
                         Some(s) => println!("{}", s),
                         None => {
                             if index != 0 {
