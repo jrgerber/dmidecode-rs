@@ -140,7 +140,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
             match smbios_data.0.first::<SMBiosOemStrings<'_>>() {
                 Some(v) => {
-                    match v.oem_strings().get_string(index) {
+                    match v.oem_strings().get_string(index).to_utf8_lossy() {
                         Some(s) => println!("{}", s),
                         None => {
                             if index != 0 {
