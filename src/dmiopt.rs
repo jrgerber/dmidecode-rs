@@ -210,7 +210,7 @@ impl BiosType {
     // We could make this return something, or, could create a type as a collection containing Vec<BiosType> and
     // then implement methods for that type to perform more advanced I/O via state.
     // More than likely the style of output will be desirable to change (verbose, debug, JSON, etc).
-    pub fn parse_and_display(types: Vec<BiosType>, data: &SMBiosData, quiet: bool) {
+    pub fn parse_and_display(types: &[BiosType], data: &SMBiosData, quiet: bool) {
         let unique_types: HashSet<u8> = types
             .iter()
             .flat_map(|bios_type| bios_type.into_iter())
@@ -226,6 +226,7 @@ impl BiosType {
             }
             dump_undefined_struct(&undefined_struct, data.version, quiet);
         }
+        println!();
     }
 }
 

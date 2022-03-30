@@ -38,6 +38,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
 
         dump_undefined_struct(&undefined_struct, smbios_data.version, quiet);
     }
+    println!();
 }
 
 pub fn dump_undefined_struct(
@@ -298,7 +299,7 @@ pub fn dump_undefined_struct(
                         if let Some(version) = bios_version {
                             if version < two_six_version {
                                 let p = val.raw;
-                                println!("{:02X}{:02X}{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}", 
+                                println!("{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}", 
                                     p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
                             } else {
                                 println!("{}", val);
@@ -1140,13 +1141,18 @@ pub fn dump_undefined_struct(
                     number_of_installable_languages
                 );
             }
+            let mut langs_installed = 0;
             for installable_language in data.installable_langauges() {
+                langs_installed += 1;
                 println!(
                     "\t\t{}",
                     dmidecode_string_val(&installable_language).unwrap_or_default()
                 );
             }
-            
+            // TODO: done to preserve behavior of dmidecode
+            for _ in langs_installed..data.number_of_installable_languages().unwrap_or(u8::MAX) {
+                println!("\t\t{}", "<BAD INDEX>");
+            }
             if let Some(current_language) = dmidecode_string_val(&data.current_language()) {
                 println!("\tCurrently Installed Language: {}", current_language);
             }
