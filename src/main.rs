@@ -19,6 +19,7 @@ use enum_iterator::IntoEnumIterator;
 use smbioslib::*;
 use std::fmt::Write;
 use structopt::StructOpt;
+use libc;
 
 /* The original DMI decode command line:
 
@@ -43,6 +44,9 @@ use structopt::StructOpt;
 */
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
     let opt: Opt = Opt::from_args();
 
     // Select an input source, file or device.
