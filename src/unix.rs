@@ -154,7 +154,8 @@ fn table_load_from_dev_mem(path: &Path) -> Result<(SMBiosData, String), Error> {
                 return Err(error);
             }
 
-            let entry_point = SMBiosEntryPoint32::try_scan_from_file(&mut dev_mem, RANGE_START..=RANGE_END)?;
+            let entry_point =
+                SMBiosEntryPoint32::try_scan_from_file(&mut dev_mem, RANGE_START..=RANGE_END)?;
             structure_table_address = entry_point.structure_table_address() as u64;
             structure_table_length = entry_point.structure_table_length() as u32;
             version = SMBiosVersion {

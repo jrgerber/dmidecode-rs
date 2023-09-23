@@ -293,6 +293,7 @@ pub fn dmi_processor_family(processor_family: ProcessorFamily, raw: u16) -> Stri
         ProcessorFamily::SeeProcessorFamily2 => "See Processor Family #2",
         ProcessorFamily::ARMv7 => "ARMv7",
         ProcessorFamily::ARMv8 => "ARMv8",
+        ProcessorFamily::ARMv9 => "ARMv9",
         ProcessorFamily::SH3 => "SH-3",
         ProcessorFamily::SH4 => "SH-4",
         ProcessorFamily::ARM => "ARM",
@@ -306,6 +307,37 @@ pub fn dmi_processor_family(processor_family: ProcessorFamily, raw: u16) -> Stri
         ProcessorFamily::RISCVRV32 => "RV32",
         ProcessorFamily::RISCVRV64 => "RV64",
         ProcessorFamily::RISCVRV128 => "RV128",
+        ProcessorFamily::LoongArch => "LoongArch",
+        ProcessorFamily::Longsoon1ProcessorFamily => "Loongson 1 Processor Family",
+        ProcessorFamily::Longsoon2ProcessorFamily => "Loongson 2 Processor Family",
+        ProcessorFamily::Longsoon3ProcessorFamily => "Loongson 3 Processor Family",
+        ProcessorFamily::Longsoon2KProcessorFamily => "Loongson 2K Processor Family",
+        ProcessorFamily::Longsoon3AProcessorFamily => "Loongson 3A Processor Family",
+        ProcessorFamily::Longsoon3BProcessorFamily => "Loongson 3B Processor Family",
+        ProcessorFamily::Longsoon3CProcessorFamily => "Loongson 3C Processor Family",
+        ProcessorFamily::Longsoon3DProcessorFamily => "Loongson 3D Processor Family",
+        ProcessorFamily::Longsoon3EProcessorFamily => "Loongson 3E Processor Family",
+        ProcessorFamily::DualCoreLoongson2KProcessor2xxxSeries => {
+            "Dual-Core Loongson 2K Processor 2xxx Series"
+        }
+        ProcessorFamily::QuadCoreLoongson3AProcessor5xxxSeries => {
+            "Quad-Core Loongson 3A Processor 5xxx Series"
+        }
+        ProcessorFamily::MultiCoreLoongson3AProcessor5xxxSeries => {
+            "Multi-Core Loongson 3A Processor 5xxx Series"
+        }
+        ProcessorFamily::QuadCoreLoongson3BProcessor5xxxSeries => {
+            "Quad-Core Loongson 3B Processor 5xxx Series"
+        }
+        ProcessorFamily::MultiCoreLoongson3BProcessor5xxxSeries => {
+            "Multi-Core Loongson 3B Processor 5xxx Series"
+        }
+        ProcessorFamily::MultiCoreLoongson3CProcessor5xxxSeries => {
+            "Multi-Core Loongson 3C Processor 5xxx Series"
+        }
+        ProcessorFamily::MultiCoreLoongson3DProcessor5xxxSeries => {
+            "Multi-Core Loongson 3D Processor 5xxx Series"
+        }
         ProcessorFamily::None => "",
     };
     match print == "" {
@@ -379,6 +411,23 @@ pub fn dmi_processor_upgrade(processor_upgrade: ProcessorUpgradeData) -> String 
         ProcessorUpgrade::SocketLGA4189 => "Socket LGA4189",
         ProcessorUpgrade::SocketLGA1200 => "Socket LGA1200",
         ProcessorUpgrade::SocketLGA4677 => "Socket LGA4677",
+        ProcessorUpgrade::SocketLGA1700 => "Socket LGA1700",
+        ProcessorUpgrade::SocketBGA1744 => "Socket BGA1744",
+        ProcessorUpgrade::SocketBGA1781 => "Socket BGA1781",
+        ProcessorUpgrade::SocketBGA1211 => "Socket BGA1211",
+        ProcessorUpgrade::SocketBGA2422 => "Socket BGA2422",
+        ProcessorUpgrade::SocketLGA1211 => "Socket LGA1211",
+        ProcessorUpgrade::SocketLGA2422 => "Socket LGA2422",
+        ProcessorUpgrade::SocketLGA5773 => "Socket LGA5773",
+        ProcessorUpgrade::SocketBGA5773 => "Socket BGA5773",
+        ProcessorUpgrade::SocketAM5 => "Socket AM5",
+        ProcessorUpgrade::SocketSP5 => "Socket SP5",
+        ProcessorUpgrade::SocketSP6 => "Socket SP6",
+        ProcessorUpgrade::SocketBGA883 => "Socket BGA883",
+        ProcessorUpgrade::SocketBGA1190 => "Socket BGA1190",
+        ProcessorUpgrade::SocketBGA4129 => "Socket BGA4129",
+        ProcessorUpgrade::SocketLGA4710 => "Socket LGA4710",
+        ProcessorUpgrade::SocketLGA7529 => "Socket LGA7529",
         ProcessorUpgrade::None => "",
     };
     match print == "" {
@@ -1155,6 +1204,7 @@ pub fn dmi_memory_device_type(memory_type: MemoryDeviceTypeData) -> String {
         MemoryDeviceType::Hbm2 => "HBM2",
         MemoryDeviceType::Ddr5 => "DDR5",
         MemoryDeviceType::Lpddr5 => "LPDDR5",
+        MemoryDeviceType::Hbm3 => "HBM3",
         MemoryDeviceType::None => "",
     };
     match print == "" {
