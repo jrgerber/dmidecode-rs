@@ -1,6 +1,6 @@
 use crate::default_out::dump_undefined_struct;
 use crate::error::BiosParseError;
-use enum_iterator::IntoEnumIterator;
+use enum_iterator::Sequence;
 use smbioslib::*;
 use std::{
     collections::HashSet,
@@ -119,6 +119,7 @@ pub struct Opt {
 }
 
 impl Opt {
+    #[allow(unused)]
     pub fn has_no_args(&self) -> bool {
         self.keyword.is_none()
             && self.input.is_none()
@@ -132,11 +133,6 @@ impl Opt {
             && !self.json_pretty
             && !self.json
     }
-}
-
-/// Prints the dmidecode version to stdout
-pub fn print_dmidecode_version() {
-    println!("# {} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -210,6 +206,7 @@ impl BiosType {
     // We could make this return something, or, could create a type as a collection containing Vec<BiosType> and
     // then implement methods for that type to perform more advanced I/O via state.
     // More than likely the style of output will be desirable to change (verbose, debug, JSON, etc).
+    #[allow(unused)]
     pub fn parse_and_display(types: &[BiosType], data: &SMBiosData, quiet: bool) {
         let unique_types: HashSet<u8> = types
             .iter()
@@ -230,7 +227,7 @@ impl BiosType {
     }
 }
 
-#[derive(Debug, StructOpt, IntoEnumIterator)]
+#[derive(Debug, StructOpt, Sequence)]
 pub enum Keyword {
     BiosVendor,
     BiosVersion,
@@ -357,6 +354,7 @@ impl Display for Keyword {
 }
 
 impl Keyword {
+    #[allow(unused)]
     pub fn parse(&self, data: &SMBiosData) -> Result<String, BiosParseError> {
         // Note: Some structures are single instance and some can be multi-instance.
         // Therefore, multiple strings may be returned in some cases.
@@ -669,7 +667,10 @@ impl Keyword {
 
 #[test]
 fn test_enum_display_exist_in_opt_string_keyword() -> Result<(), Box<dyn std::error::Error>> {
-    for keyword in Keyword::into_enum_iter() {
+    use enum_iterator::all;
+
+    let keywords = all::<Keyword>().collect::<Vec<_>>();
+    for keyword in keywords {
         let kstr = format!("{}", &keyword);
         Keyword::from_str(&kstr)?;
     }
