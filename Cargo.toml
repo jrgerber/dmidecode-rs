@@ -10,7 +10,10 @@ repository = "https://github.com/jrgerber/dmidecode-rs"
 readme = "README.md"
 keywords = ["bios", "smbios", "dmtf", "dmi", "dmidecode"]
 categories = ["hardware-support"]
-
+exclude = [
+    ".devcontainer/*",
+    ".github/*"
+]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
