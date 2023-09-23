@@ -10,7 +10,7 @@ dmidecode command written in Rust, is a tool to report SMBIOS table content in h
 ## Help
 
 ```sh
-dmidecode-rs 0.2.1
+dmidecode-rs 0.2.2
 Jeffrey R. Gerber, Juan Zuluaga
 DMI Table Decoder, Rust Edition ⛭
 
