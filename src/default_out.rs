@@ -652,7 +652,9 @@ pub fn dump_undefined_struct(
                     );
                 }
             }
-            if let Some(processor_manufacturer) = dmidecode_string_val(&data.processor_manufacturer()) {
+            if let Some(processor_manufacturer) =
+                dmidecode_string_val(&data.processor_manufacturer())
+            {
                 println!("\tManufacturer: {}", processor_manufacturer);
             }
 
@@ -1597,7 +1599,8 @@ pub fn dump_undefined_struct(
                     sbds_manufacture_date & 0x1F
                 );
             }
-            if let Some(sbds_device_chemistry) = dmidecode_string_val(&data.sbds_device_chemistry()) {
+            if let Some(sbds_device_chemistry) = dmidecode_string_val(&data.sbds_device_chemistry())
+            {
                 println!("\tSBDS Chemistry: {}", sbds_device_chemistry);
             }
             if let Some(oem_specific) = data.oem_specific() {
@@ -2265,8 +2268,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::OnboardDevicesExtendedInformation(data) => {
             println!("Onboard Device");
-            if let Some(reference_designation) =
-                dmidecode_string_val(&data.reference_designation())
+            if let Some(reference_designation) = dmidecode_string_val(&data.reference_designation())
             {
                 println!("\tReference Designation: {}", reference_designation);
             }
@@ -2412,7 +2414,8 @@ fn dmidecode_string_val(s: &SMBiosString) -> Option<String> {
         Ok(val) => Some(val.to_owned()),
         Err(SMBiosStringError::FieldOutOfBounds) => None,
         Err(SMBiosStringError::InvalidStringNumber(_)) => Some("<BAD INDEX>".to_owned()),
-        Err(SMBiosStringError::Utf8(val)) =>
-            Some(String::from_utf8_lossy(&val.clone().into_bytes()).to_string()),
+        Err(SMBiosStringError::Utf8(val)) => {
+            Some(String::from_utf8_lossy(&val.clone().into_bytes()).to_string())
+        }
     }
 }

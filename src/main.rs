@@ -14,8 +14,8 @@ mod dmiopt;
 mod error;
 
 use default_out::default_dump;
-use dmiopt::{print_dmidecode_version, BiosType, Keyword, Opt};
-use enum_iterator::IntoEnumIterator;
+use dmiopt::{BiosType, Keyword, Opt};
+use enum_iterator::all;
 use smbioslib::*;
 use std::fmt::Write;
 use structopt::StructOpt;
@@ -41,6 +41,12 @@ use structopt::StructOpt;
     Options --string, --type, --dump-bin and --oem-string determine the
     output format and are mutually exclusive.
 */
+
+/// print dmidecode version
+pub fn print_dmidecode_version() {
+    println!("# {} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
+}
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
@@ -205,8 +211,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         // opt.list, -l, --list        List supported DMI string
         (None, None, None, None, None, false, true, false, false) => {
-            for i in Keyword::into_enum_iter() {
-                println!("{}", &i);
+            let keywords = all::<Keyword>().collect::<Vec<_>>();
+            for keyword in keywords {
+                let kstr = format!("{}", &keyword);
+                println!("{}", kstr);
             }
         }
         // opt.json, -j, --json        Display output in JSON pretty print format.
