@@ -52,7 +52,7 @@ pub fn dmi_smbios_structure_type(code: u8) -> String {
         _ => "",
     };
 
-    match description == "" {
+    match description.is_empty() {
         true => match code >= 128 {
             true => "OEM-specific".to_string(),
             false => format!("{} ({})", OUT_OF_SPEC, code),
@@ -340,7 +340,7 @@ pub fn dmi_processor_family(processor_family: ProcessorFamily, raw: u16) -> Stri
         }
         ProcessorFamily::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, raw),
         false => print.to_string(),
     }
@@ -430,7 +430,7 @@ pub fn dmi_processor_upgrade(processor_upgrade: ProcessorUpgradeData) -> String 
         ProcessorUpgrade::SocketLGA7529 => "Socket LGA7529",
         ProcessorUpgrade::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, processor_upgrade.raw),
         false => print.to_string(),
     }
@@ -504,255 +504,250 @@ pub fn dmi_processor_id(data: &SMBiosProcessorInformation<'_>) {
             }
             _ => None,
         };
+        if let Some(family) = option_family {
+            let mut sig = 0;
 
-        match option_family {
-            Some(family) => {
-                let mut sig = 0;
+            if family.0 == ProcessorFamily::Intel386Processor {
+                let dx = u16::from_le_bytes(p[0..=1].try_into().expect("u16 is 2 bytes"));
+                println!(
+                    "\tSignature: Type {}, Family {}, Major Stepping {}, Minor Stepping {}",
+                    dx >> 12,
+                    (dx >> 8) & 0xF,
+                    (dx >> 4) & 0xF,
+                    dx & 0xF
+                );
+                return;
+            } else if family.0 == ProcessorFamily::Intel486Processor {
+                let dx = u16::from_le_bytes(p[0..=1].try_into().expect("u16 is 2 bytes"));
 
-                if family.0 == ProcessorFamily::Intel386Processor {
-                    let dx = u16::from_le_bytes(p[0..=1].try_into().expect("u16 is 2 bytes"));
+                // Not all 80486 CPU support the CPUID instruction, we have to find
+                // whether the one we have here does or not. Note that this trick
+                // works only because we know that 80486 must be little-endian.
+                if (dx & 0x0F00) == 0x0400
+                    && ((dx & 0x00F0) == 0x0040 || (dx & 0x00F0) >= 0x0070)
+                    && ((dx & 0x000F) >= 0x0003)
+                {
+                    sig = 1;
+                } else {
                     println!(
                         "\tSignature: Type {}, Family {}, Major Stepping {}, Minor Stepping {}",
-                        dx >> 12,
+                        (dx >> 12) & 0x3,
                         (dx >> 8) & 0xF,
                         (dx >> 4) & 0xF,
                         dx & 0xF
                     );
                     return;
-                } else if family.0 == ProcessorFamily::Intel486Processor {
-                    let dx = u16::from_le_bytes(p[0..=1].try_into().expect("u16 is 2 bytes"));
-
-                    // Not all 80486 CPU support the CPUID instruction, we have to find
-                    // whether the one we have here does or not. Note that this trick
-                    // works only because we know that 80486 must be little-endian.
-                    if (dx & 0x0F00) == 0x0400
-                        && ((dx & 0x00F0) == 0x0040 || (dx & 0x00F0) >= 0x0070)
-                        && ((dx & 0x000F) >= 0x0003)
-                    {
-                        sig = 1;
-                    } else {
-                        println!(
-                            "\tSignature: Type {}, Family {}, Major Stepping {}, Minor Stepping {}",
-                            (dx >> 12) & 0x3,
-                            (dx >> 8) & 0xF,
-                            (dx >> 4) & 0xF,
-                            dx & 0xF
-                        );
-                        return;
-                    }
                 }
-                // ARM
-                else if family.0 == ProcessorFamily::ARMv7
-                    || family.0 == ProcessorFamily::ARMv8
-                    || (family.1 >= 0x118 && family.1 <= 0x119)
-                {
-                    let midr = u32::from_le_bytes(p[4..=7].try_into().expect("u32 is 4 bytes"));
+            }
+            // ARM
+            else if family.0 == ProcessorFamily::ARMv7
+                || family.0 == ProcessorFamily::ARMv8
+                || (family.1 >= 0x118 && family.1 <= 0x119)
+            {
+                let midr = u32::from_le_bytes(p[4..=7].try_into().expect("u32 is 4 bytes"));
 
-                    // The format of this field was not defined for ARM processors
-                    // before version 3.1.0 of the SMBIOS specification, so we
-                    // silently skip it if it reads all zeroes.
-                    if midr == 0 {
-                        return;
-                    }
-
-                    println!("\tSignature: Implementor {:#04x}, Variant {:#x}, Architecture {}, Part {:#05x}, Revision {}", midr >> 24, (midr >> 20) & 0xF, (midr >> 16) & 0xF, (midr >> 4) & 0xFFF, midr & 0xF);
+                // The format of this field was not defined for ARM processors
+                // before version 3.1.0 of the SMBIOS specification, so we
+                // silently skip it if it reads all zeroes.
+                if midr == 0 {
                     return;
                 }
+
+                println!("\tSignature: Implementor {:#04x}, Variant {:#x}, Architecture {}, Part {:#05x}, Revision {}", midr >> 24, (midr >> 20) & 0xF, (midr >> 16) & 0xF, (midr >> 4) & 0xFFF, midr & 0xF);
+                return;
+            }
+            // Intel
+            else if (family.1 >= 0x0B && family.1 <= 0x15)
+                || (family.1 >= 0x28 && family.1 <= 0x2F)
+                || (family.1 >= 0xA1 && family.1 <= 0xB3)
+                || family.0 == ProcessorFamily::IntelXeonProcessorMP
+                || (family.1 >= 0xB9 && family.1 <= 0xC7)
+                || (family.1 >= 0xCD && family.1 <= 0xCF)
+                || (family.1 >= 0xD2 && family.1 <= 0xDB)
+                || (family.1 >= 0xDD && family.1 <= 0xE0)
+            {
+                sig = 1;
+            }
+            // AMD
+            else if (family.1 >= 0x18 && family.1 <= 0x1D)
+                || family.0 == ProcessorFamily::K62Plus
+                || (family.1 >= 0x38 && family.1 <= 0x3F)
+                || (family.1 >= 0x46 && family.1 <= 0x4F)
+                || (family.1 >= 0x66 && family.1 <= 0x6B)
+                || (family.1 >= 0x83 && family.1 <= 0x8F)
+                || (family.1 >= 0xB6 && family.1 <= 0xB7)
+                || (family.1 >= 0xE4 && family.1 <= 0xEF)
+            {
+                sig = 2;
+            }
+            // Some X86-class CPU have family "Other" or "Unknown". In this case,
+            // we use the version string to determine if they are known to
+            // support the CPUID instruction.
+            else if family.0 == ProcessorFamily::Other || family.0 == ProcessorFamily::Unknown {
+                if let Some(version) = data.processor_version().to_utf8_lossy() {
+                    match version.as_str() {
+                        "Pentium III MMX" => {
+                            sig = 1;
+                        }
+                        "Intel(R) Core(TM)2" => {
+                            sig = 1;
+                        }
+                        "Intel(R) Pentium(R)" => {
+                            sig = 1;
+                        }
+                        "Genuine Intel(R) CPU U1400" => {
+                            sig = 1;
+                        }
+                        "AMD Athlon(TM)" => {
+                            sig = 2;
+                        }
+                        "AMD Opteron(tm)" => {
+                            sig = 2;
+                        }
+                        "Dual-Core AMD Opteron(tm)" => {
+                            sig = 2;
+                        }
+                        _ => return,
+                    }
+                }
+            } else {
+                // neither X86 nor ARM
+                return;
+            }
+
+            // Extra flags are now returned in the ECX register when one calls
+            // the CPUID instruction. Their meaning is explained in table 3-5, but
+            // DMI doesn't support this yet.
+            let eax = u32::from_le_bytes(p[0..=3].try_into().expect("u32 is 4 bytes"));
+            let edx = u32::from_le_bytes(p[4..=7].try_into().expect("u32 is 4 bytes"));
+
+            match sig {
                 // Intel
-                else if (family.1 >= 0x0B && family.1 <= 0x15)
-                    || (family.1 >= 0x28 && family.1 <= 0x2F)
-                    || (family.1 >= 0xA1 && family.1 <= 0xB3)
-                    || family.0 == ProcessorFamily::IntelXeonProcessorMP
-                    || (family.1 >= 0xB9 && family.1 <= 0xC7)
-                    || (family.1 >= 0xCD && family.1 <= 0xCF)
-                    || (family.1 >= 0xD2 && family.1 <= 0xDB)
-                    || (family.1 >= 0xDD && family.1 <= 0xE0)
-                {
-                    sig = 1;
+                1 => {
+                    println!(
+                        "\tSignature: Type {}, Family {}, Model {}, Stepping {}",
+                        (eax >> 12) & 0x3,
+                        ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
+                        ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F),
+                        eax & 0xF
+                    );
                 }
-                // AMD
-                else if (family.1 >= 0x18 && family.1 <= 0x1D)
-                    || family.0 == ProcessorFamily::K62Plus
-                    || (family.1 >= 0x38 && family.1 <= 0x3F)
-                    || (family.1 >= 0x46 && family.1 <= 0x4F)
-                    || (family.1 >= 0x66 && family.1 <= 0x6B)
-                    || (family.1 >= 0x83 && family.1 <= 0x8F)
-                    || (family.1 >= 0xB6 && family.1 <= 0xB7)
-                    || (family.1 >= 0xE4 && family.1 <= 0xEF)
-                {
-                    sig = 2;
+                // AMD, publication #25481 revision 2.28
+                2 => {
+                    println!(
+                        "\tSignature: Family {}, Model {}, Stepping {}",
+                        ((eax >> 8) & 0xF)
+                            + match ((eax >> 8) & 0xF) == 0xF {
+                                true => (eax >> 20) & 0xFF,
+                                false => 0,
+                            },
+                        ((eax >> 4) & 0xF)
+                            | match ((eax >> 8) & 0xF) == 0xF {
+                                true => (eax >> 12) & 0xF0,
+                                false => 0,
+                            },
+                        eax & 0xF
+                    );
                 }
-                // Some X86-class CPU have family "Other" or "Unknown". In this case,
-                // we use the version string to determine if they are known to
-                // support the CPUID instruction.
-                else if family.0 == ProcessorFamily::Other || family.0 == ProcessorFamily::Unknown
-                {
-                    if let Some(version) = data.processor_version().to_utf8_lossy() {
-                        match version.as_str() {
-                            "Pentium III MMX" => {
-                                sig = 1;
-                            }
-                            "Intel(R) Core(TM)2" => {
-                                sig = 1;
-                            }
-                            "Intel(R) Pentium(R)" => {
-                                sig = 1;
-                            }
-                            "Genuine Intel(R) CPU U1400" => {
-                                sig = 1;
-                            }
-                            "AMD Athlon(TM)" => {
-                                sig = 2;
-                            }
-                            "AMD Opteron(tm)" => {
-                                sig = 2;
-                            }
-                            "Dual-Core AMD Opteron(tm)" => {
-                                sig = 2;
-                            }
-                            _ => return,
-                        }
+                _ => (),
+            }
+
+            // Flags
+            match edx & 0xBFEFFBFF == 0 {
+                true => println!("\tFlags: None"),
+                false => {
+                    println!("\tFlags:");
+                    if (edx & (1 << 0)) != 0 {
+                        println!("\t\tFPU (Floating-point unit on-chip)");
                     }
-                } else {
-                    // neither X86 nor ARM
-                    return;
-                }
-
-                // Extra flags are now returned in the ECX register when one calls
-                // the CPUID instruction. Their meaning is explained in table 3-5, but
-                // DMI doesn't support this yet.
-                let eax = u32::from_le_bytes(p[0..=3].try_into().expect("u32 is 4 bytes"));
-                let edx = u32::from_le_bytes(p[4..=7].try_into().expect("u32 is 4 bytes"));
-
-                match sig {
-                    // Intel
-                    1 => {
-                        println!(
-                            "\tSignature: Type {}, Family {}, Model {}, Stepping {}",
-                            (eax >> 12) & 0x3,
-                            ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
-                            ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F),
-                            eax & 0xF
-                        );
+                    if (edx & (1 << 1)) != 0 {
+                        println!("\t\tVME (Virtual mode extension)");
                     }
-                    // AMD, publication #25481 revision 2.28
-                    2 => {
-                        println!(
-                            "\tSignature: Family {}, Model {}, Stepping {}",
-                            ((eax >> 8) & 0xF)
-                                + match ((eax >> 8) & 0xF) == 0xF {
-                                    true => (eax >> 20) & 0xFF,
-                                    false => 0,
-                                },
-                            ((eax >> 4) & 0xF)
-                                | match ((eax >> 8) & 0xF) == 0xF {
-                                    true => (eax >> 12) & 0xF0,
-                                    false => 0,
-                                },
-                            eax & 0xF
-                        );
+                    if (edx & (1 << 9)) != 0 {
+                        println!("\t\tDE (Debugging extension)");
                     }
-                    _ => (),
-                }
+                    if (edx & (1 << 3)) != 0 {
+                        println!("\t\tPSE (Page size extension)");
+                    }
+                    if (edx & (1 << 4)) != 0 {
+                        println!("\t\tTSC (Time stamp counter)");
+                    }
+                    if (edx & (1 << 5)) != 0 {
+                        println!("\t\tMSR (Model specific registers)");
+                    }
+                    if (edx & (1 << 6)) != 0 {
+                        println!("\t\tPAE (Physical address extension)");
+                    }
+                    if (edx & (1 << 7)) != 0 {
+                        println!("\t\tMCE (Machine check exception)");
+                    }
+                    if (edx & (1 << 8)) != 0 {
+                        println!("\t\tCX8 (CMPXCHG8 instruction supported)");
+                    }
+                    if (edx & (1 << 9)) != 0 {
+                        println!("\t\tAPIC (On-chip APIC hardware supported)");
+                    }
 
-                // Flags
-                match edx & 0xBFEFFBFF == 0 {
-                    true => println!("\tFlags: None"),
-                    false => {
-                        println!("\tFlags:");
-                        if (edx & (1 << 0)) != 0 {
-                            println!("\t\tFPU (Floating-point unit on-chip)");
-                        }
-                        if (edx & (1 << 1)) != 0 {
-                            println!("\t\tVME (Virtual mode extension)");
-                        }
-                        if (edx & (1 << 9)) != 0 {
-                            println!("\t\tDE (Debugging extension)");
-                        }
-                        if (edx & (1 << 3)) != 0 {
-                            println!("\t\tPSE (Page size extension)");
-                        }
-                        if (edx & (1 << 4)) != 0 {
-                            println!("\t\tTSC (Time stamp counter)");
-                        }
-                        if (edx & (1 << 5)) != 0 {
-                            println!("\t\tMSR (Model specific registers)");
-                        }
-                        if (edx & (1 << 6)) != 0 {
-                            println!("\t\tPAE (Physical address extension)");
-                        }
-                        if (edx & (1 << 7)) != 0 {
-                            println!("\t\tMCE (Machine check exception)");
-                        }
-                        if (edx & (1 << 8)) != 0 {
-                            println!("\t\tCX8 (CMPXCHG8 instruction supported)");
-                        }
-                        if (edx & (1 << 9)) != 0 {
-                            println!("\t\tAPIC (On-chip APIC hardware supported)");
-                        }
+                    if (edx & (1 << 11)) != 0 {
+                        println!("\t\tSEP (Fast system call)");
+                    }
+                    if (edx & (1 << 12)) != 0 {
+                        println!("\t\tMTRR (Memory type range registers)");
+                    }
+                    if (edx & (1 << 13)) != 0 {
+                        println!("\t\tPGE (Page global enable)");
+                    }
+                    if (edx & (1 << 14)) != 0 {
+                        println!("\t\tMCA (Machine check architecture)");
+                    }
+                    if (edx & (1 << 15)) != 0 {
+                        println!("\t\tCMOV (Conditional move instruction supported)");
+                    }
+                    if (edx & (1 << 16)) != 0 {
+                        println!("\t\tPAT (Page attribute table)");
+                    }
+                    if (edx & (1 << 17)) != 0 {
+                        println!("\t\tPSE-36 (36-bit page size extension)");
+                    }
+                    if (edx & (1 << 18)) != 0 {
+                        println!("\t\tPSN (Processor serial number present and enabled)");
+                    }
+                    if (edx & (1 << 19)) != 0 {
+                        println!("\t\tCLFSH (CLFLUSH instruction supported)");
+                    }
 
-                        if (edx & (1 << 11)) != 0 {
-                            println!("\t\tSEP (Fast system call)");
-                        }
-                        if (edx & (1 << 12)) != 0 {
-                            println!("\t\tMTRR (Memory type range registers)");
-                        }
-                        if (edx & (1 << 13)) != 0 {
-                            println!("\t\tPGE (Page global enable)");
-                        }
-                        if (edx & (1 << 14)) != 0 {
-                            println!("\t\tMCA (Machine check architecture)");
-                        }
-                        if (edx & (1 << 15)) != 0 {
-                            println!("\t\tCMOV (Conditional move instruction supported)");
-                        }
-                        if (edx & (1 << 16)) != 0 {
-                            println!("\t\tPAT (Page attribute table)");
-                        }
-                        if (edx & (1 << 17)) != 0 {
-                            println!("\t\tPSE-36 (36-bit page size extension)");
-                        }
-                        if (edx & (1 << 18)) != 0 {
-                            println!("\t\tPSN (Processor serial number present and enabled)");
-                        }
-                        if (edx & (1 << 19)) != 0 {
-                            println!("\t\tCLFSH (CLFLUSH instruction supported)");
-                        }
-
-                        if (edx & (1 << 21)) != 0 {
-                            println!("\t\tDS (Debug store)");
-                        }
-                        if (edx & (1 << 22)) != 0 {
-                            println!("\t\tACPI (ACPI supported)");
-                        }
-                        if (edx & (1 << 23)) != 0 {
-                            println!("\t\tMMX (MMX technology supported)");
-                        }
-                        if (edx & (1 << 24)) != 0 {
-                            println!("\t\tFXSR (FXSAVE and FXSTOR instructions supported)");
-                        }
-                        if (edx & (1 << 25)) != 0 {
-                            println!("\t\tSSE (Streaming SIMD extensions)");
-                        }
-                        if (edx & (1 << 26)) != 0 {
-                            println!("\t\tSSE2 (Streaming SIMD extensions 2)");
-                        }
-                        if (edx & (1 << 27)) != 0 {
-                            println!("\t\tSS (Self-snoop)");
-                        }
-                        if (edx & (1 << 28)) != 0 {
-                            println!("\t\tHTT (Multi-threading)");
-                        }
-                        if (edx & (1 << 29)) != 0 {
-                            println!("\t\tTM (Thermal monitor supported)");
-                        }
-                        if (edx & (1 << 31)) != 0 {
-                            println!("\t\tPBE (Pending break enabled)");
-                        }
+                    if (edx & (1 << 21)) != 0 {
+                        println!("\t\tDS (Debug store)");
+                    }
+                    if (edx & (1 << 22)) != 0 {
+                        println!("\t\tACPI (ACPI supported)");
+                    }
+                    if (edx & (1 << 23)) != 0 {
+                        println!("\t\tMMX (MMX technology supported)");
+                    }
+                    if (edx & (1 << 24)) != 0 {
+                        println!("\t\tFXSR (FXSAVE and FXSTOR instructions supported)");
+                    }
+                    if (edx & (1 << 25)) != 0 {
+                        println!("\t\tSSE (Streaming SIMD extensions)");
+                    }
+                    if (edx & (1 << 26)) != 0 {
+                        println!("\t\tSSE2 (Streaming SIMD extensions 2)");
+                    }
+                    if (edx & (1 << 27)) != 0 {
+                        println!("\t\tSS (Self-snoop)");
+                    }
+                    if (edx & (1 << 28)) != 0 {
+                        println!("\t\tHTT (Multi-threading)");
+                    }
+                    if (edx & (1 << 29)) != 0 {
+                        println!("\t\tTM (Thermal monitor supported)");
+                    }
+                    if (edx & (1 << 31)) != 0 {
+                        println!("\t\tPBE (Pending break enabled)");
                     }
                 }
             }
-            None => (),
         }
     }
 }
@@ -768,7 +763,7 @@ pub fn dmi_memory_controller_ed_method(error_detecting_method: ErrorDetectingMet
         ErrorDetectingMethod::Crc => "CRC",
         ErrorDetectingMethod::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, error_detecting_method.raw),
         false => print.to_string(),
     }
@@ -815,7 +810,7 @@ pub fn dmi_memory_controller_interleave(interleave: InterleaveSupportData) -> St
         InterleaveSupport::SixteenWay => "Sixteen-way Interleave",
         InterleaveSupport::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, interleave.raw),
         false => print.to_string(),
     }
@@ -882,12 +877,12 @@ pub fn dmi_memory_module_types(attr: &str, memory_types: MemoryTypes, flat: bool
             vec.push("SDRAM")
         }
 
-        if vec.len() != 0 {
+        if !vec.is_empty() {
             if flat {
                 print!("\t{}: ", attr);
                 let mut iter = vec.iter();
                 print!("{}", iter.next().unwrap());
-                while let Some(memory_type) = iter.next() {
+                for memory_type in iter {
                     // Insert space if not the first value
                     print!(" {}", memory_type);
                 }
@@ -954,7 +949,7 @@ pub fn dmi_memory_module_error(error_status: u8) {
         0x04 => "See Event Log",
         _ => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => println!("{} ({})", OUT_OF_SPEC, error_status),
         false => println!("{}", print),
     }
@@ -1031,12 +1026,12 @@ pub fn dmi_cache_types(attr: &str, types: SramTypes, flat: bool) {
             vec.push("Asynchronous")
         }
 
-        if vec.len() != 0 {
+        if !vec.is_empty() {
             if flat {
                 print!("\t{}: ", attr);
                 let mut iter = vec.iter();
                 print!("{}", iter.next().unwrap());
-                while let Some(cache_type) = iter.next() {
+                for cache_type in iter {
                     // Insert space if not the first value
                     print!(" {}", cache_type);
                 }
@@ -1060,7 +1055,7 @@ pub fn dmi_cache_ec_type(ec_type: ErrorCorrectionTypeData) -> String {
         ErrorCorrectionType::MultiBitEcc => "Multi-bit ECC",
         ErrorCorrectionType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, ec_type.raw),
         false => print.to_string(),
     }
@@ -1074,7 +1069,7 @@ pub fn dmi_cache_type(cache_type: SystemCacheTypeData) -> String {
         SystemCacheType::Unified => "Unified",
         SystemCacheType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, cache_type.raw),
         false => print.to_string(),
     }
@@ -1097,7 +1092,7 @@ pub fn dmi_cache_associativity(associativity: CacheAssociativityData) -> String 
         CacheAssociativity::SetAssociative20Way => "20-way Set-associative",
         CacheAssociativity::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, associativity.raw),
         false => print.to_string(),
     }
@@ -1157,7 +1152,7 @@ pub fn dmi_memory_device_form_factor(form_factor: MemoryFormFactorData) -> Strin
         MemoryFormFactor::Die => "Die",
         MemoryFormFactor::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, form_factor.raw),
         false => print.to_string(),
     }
@@ -1207,7 +1202,7 @@ pub fn dmi_memory_device_type(memory_type: MemoryDeviceTypeData) -> String {
         MemoryDeviceType::Hbm3 => "HBM3",
         MemoryDeviceType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, memory_type.raw),
         false => print.to_string(),
     }
@@ -1264,10 +1259,10 @@ pub fn dmi_memory_device_type_detail(type_detail: MemoryTypeDetails) {
             vec.push("LRDIMM");
         }
 
-        if vec.len() != 0 {
+        if !vec.is_empty() {
             let mut iter = vec.iter();
             print!("{}", iter.next().unwrap());
-            while let Some(detail) = iter.next() {
+            for detail in iter {
                 // Insert space if not the first value
                 print!(" {}", detail);
             }
@@ -1330,7 +1325,7 @@ pub fn dmi_memory_technology(technology: MemoryDeviceTechnologyData) {
         }
         MemoryDeviceTechnology::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => println!("{} ({})", OUT_OF_SPEC, technology.raw),
         false => println!("{}", print),
     }
@@ -1353,10 +1348,10 @@ pub fn dmi_memory_operating_mode_capability(mode: MemoryOperatingModeCapabilitie
             vec.push("Block-accessible persistent memory")
         }
 
-        if vec.len() != 0 {
+        if !vec.is_empty() {
             let mut iter = vec.iter();
             print!("{}", iter.next().unwrap());
-            while let Some(mode) = iter.next() {
+            for mode in iter {
                 // Insert space if not the first value
                 print!(" {}", mode);
             }
@@ -1411,7 +1406,7 @@ pub fn dmi_memory_error_type(error_type: MemoryErrorTypeData) -> String {
         MemoryErrorType::UncorrectableError => "Uncorrectable Error",
         MemoryErrorType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, error_type.raw),
         false => print.to_string(),
     }
@@ -1424,7 +1419,7 @@ pub fn dmi_memory_error_granularity(granularity: MemoryErrorGranularityData) -> 
         MemoryErrorGranularity::MemoryPartitionLevel => "Memory Partition Level",
         MemoryErrorGranularity::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, granularity.raw),
         false => print.to_string(),
     }
@@ -1438,7 +1433,7 @@ pub fn dmi_memory_error_operation(operation: MemoryErrorOperationData) -> String
         MemoryErrorOperation::PartialWrite => "Partial Write",
         MemoryErrorOperation::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, operation.raw),
         false => print.to_string(),
     }
@@ -1483,7 +1478,7 @@ pub fn dmi_memory_array_location(location: MemoryArrayLocationData) -> String {
         MemoryArrayLocation::CxlFlexbus10AddOnCard => "CXL Flexbus 1.0",
         MemoryArrayLocation::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, location.raw),
         false => print.to_string(),
     }
@@ -1499,7 +1494,7 @@ pub fn dmi_memory_array_use(usage: MemoryArrayUseData) -> String {
         MemoryArrayUse::CacheMemory => "Cache Memory",
         MemoryArrayUse::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, usage.raw),
         false => print.to_string(),
     }
@@ -1515,7 +1510,7 @@ pub fn dmi_memory_array_ec_type(memory_error_correction: MemoryArrayErrorCorrect
         MemoryArrayErrorCorrection::Crc => "CRC",
         MemoryArrayErrorCorrection::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, memory_error_correction.raw),
         false => print.to_string(),
     }
@@ -1558,23 +1553,15 @@ pub fn dmi_starting_ending_addresses(
 
     // Dmidecode has different padding on addresses for extended addresses vs standard
     if using_ext_address {
-        match (starting_address, ending_address) {
-            (Some(start), Some(end)) => {
-                println!("\tStarting Address: {:#018X}", start);
-                println!("\tEnding Address: {:#018X}", end);
-                dmi_mapped_address_extended_size(start, end);
-            }
-            _ => (),
+        if let (Some(start), Some(end)) = (starting_address, ending_address) {
+            println!("\tStarting Address: {:#018X}", start);
+            println!("\tEnding Address: {:#018X}", end);
+            dmi_mapped_address_extended_size(start, end);
         }
-    } else {
-        match (starting_address, ending_address) {
-            (Some(start), Some(end)) => {
-                println!("\tStarting Address: {:#013X}", start);
-                println!("\tEnding Address: {:#013X}", end);
-                dmi_mapped_address_extended_size(start, end);
-            }
-            _ => (),
-        }
+    } else if let (Some(start), Some(end)) = (starting_address, ending_address) {
+        println!("\tStarting Address: {:#013X}", start);
+        println!("\tEnding Address: {:#013X}", end);
+        dmi_mapped_address_extended_size(start, end);
     }
 }
 pub fn dmi_mapped_address_row_position(position: u8) {
@@ -1613,11 +1600,7 @@ pub fn dmi_hardware_security_status(status: HardwareSecurityStatus) -> String {
     .to_string()
 }
 pub fn dmi_bcd_range(value: u8, low: u8, high: u8) -> bool {
-    if value > 0x99 || (value & 0x0F) > 0x09 || value < low || value > high{
-        false
-    }  else {
-        true
-    }
+    !(value > 0x99 || (value & 0x0F) > 0x09 || value < low || value > high)
 }
 pub fn dmi_system_boot_status(boot_status_data: &SystemBootStatusData<'_>) -> String {
     let print = match boot_status_data.system_boot_status() {
@@ -1633,12 +1616,12 @@ pub fn dmi_system_boot_status(boot_status_data: &SystemBootStatusData<'_>) -> St
         SystemBootStatus::None => "",
     };
 
-    match print == "" {
-        true => match boot_status_data.raw.len() == 0 {
+    match print.is_empty() {
+        true => match boot_status_data.raw.is_empty() {
             true => OUT_OF_SPEC.to_string(),
             false => {
                 let byte = boot_status_data.raw[0];
-                if byte >= 128u8 && byte <= 191u8 {
+                if (128u8..=191u8).contains(&byte) {
                     "OEM-specific".to_string()
                 } else if byte >= 192u8 {
                     "Product-specific".to_string()
@@ -1647,7 +1630,7 @@ pub fn dmi_system_boot_status(boot_status_data: &SystemBootStatusData<'_>) -> St
                 }
             }
         },
-        false => format!("{}", print),
+        false => print.to_string(),
     }
 }
 pub fn dmi_port_connector_type(port_connector_type: &PortInformationConnectorTypeData) -> String {
@@ -1697,7 +1680,7 @@ pub fn dmi_port_connector_type(port_connector_type: &PortInformationConnectorTyp
         PortInformationConnectorType::None => "",
     };
 
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, port_connector_type.raw),
         false => print.to_string(),
     }
@@ -1746,7 +1729,7 @@ pub fn dmi_port_type(port_type_data: &PortInformationPortTypeData) -> String {
         PortInformationPortType::None => "",
     };
 
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, port_type_data.raw),
         false => print.to_string(),
     }
@@ -1769,7 +1752,7 @@ pub fn dmi_slot_bus_width(width: &SlotWidthData) -> String {
         SlotWidth::X32 => "x32",
         SlotWidth::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, width.raw),
         false => print.to_string(),
     }
@@ -1961,7 +1944,7 @@ pub fn dmi_slot_type(system_slot_type: &SystemSlotTypeData) -> String {
         SystemSlotType::EnterpriseAndDataCenter3InE3 => "EDSFF E3",
         SystemSlotType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, system_slot_type.raw),
         false => print.to_string(),
     }
@@ -1975,7 +1958,7 @@ pub fn dmi_slot_current_usage(current_usage: &SlotCurrentUsageData) -> String {
         SlotCurrentUsage::Unavailable => "Unavailable",
         SlotCurrentUsage::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, current_usage.raw),
         false => print.to_string(),
     }
@@ -1990,7 +1973,7 @@ pub fn dmi_slot_length(slot_length: &SlotLengthData) -> String {
         SlotLength::DriveFormFactor35 => "3.5\" drive form factor",
         SlotLength::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, slot_length.raw),
         false => print.to_string(),
     }
@@ -2097,12 +2080,11 @@ pub fn dmi_slot_segment_bus_func(
         */
         DeviceFunctionNumber::NotApplicable => (0x1F, 0x7),
     };
-    match bus_number {
-        BusNumber::Number(bn) => println!(
+    if let BusNumber::Number(bn) = bus_number {
+        println!(
             "\tBus Address: {:04x}:{:02x}:{:02x}.{:x}",
             sgn, bn, device, function
-        ),
-        _ => (),
+        )
     }
 }
 pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
@@ -2125,7 +2107,7 @@ pub fn dmi_on_board_devices_type(device_type: &OnBoardDeviceType) -> String {
         TypeOfDevice::UfsController => "UFS Controller",
         TypeOfDevice::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => format!("{} ({})", OUT_OF_SPEC, &device_type.raw & 0x7F),
         false => print.to_string(),
     }
@@ -2139,7 +2121,7 @@ pub fn dmi_event_log_method(access_method: &AccessMethodData) -> String {
         AccessMethod::GeneralPurposeNonVolatile => "General-purpose non-volatile data functions",
         AccessMethod::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             if access_method.raw >= 0x80 {
                 format!("OEM-specific ({})", access_method.raw)
@@ -2174,7 +2156,7 @@ pub fn dmi_event_log_header_type(header_format: &HeaderFormatData) -> String {
         HeaderFormat::Type1LogHeader => "Type 1",
         HeaderFormat::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             if header_format.raw >= 0x80 {
                 format!("OEM-specific ({})", header_format.raw)
@@ -2212,12 +2194,12 @@ pub fn dmi_event_log_descriptor_type(log_type: &LogTypeData) -> String {
         LogType::SystemBoot => "System boot",
         LogType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             if log_type.raw >= 0x80 && log_type.raw <= 0xFE {
                 format!("OEM-specific ({})", log_type.raw)
             } else if log_type.raw == 0xFF {
-                format!("End of log")
+                "End of log".to_string()
             } else {
                 format!("{} ({})", OUT_OF_SPEC, log_type.raw)
             }
@@ -2238,7 +2220,7 @@ pub fn dmi_event_log_descriptor_format(data: &VariableDataFormatTypeData) -> Str
         }
         VariableDataFormatType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             if data.raw >= 0x80 {
                 format!("OEM-specific ({})", data.raw)
@@ -2262,7 +2244,7 @@ pub fn dmi_pointing_device_type(device_type: &PointingDeviceTypeData) -> String 
         PointingDeviceType::OpticalSensor => "Optical Sensor",
         PointingDeviceType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, device_type.raw)
         }
@@ -2286,7 +2268,7 @@ pub fn dmi_pointing_device_interface(interface: &PointingDeviceInterfaceData) ->
         PointingDeviceInterface::SPI => "SPI",
         PointingDeviceInterface::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, interface.raw)
         }
@@ -2305,7 +2287,7 @@ pub fn dmi_battery_chemistry(chemistry: &PortableBatteryDeviceChemistryData) -> 
         PortableBatteryDeviceChemistry::LithiumPolymer => "Lithium Polymer",
         PortableBatteryDeviceChemistry::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, chemistry.raw)
         }
@@ -2352,10 +2334,8 @@ pub fn dmi_voltage_probe_location(location: &VoltageProbeLocation) -> String {
         VoltageProbeLocation::AddInCard => "Add-in Card",
         VoltageProbeLocation::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2369,10 +2349,8 @@ pub fn dmi_probe_status(status: &VoltageProbeStatus) -> String {
         VoltageProbeStatus::NonRecoverable => "Non-recoverable",
         VoltageProbeStatus::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2421,10 +2399,8 @@ pub fn dmi_cooling_device_type(cooling_device_type: &CoolingDeviceType) -> Strin
         CoolingDeviceType::PassiveCooling => "Passive Cooling",
         CoolingDeviceType::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2438,10 +2414,8 @@ pub fn dmi_cooling_device_status(status: &CoolingDeviceStatus) -> String {
         CoolingDeviceStatus::NonRecoverable => "Non-recoverable",
         CoolingDeviceStatus::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2471,10 +2445,8 @@ pub fn dmi_temperature_probe_location(location: &TemperatureProbeLocation) -> St
         TemperatureProbeLocation::DriveBackPlane => "Drive Back Plane",
         TemperatureProbeLocation::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2488,10 +2460,8 @@ pub fn dmi_temperature_probe_status(status: &TemperatureProbeStatus) -> String {
         TemperatureProbeStatus::NonRecoverable => "Non-recoverable",
         TemperatureProbeStatus::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2540,10 +2510,8 @@ pub fn dmi_current_probe_location(location: &CurrentProbeLocation) -> String {
         CurrentProbeLocation::AddInCard => "Add-in Card",
         CurrentProbeLocation::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2557,10 +2525,8 @@ pub fn dmi_current_probe_status(status: &CurrentProbeStatus) -> String {
         CurrentProbeStatus::NonRecoverable => "Non-recoverable",
         CurrentProbeStatus::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2618,7 +2584,7 @@ pub fn dmi_management_device_type(device_type: &ManagementDeviceTypeData) -> Str
         ManagementDeviceType::HoltekHT82H791 => "HT82H791",
         ManagementDeviceType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, device_type.raw)
         }
@@ -2636,7 +2602,7 @@ pub fn dmi_management_device_address_type(
         ManagementDeviceAddressType::SMBus => "SMBus",
         ManagementDeviceAddressType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, address_type.raw)
         }
@@ -2651,7 +2617,7 @@ pub fn dmi_memory_channel_type(channel_type: &MemoryChannelTypeData) -> String {
         MemoryChannelType::SyncLink => "SyncLink",
         MemoryChannelType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, channel_type.raw)
         }
@@ -2669,7 +2635,7 @@ pub fn dmi_ipmi_interface_type(interface_type: &IpmiInterfaceTypeData) -> String
         IpmiInterfaceType::SMBusSystemInterface => "SSIF (SMBus System Interface)",
         IpmiInterfaceType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, interface_type.raw)
         }
@@ -2740,10 +2706,8 @@ pub fn dmi_power_supply_status(status: &PowerSupplyStatus) -> String {
         PowerSupplyStatus::Critical => "Critical",
         PowerSupplyStatus::None => "",
     };
-    match print == "" {
-        true => {
-            format!("{}", OUT_OF_SPEC)
-        }
+    match print.is_empty() {
+        true => OUT_OF_SPEC.to_string(),
         false => print.to_string(),
     }
 }
@@ -2788,9 +2752,9 @@ pub fn dmi_management_controller_host_type(host_type: &HostInterfaceTypeData) ->
         HostInterfaceType::OemDefined => "OEM",
         HostInterfaceType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => match host_type.raw <= 0x3F {
-            true => format!("{}", "MCTP"),
+            true => "MCTP".to_string(),
             false => format!("{} ({})", OUT_OF_SPEC, host_type.raw),
         },
         false => print.to_string(),
@@ -2801,12 +2765,10 @@ pub fn dmi_tpm_vendor_id(vendor_id: &VendorId<'_>) {
         .array
         .iter()
         .take_while(|&&not_zero| not_zero != 0u8)
-        .map(
-            |&ascii_filter| match ascii_filter < 32 || ascii_filter >= 127 {
-                true => '.',
-                false => ascii_filter as char,
-            },
-        )
+        .map(|&ascii_filter| match !(32..127).contains(&ascii_filter) {
+            true => '.',
+            false => ascii_filter as char,
+        })
         .collect();
     println!("\tVendor ID: {}", vendor_id_string);
 }
@@ -2998,7 +2960,7 @@ pub fn dmi_parse_controller_structure(data: &SMBiosManagementControllerHostInter
                                 true => println!("{}", OUT_OF_SPEC),
                                 false => {
                                     let hname: String =
-                                        rdata[91..].into_iter().map(|&i| i as char).collect();
+                                        rdata[91..].iter().map(|&i| i as char).collect();
                                     println!("{}", hname)
                                 }
                             }
@@ -3029,7 +2991,7 @@ fn dmi_protocol_record_type(protocol_type: &HostProtocolTypeData) -> String {
         HostProtocolType::OemDefined => "OEM",
         HostProtocolType::None => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, protocol_type.raw)
         }
@@ -3046,7 +3008,7 @@ fn dmi_protocol_assignment_type(assignment_type: u8) -> String {
         0x4 => "Host Selected",
         _ => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, assignment_type)
         }
@@ -3061,7 +3023,7 @@ fn dmi_address_type(address_type: u8) -> String {
         0x2 => "IPv6",
         _ => "",
     };
-    match print == "" {
+    match print.is_empty() {
         true => {
             format!("{} ({})", OUT_OF_SPEC, address_type)
         }

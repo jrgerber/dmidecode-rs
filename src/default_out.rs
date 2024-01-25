@@ -36,7 +36,7 @@ pub fn default_dump(smbios_data: &SMBiosData, quiet: bool) {
         */
         println!();
 
-        dump_undefined_struct(&undefined_struct, smbios_data.version, quiet);
+        dump_undefined_struct(undefined_struct, smbios_data.version, quiet);
     }
     println!();
 }
@@ -234,28 +234,22 @@ pub fn dump_undefined_struct(
                 }
             }
 
-            match (
+            if let (Some(major_release), Some(minor_release)) = (
                 data.system_bios_major_release(),
                 data.system_bios_minor_release(),
             ) {
-                (Some(major_release), Some(minor_release)) => {
-                    if major_release != 0xFF && minor_release != 0xFF {
-                        println!("\tBIOS Revision: {}.{}", major_release, minor_release);
-                    }
+                if major_release != 0xFF && minor_release != 0xFF {
+                    println!("\tBIOS Revision: {}.{}", major_release, minor_release);
                 }
-                _ => {}
             }
 
-            match (
+            if let (Some(major_release), Some(minor_release)) = (
                 data.e_c_firmware_major_release(),
                 data.e_c_firmware_minor_release(),
             ) {
-                (Some(major_release), Some(minor_release)) => {
-                    if major_release != 0xFF && minor_release != 0xFF {
-                        println!("\tFirmware Revision: {}.{}", major_release, minor_release);
-                    }
+                if major_release != 0xFF && minor_release != 0xFF {
+                    println!("\tFirmware Revision: {}.{}", major_release, minor_release);
                 }
-                _ => {}
             }
         }
         DefinedStruct::SystemInformation(data) => {
@@ -499,7 +493,7 @@ pub fn dump_undefined_struct(
                     ChassisType::None => "",
                 };
 
-                if print == "" {
+                if print.is_empty() {
                     println!("{} ({})", OUT_OF_SPEC, chassis_type.raw);
                 } else {
                     println!("{}", print);
@@ -612,15 +606,14 @@ pub fn dump_undefined_struct(
                                 dmi_smbios_structure_type(*bios_type)
                             }
                         };
-                        match (element.element_minimum(), element.element_maximum()) {
-                            (ElementMinimum::Count(minimum), ElementMaximum::Count(maximum)) => {
-                                let range = match minimum == maximum {
-                                    true => format!("{}", minimum),
-                                    false => format!("{}-{}", minimum, maximum),
-                                };
-                                println!("\t\t{} {}", type_description, range);
-                            }
-                            _ => (),
+                        if let (ElementMinimum::Count(minimum), ElementMaximum::Count(maximum)) =
+                            (element.element_minimum(), element.element_maximum())
+                        {
+                            let range = match minimum == maximum {
+                                true => format!("{}", minimum),
+                                false => format!("{}-{}", minimum, maximum),
+                            };
+                            println!("\t\t{} {}", type_description, range);
                         }
                     }
                 }
@@ -669,12 +662,12 @@ pub fn dump_undefined_struct(
                     ProcessorVoltage::CurrentVolts(volts) => println!("{:.1} V", volts),
                     ProcessorVoltage::SupportedVolts(supported) => {
                         let voltages = supported.voltages();
-                        match voltages.len() == 0 {
+                        match voltages.is_empty() {
                             true => print!("{}", UNKNOWN),
                             false => {
                                 let mut iter = voltages.iter();
                                 print!("{:.1} V", iter.next().unwrap());
-                                while let Some(voltage) = iter.next() {
+                                for voltage in iter {
                                     // Insert space if not the first value
                                     print!(" {:.1} V", voltage);
                                 }
@@ -719,7 +712,7 @@ pub fn dump_undefined_struct(
                             CpuStatus::Other => OTHER,
                             CpuStatus::None => "",
                         };
-                        match print == "" {
+                        match print.is_empty() {
                             true => println!("{} ({})", OUT_OF_SPEC, status.raw),
                             false => println!("{}", print),
                         }
@@ -829,21 +822,16 @@ pub fn dump_undefined_struct(
                 );
             }
 
-            match (
+            if let (Some(size_power), Some(count)) = (
                 data.maximum_memory_module_size(),
                 data.number_of_associated_memory_slots(),
             ) {
-                (Some(size_power), Some(count)) => {
-                    if let Some(module_size_mb) = 0x1u128.checked_shl(size_power as u32) {
-                        println!("\tMaximum Memory Module Size: {} MB", module_size_mb);
-                        if let Some(modules_total_size_mb) =
-                            module_size_mb.checked_mul(count as u128)
-                        {
-                            println!("\tMaximum Total Memory Size: {} MB", modules_total_size_mb);
-                        }
+                if let Some(module_size_mb) = 0x1u128.checked_shl(size_power as u32) {
+                    println!("\tMaximum Memory Module Size: {} MB", module_size_mb);
+                    if let Some(modules_total_size_mb) = module_size_mb.checked_mul(count as u128) {
+                        println!("\tMaximum Total Memory Size: {} MB", modules_total_size_mb);
                     }
                 }
-                _ => (),
             }
             if let Some(supported_speeds) = data.supported_speeds() {
                 dmi_memory_controller_speeds(supported_speeds);
@@ -998,15 +986,14 @@ pub fn dump_undefined_struct(
             if let Some(slot_designation) = dmidecode_string_val(&data.slot_designation()) {
                 println!("\tDesignation: {}", slot_designation);
             }
-            match (data.slot_data_bus_width(), data.system_slot_type()) {
-                (Some(slot_data_bus_width), Some(system_slot_type)) => {
-                    println!(
-                        "\tType: {} {}",
-                        dmi_slot_bus_width(&slot_data_bus_width),
-                        dmi_slot_type(&system_slot_type)
-                    );
-                }
-                _ => (),
+            if let (Some(slot_data_bus_width), Some(system_slot_type)) =
+                (data.slot_data_bus_width(), data.system_slot_type())
+            {
+                println!(
+                    "\tType: {} {}",
+                    dmi_slot_bus_width(&slot_data_bus_width),
+                    dmi_slot_type(&system_slot_type)
+                );
             }
             if let Some(current_usage) = data.current_usage() {
                 println!(
@@ -1017,8 +1004,8 @@ pub fn dump_undefined_struct(
             if let Some(slot_length) = data.slot_length() {
                 println!("\tLength: {}", dmi_slot_length(&slot_length));
             }
-            match (data.slot_id(), data.system_slot_type()) {
-                (Some(slot_id), Some(slot_type)) => match slot_type.value {
+            if let (Some(slot_id), Some(slot_type)) = (data.slot_id(), data.system_slot_type()) {
+                match slot_type.value {
                     SystemSlotType::Mca => println!("\tID: {}", slot_id.byte_0()),
                     SystemSlotType::Isa => println!("\tID: {}", slot_id.byte_0()),
                     SystemSlotType::Pci => println!("\tID: {}", slot_id.byte_0()),
@@ -1031,27 +1018,24 @@ pub fn dump_undefined_struct(
                         slot_id.byte_1()
                     ),
                     _ => (),
-                },
-                _ => (),
+                }
             }
+
             dmi_slot_characteristics(
                 "Characteristics",
                 &data.slot_characteristics_1(),
                 &data.slot_characteristics_2(),
             );
-            match (
+            if let (Some(segment_group_number), Some(bus_number), Some(device_function_number)) = (
                 data.segment_group_number(),
                 data.bus_number(),
                 data.device_function_number(),
             ) {
-                (Some(segment_group_number), Some(bus_number), Some(device_function_number)) => {
-                    dmi_slot_segment_bus_func(
-                        &segment_group_number,
-                        &bus_number,
-                        &device_function_number,
-                    );
-                }
-                _ => (),
+                dmi_slot_segment_bus_func(
+                    &segment_group_number,
+                    &bus_number,
+                    &device_function_number,
+                );
             }
             if let Some(data_bus_width) = data.data_bus_width() {
                 println!("\tData Bus Width: {}", data_bus_width);
@@ -1153,7 +1137,7 @@ pub fn dump_undefined_struct(
             }
             // TODO: done to preserve behavior of dmidecode
             for _ in langs_installed..data.number_of_installable_languages().unwrap_or(u8::MAX) {
-                println!("\t\t{}", "<BAD INDEX>");
+                println!("\t\t<BAD INDEX>");
             }
             if let Some(current_language) = dmidecode_string_val(&data.current_language()) {
                 println!("\tCurrently Installed Language: {}", current_language);
@@ -1168,15 +1152,13 @@ pub fn dump_undefined_struct(
                 println!("\tItems: {}", number_of_items);
             }
             for item in data.item_iterator() {
-                match (item.item_handle(), item.struct_type()) {
-                    (Some(handle), Some(struct_type)) => {
-                        println!(
-                            "\t\t{:#06X} {}",
-                            *handle,
-                            dmi_smbios_structure_type(struct_type)
-                        );
-                    }
-                    _ => (),
+                if let (Some(handle), Some(struct_type)) = (item.item_handle(), item.struct_type())
+                {
+                    println!(
+                        "\t\t{:#06X} {}",
+                        *handle,
+                        dmi_smbios_structure_type(struct_type)
+                    );
                 }
             }
         }
@@ -1185,32 +1167,30 @@ pub fn dump_undefined_struct(
             if let Some(log_area_length) = data.log_area_length() {
                 println!("\tArea Length: {}", log_area_length);
             }
-            match (data.log_header_start_offset(), data.log_data_start_offset()) {
-                (Some(log_header_start_offset), Some(log_data_start_offset)) => {
-                    println!("\tHeader Start Offset: {:#06X}", log_header_start_offset);
-                    let length = log_data_start_offset - log_header_start_offset;
-                    if length > 0 {
-                        println!(
-                            "\tHeader Length: {} {}",
-                            length,
-                            match length == 1 {
-                                true => "byte",
-                                false => "bytes",
-                            }
-                        );
-                    }
-                    println!("\tData Start Offset: {:#06X}", log_data_start_offset);
+            if let (Some(log_header_start_offset), Some(log_data_start_offset)) =
+                (data.log_header_start_offset(), data.log_data_start_offset())
+            {
+                println!("\tHeader Start Offset: {:#06X}", log_header_start_offset);
+                let length = log_data_start_offset - log_header_start_offset;
+                if length > 0 {
+                    println!(
+                        "\tHeader Length: {} {}",
+                        length,
+                        match length == 1 {
+                            true => "byte",
+                            false => "bytes",
+                        }
+                    );
                 }
-                _ => (),
+                println!("\tData Start Offset: {:#06X}", log_data_start_offset);
             }
             if let Some(access_method) = data.access_method() {
                 println!("\tAccess Method: {}", dmi_event_log_method(&access_method));
             }
-            match (data.access_method(), data.access_method_address()) {
-                (Some(access_method), Some(access_method_address)) => {
-                    dmi_event_log_address(&access_method, access_method_address)
-                }
-                _ => (),
+            if let (Some(access_method), Some(access_method_address)) =
+                (data.access_method(), data.access_method_address())
+            {
+                dmi_event_log_address(&access_method, access_method_address)
             }
             if let Some(log_status) = data.log_status() {
                 println!(
@@ -1713,38 +1693,35 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::SystemPowerControls(data) => {
             println!("System Power Controls");
-            match (
+            if let (Some(month), Some(day), Some(hour), Some(minute), Some(second)) = (
                 data.next_scheduled_power_on_month(),
                 data.next_scheduled_power_on_day_of_month(),
                 data.next_scheduled_power_on_hour(),
                 data.next_scheduled_power_on_minute(),
                 data.next_scheduled_power_on_second(),
             ) {
-                (Some(month), Some(day), Some(hour), Some(minute), Some(second)) => {
-                    let mut time = String::new();
-                    match dmi_bcd_range(month, 0x0, 0x12) {
-                        true => time.push_str(format!("{:04X}", month).as_str()),
-                        false => time.push_str("*"),
-                    }
-                    match dmi_bcd_range(day, 0x0, 0x31) {
-                        true => time.push_str(format!("-{:04X}", day).as_str()),
-                        false => time.push_str("-*"),
-                    }
-                    match dmi_bcd_range(hour, 0x0, 0x23) {
-                        true => time.push_str(format!(" {:04X}", hour).as_str()),
-                        false => time.push_str(" *"),
-                    }
-                    match dmi_bcd_range(minute, 0x0, 0x59) {
-                        true => time.push_str(format!(":{:04X}", minute).as_str()),
-                        false => time.push_str(":*"),
-                    }
-                    match dmi_bcd_range(second, 0x0, 0x59) {
-                        true => time.push_str(format!(":{:04X}", second).as_str()),
-                        false => time.push_str(":*"),
-                    }
-                    println!("\tNext Scheduled Power-on: {}", time);
+                let mut time = String::new();
+                match dmi_bcd_range(month, 0x0, 0x12) {
+                    true => time.push_str(format!("{:04X}", month).as_str()),
+                    false => time.push('*'),
                 }
-                _ => (),
+                match dmi_bcd_range(day, 0x0, 0x31) {
+                    true => time.push_str(format!("-{:04X}", day).as_str()),
+                    false => time.push_str("-*"),
+                }
+                match dmi_bcd_range(hour, 0x0, 0x23) {
+                    true => time.push_str(format!(" {:04X}", hour).as_str()),
+                    false => time.push_str(" *"),
+                }
+                match dmi_bcd_range(minute, 0x0, 0x59) {
+                    true => time.push_str(format!(":{:04X}", minute).as_str()),
+                    false => time.push_str(":*"),
+                }
+                match dmi_bcd_range(second, 0x0, 0x59) {
+                    true => time.push_str(format!(":{:04X}", second).as_str()),
+                    false => time.push_str(":*"),
+                }
+                println!("\tNext Scheduled Power-on: {}", time);
             }
         }
         DefinedStruct::VoltageProbe(data) => {
@@ -2105,40 +2082,34 @@ pub fn dump_undefined_struct(
                     false => println!("{}", nvstorage_device_address),
                 }
             }
-            match (data.interface_type(), data.base_address()) {
-                (Some(interface_type), Some(base_address)) => {
-                    dmi_ipmi_base_address(
-                        &interface_type,
-                        base_address,
-                        &data.base_address_modifier(),
+            if let (Some(interface_type), Some(base_address)) =
+                (data.interface_type(), data.base_address())
+            {
+                dmi_ipmi_base_address(&interface_type, base_address, &data.base_address_modifier());
+            }
+            if let (Some(interface_type), Some(base_address_modifier)) =
+                (data.interface_type(), data.base_address_modifier())
+            {
+                if interface_type.value != IpmiInterfaceType::SMBusSystemInterface {
+                    println!(
+                        "\tRegister Spacing: {}",
+                        dmi_ipmi_register_spacing(&base_address_modifier.register_spacing)
+                    );
+                    println!(
+                        "\tInterrupt Polarity: {}",
+                        match &base_address_modifier.interrupt_polarity {
+                            InterruptPolarity::ActiveHigh => "Active High",
+                            InterruptPolarity::ActiveLow => "Active Low",
+                        }
+                    );
+                    println!(
+                        "\tInterrupt Trigger Mode: {}",
+                        match &base_address_modifier.interrupt_trigger_mode {
+                            InterruptTriggerMode::Level => "Level",
+                            InterruptTriggerMode::Edge => "Edge",
+                        }
                     );
                 }
-                _ => (),
-            }
-            match (data.interface_type(), data.base_address_modifier()) {
-                (Some(interface_type), Some(base_address_modifier)) => {
-                    if interface_type.value != IpmiInterfaceType::SMBusSystemInterface {
-                        println!(
-                            "\tRegister Spacing: {}",
-                            dmi_ipmi_register_spacing(&base_address_modifier.register_spacing)
-                        );
-                        println!(
-                            "\tInterrupt Polarity: {}",
-                            match &base_address_modifier.interrupt_polarity {
-                                InterruptPolarity::ActiveHigh => "Active High",
-                                InterruptPolarity::ActiveLow => "Active Low",
-                            }
-                        );
-                        println!(
-                            "\tInterrupt Trigger Mode: {}",
-                            match &base_address_modifier.interrupt_trigger_mode {
-                                InterruptTriggerMode::Level => "Level",
-                                InterruptTriggerMode::Edge => "Edge",
-                            }
-                        );
-                    }
-                }
-                _ => (),
             }
             if let Some(interrupt_number) = data.interrupt_number() {
                 if interrupt_number != 0 {
@@ -2285,19 +2256,16 @@ pub fn dump_undefined_struct(
             if let Some(device_type_instance) = data.device_type_instance() {
                 println!("\tType Instance: {}", device_type_instance);
             }
-            match (
+            if let (Some(segment_group_number), Some(bus_number), Some(device_function_number)) = (
                 data.segment_group_number(),
                 data.bus_number(),
                 data.device_function_number(),
             ) {
-                (Some(segment_group_number), Some(bus_number), Some(device_function_number)) => {
-                    dmi_slot_segment_bus_func(
-                        &segment_group_number,
-                        &bus_number,
-                        &device_function_number,
-                    );
-                }
-                _ => (),
+                dmi_slot_segment_bus_func(
+                    &segment_group_number,
+                    &bus_number,
+                    &device_function_number,
+                );
             }
         }
         DefinedStruct::ManagementControllerHostInterface(data) => {
@@ -2340,41 +2308,41 @@ pub fn dump_undefined_struct(
             if let Some(vendor_id) = data.vendor_id() {
                 dmi_tpm_vendor_id(&vendor_id);
             }
-            match (data.major_spec_version(), data.minor_spec_version()) {
-                (Some(major_spec_version), Some(minor_spec_version)) => {
-                    println!(
-                        "\tSpecification Version: {}.{}",
-                        major_spec_version, minor_spec_version
-                    );
-                    if let Some(firmware_version_1) = data.firmware_version_1() {
-                        match major_spec_version {
-                            0x01 => {
-                                /*
-                                 * We skip the first 2 bytes, which are
-                                 * redundant with the above, and uncoded
-                                 * in a silly way.
-                                 */
-                                let bytes = firmware_version_1.to_le_bytes();
-                                println!("\tFirmware Revision: {}.{}", bytes[2], bytes[3]);
-                            }
-                            0x02 => {
-                                println!(
-                                    "\tFirmware Revision: {}.{}",
-                                    firmware_version_1 >> 16,
-                                    firmware_version_1 & u16::MAX as u32
-                                );
-                            }
-                            _ => (),
+            if let (Some(major_spec_version), Some(minor_spec_version)) =
+                (data.major_spec_version(), data.minor_spec_version())
+            {
+                println!(
+                    "\tSpecification Version: {}.{}",
+                    major_spec_version, minor_spec_version
+                );
+                if let Some(firmware_version_1) = data.firmware_version_1() {
+                    match major_spec_version {
+                        0x01 => {
+                            /*
+                             * We skip the first 2 bytes, which are
+                             * redundant with the above, and uncoded
+                             * in a silly way.
+                             */
+                            let bytes = firmware_version_1.to_le_bytes();
+                            println!("\tFirmware Revision: {}.{}", bytes[2], bytes[3]);
                         }
+                        0x02 => {
+                            println!(
+                                "\tFirmware Revision: {}.{}",
+                                firmware_version_1 >> 16,
+                                firmware_version_1 & u16::MAX as u32
+                            );
+                        }
+                        _ => (),
                     }
-                    /*
-                     * We skip the next 4 bytes (firmware_version_2), as their
-                     * format is not standardized and their
-                     * usefulness seems limited anyway.
-                     */
                 }
-                _ => (),
+                /*
+                 * We skip the next 4 bytes (firmware_version_2), as their
+                 * format is not standardized and their
+                 * usefulness seems limited anyway.
+                 */
             }
+
             if let Some(description) = dmidecode_string_val(&data.description()) {
                 println!("\tDescription: {}", description);
             }
