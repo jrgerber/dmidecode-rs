@@ -40,11 +40,11 @@ fn test_dump_bin_read_bin() -> Result<(), Box<dyn std::error::Error>> {
 
     let filename = dir.path().join("raw.bin");
     let filename_str = filename.to_str().unwrap();
-    cmd_dump.arg("--dump-bin").arg(&filename_str);
+    cmd_dump.arg("--dump-bin").arg(filename_str);
     cmd_dump.assert().success();
 
     let mut cmd_read = Command::cargo_bin(CLI_COMMAND)?;
-    cmd_read.arg("--from-dump").arg(&filename_str);
+    cmd_read.arg("--from-dump").arg(filename_str);
     cmd_read.assert().success();
 
     drop(filename);
