@@ -22,7 +22,7 @@ pub fn table_load(opt: &Opt) -> Result<(SMBiosData, String), Error> {
 }
 
 #[cfg(target_os = "freebsd")]
-pub fn table_load(_opt: &Opt) -> Result<(SMBiosData, String), Error> {
+pub fn table_load(opt: &Opt) -> Result<(SMBiosData, String), Error> {
     // FreeBSD only has /dev/mem and does not have sysfs (/sys/firmware/dmi/tables/DMI)
     let path = match &opt.dev_mem {
         Some(given_file) => given_file.as_path(),
@@ -33,13 +33,14 @@ pub fn table_load(_opt: &Opt) -> Result<(SMBiosData, String), Error> {
 }
 
 /// Load from /sys/firmware/dmi/tables/DMI
+#[cfg(target_os = "linux")]
 fn table_load_from_sysfs() -> Result<(SMBiosData, String), Error> {
     let mut output = String::new();
 
     writeln!(&mut output, "Getting SMBIOS data from sysfs.").unwrap();
 
     let version: SMBiosVersion;
-    let entry_path = std::path::Path::new(SYS_ENTRY_FILE);
+    let entry_path = Path::new(SYS_ENTRY_FILE);
 
     match SMBiosEntryPoint64::try_load_from_file(entry_path) {
         Ok(entry_point) => {

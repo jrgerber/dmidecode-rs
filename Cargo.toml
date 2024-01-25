@@ -21,11 +21,15 @@ exclude = [
 name = "dmidecode"
 path = "src/main.rs"
 
+[profile.release]
+lto = true
+strip = true
+
 [dependencies]
-structopt = { version = "0.3", default-features = true }
-smbios-lib = "0.9.1"
 enum-iterator = "1.4.0"
 serde_json = "1.0"
+smbios-lib = "0.9.1"
+structopt = { version = "0.3", default-features = true }
 
 [dev-dependencies]
 assert_cmd = "2.0.11"
