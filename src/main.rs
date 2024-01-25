@@ -2,19 +2,11 @@
 
 #![warn(missing_docs)]
 #![deny(rust_2018_idioms)]
-
-#[cfg_attr(any(target_os = "linux", target_os = "freebsd"), path = "unix.rs")]
-#[cfg_attr(windows, path = "windows.rs")]
-#[cfg_attr(target_os = "macos", path = "macos.rs")]
-mod platform;
-
-mod default_out;
-mod dmifn;
-mod dmiopt;
-mod error;
-
-use default_out::default_dump;
-use dmiopt::{BiosType, Keyword, Opt};
+use dmidecode_rs::{
+    default_out::default_dump,
+    dmiopt::{BiosType, Keyword, Opt},
+    platform
+};
 use enum_iterator::all;
 use smbioslib::*;
 use std::fmt::Write;

@@ -1613,11 +1613,9 @@ pub fn dmi_hardware_security_status(status: HardwareSecurityStatus) -> String {
     .to_string()
 }
 pub fn dmi_bcd_range(value: u8, low: u8, high: u8) -> bool {
-    if value > 0x99 || (value & 0x0F) > 0x09 {
+    if value > 0x99 || (value & 0x0F) > 0x09 || value < low || value > high{
         false
-    } else if value < low || value > high {
-        false
-    } else {
+    }  else {
         true
     }
 }
