@@ -26,4 +26,4 @@ jobs:
       run: cargo test --verbose
     - if: matrix.os == 'macos-latest'
       name: Run MacOS tests
-      run: cargo test --verbose --skip test_oem_string_valid
+      run: cargo test --verbose -- --skip test_oem_string_valid
