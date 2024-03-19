@@ -98,12 +98,11 @@ fn test_oem_string_invalid() -> Result<(), Box<dyn std::error::Error>> {
 fn test_oem_string_valid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
     cmd1.arg("--oem-string").arg("count");
-    let status = cmd1.status()?;
-    assert!(status.success());
+    cmd1.assert().success();
     let output = cmd1.output()?;
     let data = str::from_utf8(&output.stdout)?;
-    println!("JCZ output data: {}", data);
     let value = data.trim().parse::<u8>()?;
+    // If count is "0", do not run next command.
     if value == 0 {
         return Ok(())
     }
