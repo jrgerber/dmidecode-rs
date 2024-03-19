@@ -1,6 +1,6 @@
 use assert_cmd::prelude::*;
 use predicates::prelude::*;
-use std::process::Command;
+use std::{str, process::Command};
 use tempfile::tempdir;
 
 static CLI_COMMAND: &str = "dmidecode";
@@ -99,8 +99,13 @@ fn test_oem_string_valid() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
     cmd1.arg("--oem-string").arg("count");
     cmd1.assert().success();
-
-    // TODO: Learn how to capture stdout from cmd1.  If it is "0", do not run cmd2.
+    let output = cmd1.output()?;
+    let data = str::from_utf8(&output.stdout)?;
+    let value = data.trim().parse::<u8>()?;
+    // If count is "0", do not run next command.
+    if value == 0 {
+        return Ok(())
+    }
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
     cmd1.arg("--oem-string").arg("1");
     cmd1.assert().success();

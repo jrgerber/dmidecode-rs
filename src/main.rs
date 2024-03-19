@@ -47,7 +47,6 @@ pub fn print_dmidecode_version() {
     println!("# {} {}", env!("CARGO_PKG_NAME"), env!("CARGO_PKG_VERSION"));
 }
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let opt: Opt = Opt::from_args();
 
@@ -137,7 +136,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match smbios_data.0.first::<SMBiosOemStrings<'_>>() {
                 Some(v) => {
                     match v.oem_strings().get_string(index).to_utf8_lossy() {
-                        Some(s) => println!("{}", s),
+                        Some(s) => {
+                            if oem != "count" {
+                                println!("{}", s);
+                            } else {
+                                println!("{}", v.count().unwrap());
+                            }
+                        }
                         None => {
                             if index != 0 {
                                 // count

@@ -21,9 +21,5 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
-    - if: matrix.os != 'macos-latest'
-      name: Run Linux and Windows tests
-      run: cargo test --verbose
-    - if: matrix.os == 'macos-latest'
-      name: Run MacOS tests
-      run: cargo test --verbose -- --skip test_oem_string_valid
+    - name: Test
+      run: cargo test --  --exact --nocapture
