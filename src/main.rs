@@ -236,7 +236,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         _ => {
             print_dmidecode_version();
-            let smbios_data = platform::table_load(&opt)?;
             print!("{}", smbios_data.1);
             default_dump(&smbios_data.0, opt.quiet);
         }
