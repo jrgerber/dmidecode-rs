@@ -121,7 +121,9 @@ pub struct Opt {
 impl Opt {
     #[allow(unused)]
     pub fn has_no_args(&self) -> bool {
-        self.keyword.is_none()
+        self.quiet
+            && self.dev_mem.is_none()
+            && self.keyword.is_none()
             && self.input.is_none()
             && self.output.is_none()
             && self.bios_types.is_none()
