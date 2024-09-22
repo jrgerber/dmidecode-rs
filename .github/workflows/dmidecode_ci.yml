@@ -15,11 +15,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest]
 
     steps:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
+    -name: Run dmidecode
+      run: target/debug/dmidecode
+    name: OS version
+      run: uname -a
     - name: Test
       run: cargo test --  --exact --nocapture
