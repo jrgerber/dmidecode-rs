@@ -15,10 +15,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-13, ubuntu-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v4
+    - name: OS version
+      run: uname -a
     - name: Build
       run: cargo build --verbose
     - name: Test

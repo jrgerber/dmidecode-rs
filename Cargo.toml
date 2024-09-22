@@ -1,6 +1,6 @@
 [package]
 name = "dmidecode-rs"
-version = "0.2.2"
+version = "0.2.3"
 authors = ["Jeffrey R. Gerber <jeffreygerber@gmail.com>", "Juan Zuluaga <juzuluag@hotmail.com>"]
 license-file = "LICENSE"
 edition = "2018"
@@ -22,12 +22,12 @@ name = "dmidecode"
 path = "src/main.rs"
 
 [dependencies]
-structopt = { version = "0.3.25", default-features = true }
-smbios-lib = "0.9.1"
-enum-iterator = "2.0.0"
-serde_json = "1.0.113"
+structopt = { version = "~0.3", default-features = true }
+smbios-lib = "~0.9"
+enum-iterator = "~2.0"
+serde_json = "~1.0"
 
 [dev-dependencies]
-assert_cmd = "2.0.13"
-predicates = "3.0.4"
-tempfile = "3.10.0"
+assert_cmd = "~2.0"
+predicates = "~3.0"
+tempfile = "~3.10"
