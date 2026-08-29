@@ -562,6 +562,9 @@ pub fn dump_undefined_struct(
                     ChassisHeight::U(units) => {
                         println!("\tHeight: {} U", units);
                     }
+                    ChassisHeight::SpecifiedInRackHeight => {
+                        println!("\tHeight: Specified in Rack Height");
+                    }
                 }
             }
             if let Some(number_of_power_cords) = data.number_of_power_cords() {
