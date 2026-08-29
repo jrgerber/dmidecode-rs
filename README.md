@@ -1,7 +1,6 @@
 # dmidecode-rs
 
 ![dmidecode-rs_ci](https://github.com/jrgerber/dmidecode-rs/actions/workflows/dmidecode_ci.yml/badge.svg)
-![LOC](https://tokei.rs/b1/github/jrgerber/dmidecode-rs?category=code)
 
 Rust implementation of the classic dmidecode utility for reporting SMBIOS/DMI data in a human-readable format.
 
