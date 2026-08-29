@@ -339,6 +339,16 @@ pub fn dmi_processor_family(processor_family: ProcessorFamily, raw: u16) -> Stri
             "Multi-Core Loongson 3D Processor 5xxx Series"
         }
         ProcessorFamily::None => "",
+        ProcessorFamily::Intel => "Intel",
+        ProcessorFamily::IntelXeonDProcessorFamily => "Xeon D",
+        ProcessorFamily::IntelCore3 => "Core 3",
+        ProcessorFamily::IntelCore5 => "Core 5",
+        ProcessorFamily::IntelCore7 => "Core 7",
+        ProcessorFamily::IntelCore9 => "Core 9",
+        ProcessorFamily::IntelCoreUltra3 => "Core Ultra 3",
+        ProcessorFamily::IntelCoreUltra5 => "Core Ultra 5",
+        ProcessorFamily::IntelCoreUltra7 => "Core Ultra 7",
+        ProcessorFamily::IntelCoreUltra9 => "Core Ultra 9",
     };
     match print == "" {
         true => format!("{} ({})", OUT_OF_SPEC, raw),
@@ -429,6 +439,14 @@ pub fn dmi_processor_upgrade(processor_upgrade: ProcessorUpgradeData) -> String 
         ProcessorUpgrade::SocketLGA4710 => "Socket LGA4710",
         ProcessorUpgrade::SocketLGA7529 => "Socket LGA7529",
         ProcessorUpgrade::None => "",
+        ProcessorUpgrade::SocketBGA1964 => "Socket BGA1964",
+        ProcessorUpgrade::SocketBGA1792 => "Socket BGA1792",
+        ProcessorUpgrade::SocketBGA2049 => "Socket BGA2049",
+        ProcessorUpgrade::SocketBGA2551 => "Socket BGA2551",
+        ProcessorUpgrade::SocketLGA1851 => "Socket LGA1851",
+        ProcessorUpgrade::SocketBGA2114 => "Socket BGA2114",
+        ProcessorUpgrade::SocketBGA2833 => "Socket BGA2833",
+        ProcessorUpgrade::SeeSocketType => "See Socket Type",
     };
     match print == "" {
         true => format!("{} ({})", OUT_OF_SPEC, processor_upgrade.raw),
@@ -1156,6 +1174,9 @@ pub fn dmi_memory_device_form_factor(form_factor: MemoryFormFactorData) -> Strin
         MemoryFormFactor::Fbdimm => "FB-DIMM",
         MemoryFormFactor::Die => "Die",
         MemoryFormFactor::None => "",
+        MemoryFormFactor::Camm => "CAMM",
+        MemoryFormFactor::Cudimm => "CUDIMM",
+        MemoryFormFactor::Csodimm => "CSODIMM",
     };
     match print == "" {
         true => format!("{} ({})", OUT_OF_SPEC, form_factor.raw),
@@ -1206,6 +1227,7 @@ pub fn dmi_memory_device_type(memory_type: MemoryDeviceTypeData) -> String {
         MemoryDeviceType::Lpddr5 => "LPDDR5",
         MemoryDeviceType::Hbm3 => "HBM3",
         MemoryDeviceType::None => "",
+        MemoryDeviceType::Mrdimm => "MRDIMM",
     };
     match print == "" {
         true => format!("{} ({})", OUT_OF_SPEC, memory_type.raw),
@@ -1329,6 +1351,7 @@ pub fn dmi_memory_technology(technology: MemoryDeviceTechnologyData) {
             "Intel Optane DC persistent memory"
         }
         MemoryDeviceTechnology::None => "",
+        MemoryDeviceTechnology::Mrdimm => "MRDIMM",
     };
     match print == "" {
         true => println!("{} ({})", OUT_OF_SPEC, technology.raw),
@@ -2786,6 +2809,13 @@ pub fn dmi_management_controller_host_type(host_type: &HostInterfaceTypeData) ->
         HostInterfaceType::Uart16650 => "16650/16650A UART Register Compatible",
         HostInterfaceType::Uart16750 => "16750/16750A UART Register Compatible",
         HostInterfaceType::Uart16850 => "16850/16850A UART Register Compatible",
+        HostInterfaceType::I2C => "I2C / SMBus",
+        HostInterfaceType::I3C => "I3C",
+        HostInterfaceType::PcieVdm => "PCIe VDM",
+        HostInterfaceType::Mmbi => "MMBI",
+        HostInterfaceType::Pcc => "PCC",
+        HostInterfaceType::Ucie => "UCIe",
+        HostInterfaceType::Usb => "USB",
         HostInterfaceType::NetworkHostInterface => "Network",
         HostInterfaceType::OemDefined => "OEM",
         HostInterfaceType::None => "",
@@ -3092,6 +3122,40 @@ fn dmi_address_decode(data: &[u8], address_type: u8) -> String {
 #[cfg(test)]
 mod tests {
     use crate::dmifn::dmi_print_helper;
+    use super::*;
+
+    #[test]
+    fn test_newer_smbios_values_render_instead_of_panicking() {
+        assert_eq!(dmi_processor_family(ProcessorFamily::IntelCoreUltra7, 0), "Core Ultra 7");
+        assert_eq!(
+            dmi_processor_upgrade(ProcessorUpgradeData {
+                raw: 0x55,
+                value: ProcessorUpgrade::SocketLGA1851,
+            }),
+            "Socket LGA1851"
+        );
+        assert_eq!(
+            dmi_memory_device_form_factor(MemoryFormFactorData {
+                raw: 0x11,
+                value: MemoryFormFactor::Camm,
+            }),
+            "CAMM"
+        );
+        assert_eq!(
+            dmi_memory_device_type(MemoryDeviceTypeData {
+                raw: 0x25,
+                value: MemoryDeviceType::Mrdimm,
+            }),
+            "MRDIMM"
+        );
+        assert_eq!(
+            dmi_management_controller_host_type(&HostInterfaceTypeData {
+                raw: 0x09,
+                value: HostInterfaceType::I2C,
+            }),
+            "I2C / SMBus"
+        );
+    }
 
     #[test]
     pub fn test_units_formatter_happy() {

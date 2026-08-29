@@ -1,14 +1,102 @@
 # dmidecode-rs
 
 ![dmidecode-rs_ci](https://github.com/jrgerber/dmidecode-rs/actions/workflows/dmidecode_ci.yml/badge.svg)
-![LOC](https://tokei.rs/b1/github/jrgerber/dmidecode-rs?category=code)
 
-dmidecode command written in Rust, is a tool to report SMBIOS table content in human readable format.
+Rust implementation of the classic dmidecode utility for reporting SMBIOS/DMI data in a human-readable format.
 
-## Help
+## Features
 
-```sh
-dmidecode-rs 0.2.2
+- Decode SMBIOS tables on supported platforms
+- Read data from sysfs, memory devices, or dump files
+- Filter output by BIOS type, handle, keyword, or OEM string
+- Output plain text, JSON, or raw hexadecimal dump
+- Supports Linux, FreeBSD, macOS, and Windows targets
+
+## Installation
+
+Build from source:
+
+```bash
+git clone https://github.com/jrgerber/dmidecode-rs.git
+cd dmidecode-rs
+cargo build --release
+./target/release/dmidecode --help
+```
+
+Or install directly with Cargo:
+
+```bash
+cargo install dmidecode-rs
+```
+
+## Usage
+
+```bash
+dmidecode --help
+```
+
+Common examples:
+
+```bash
+# Show all SMBIOS data
+sudo dmidecode
+
+# Show only memory-related entries
+sudo dmidecode --type memory
+
+# Read a specific DMI string
+sudo dmidecode --string bios-version
+
+# Print JSON output
+sudo dmidecode --json
+
+# Dump raw SMBIOS data to a file
+sudo dmidecode --dump-bin raw.bin
+
+# Read SMBIOS data from a dump file
+sudo dmidecode --from-dump raw.bin
+
+# Disable sysfs usage for debugging
+sudo dmidecode --no-sysfs
+```
+
+## Supported DMI string keywords
+
+The `--string` option supports these keywords:
+
+```text
+bios-vendor
+bios-version
+bios-release-date
+bios-revision
+firmware-revision
+system-manufacturer
+system-product-name
+system-version
+system-serial-number
+system-uuid
+system-sku-number
+system-family
+baseboard-manufacturer
+baseboard-product-name
+baseboard-version
+baseboard-serial-number
+baseboard-asset-tag
+chassis-manufacturer
+chassis-type
+chassis-version
+chassis-serial-number
+chassis-asset-tag
+processor-family
+processor-manufacturer
+processor-version
+processor-frequency
+```
+
+## Command help
+
+```text
+dmidecode-rs 0.2.4
 Jeffrey R. Gerber, Juan Zuluaga
 DMI Table Decoder, Rust Edition ⛭
 
@@ -31,18 +119,14 @@ FLAGS:
         --no-sysfs
             Do not attempt to read DMI data from sysfs files.
 
-            This is mainly useful for debugging.
     -q, --quiet
             Less verbose output
 
     -u, --dump
             Do not decode the entries, dump their contents as hexadecimal instead.
 
-            Note that this is still a text output, no binary data will be thrown upon you. The strings attached to each
-            entry are displayed as both hexadecimal and ASCII. This option is mainly useful for debugging.
     -V, --version
             Prints version information
-
 
 OPTIONS:
     -d, --dev-mem <FILE>
@@ -51,44 +135,25 @@ OPTIONS:
     -t, --type <bios-types>...
             Only display the entries of given type
 
-            Supply one or more keywords, one or more type values,
-            or a combination of the two.
-
-               Keyword     Types
-               ------------------------------
-               bios        0, 13
-               system      1, 12, 15, 23, 32
-               baseboard   2, 10, 41
-               chassis     3
-               processor   4
-               memory      5, 6, 16, 17
-               cache       7
-               connector   8
-               slot        9
     -H, --handle <handle>
-            Only display the entry whose handle matches `handle`. `handle` is a 16-bit integer in either a decimal or a
-            hexadecimal (0xN) form
+            Only display the entry whose handle matches handle
+
         --from-dump <input>
             Read the DMI data from a binary file
 
     -s, --string <keyword>
-            Only display the value of the DMI string identified by `keyword`.
+            Only display the value of the DMI string identified by keyword
 
-            `keyword` must be a keyword from the following list: bios-vendor, bios-version, bios-release-date, system-
-            manufacturer, system- product-name, system-version, system-serial-number, system-uuid, system-family,
-            baseboard-manufacturer, baseboard-product-name, baseboard-version, baseboard-serial-number, baseboard-asset-
-            tag, chassis-manufacturer, chassis-type, chassis-version, chassis- serial-number, chassis-
-            asset-tag, processor-family, processor- manufacturer, processor-version, processor-frequency.  Each
-            keyword corresponds to a given DMI type and a given offset within this entry type.  Not all strings may be
-            meaningful or even defined on all systems. Some keywords may return more than one result on some systems
-            (e.g.  processor-version on a multi- processor system).  If KEYWORD is not provided or not valid, a list of
-            all valid keywords is printed and dmidecode exits with an error.  This option cannot be used more than once.
-
-            Note: on Linux, most of these strings can alternatively be read directly from sysfs, typically from files
-            under /sys/devices/virtual/dmi/id.  Most of these files are even readable by regular users.
         --oem-string <oem-string>
-            Only display the value of the OEM string number N. The first OEM string has number 1. With special value
-            "count", return the number of OEM strings instead
+            Only display the value of the OEM string number N
+
         --dump-bin <output>
             Dump the DMI data to a binary file
 ```
+
+## Notes
+
+This project follows the familiar dmidecode command-line behavior while providing a Rust implementation. It is intended for hardware inspection and debugging, and it can be useful when you want a portable tool with JSON output or script-friendly filtering.
+
+For the latest changes and issues, see the GitHub repository: https://github.com/jrgerber/dmidecode-rs
+

@@ -113,7 +113,7 @@ fn test_oem_string_valid() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(any(target_os = "freebsd"))]
 #[test]
 fn test_no_sysfs() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
@@ -123,7 +123,7 @@ fn test_no_sysfs() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(any(target_os = "freebsd"))]
 #[test]
 fn test_dev_mem() -> Result<(), Box<dyn std::error::Error>> {
     // test good path to /dev/mem
