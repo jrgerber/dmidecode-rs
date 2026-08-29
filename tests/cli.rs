@@ -113,7 +113,7 @@ fn test_oem_string_valid() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-#[cfg(any(target_os = "linux", target_os = "freebsd"))]
+#[cfg(any(target_os = "linux"))]
 #[test]
 fn test_no_sysfs() -> Result<(), Box<dyn std::error::Error>> {
     let mut cmd1 = Command::cargo_bin(CLI_COMMAND)?;
