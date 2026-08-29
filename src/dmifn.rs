@@ -49,6 +49,9 @@ pub fn dmi_smbios_structure_type(code: u8) -> String {
         41 => "Onboard Device",
         42 => "Management Controller Host Interface",
         43 => "TPM Device",
+        44 => "Processor Additional Information",
+        45 => "Firmware Inventory Information",
+        46 => "String Property",
         _ => "",
     };
 
@@ -353,6 +356,79 @@ pub fn dmi_processor_family(processor_family: ProcessorFamily, raw: u16) -> Stri
     match print == "" {
         true => format!("{} ({})", OUT_OF_SPEC, raw),
         false => print.to_string(),
+    }
+}
+
+pub fn dmi_processor_architecture_type(
+    processor_architecture: ProcessorArchitectureTypeData,
+) -> String {
+    match processor_architecture.raw {
+        0x00 => "Reserved".to_string(),
+        0x01 => "IA32 (x86)".to_string(),
+        0x02 => "x64 (x86-64, Intel64, AMD64, EM64T)".to_string(),
+        0x03 => "Intel Itanium architecture".to_string(),
+        0x04 => "32-bit ARM (Aarch32)".to_string(),
+        0x05 => "64-bit ARM (Aarch64)".to_string(),
+        0x06 => "32-bit RISC-V (RV32)".to_string(),
+        0x07 => "64-bit RISC-V (RV64)".to_string(),
+        0x08 => "128-bit RISC-V (RV128)".to_string(),
+        0x09 => "32-bit LoongArch (LoongArch32)".to_string(),
+        0x0A => "64-bit LoongArch (LoongArch64)".to_string(),
+        _ => format!("{} ({})", OUT_OF_SPEC, processor_architecture.raw),
+    }
+}
+
+pub fn dmi_firmware_version_format(version_format: VersionFormatData) -> String {
+    match version_format.value {
+        VersionFormat::FreeForm => "Free-form".to_string(),
+        VersionFormat::MajorMinor => "Major/Minor".to_string(),
+        VersionFormat::HexidecimalString32 => "Hexadecimal string (32-bit)".to_string(),
+        VersionFormat::HexidecimalString64 => "Hexadecimal string (64-bit)".to_string(),
+        VersionFormat::VendorOemSpecific => "Vendor/OEM-specific".to_string(),
+        VersionFormat::None => format!("{} ({})", OUT_OF_SPEC, version_format.raw),
+    }
+}
+
+pub fn dmi_firmware_id_format(firmware_id_format: FirmwareIdFormatData) -> String {
+    match firmware_id_format.value {
+        FirmwareIdFormat::FreeForm => "Free-form".to_string(),
+        FirmwareIdFormat::UefiGuid => "UEFI GUID".to_string(),
+        FirmwareIdFormat::VendorOemSpecific => "Vendor/OEM-specific".to_string(),
+        FirmwareIdFormat::None => format!("{} ({})", OUT_OF_SPEC, firmware_id_format.raw),
+    }
+}
+
+pub fn dmi_firmware_inventory_state(state: FirmwareInventoryStateInformationData) -> String {
+    match state.value {
+        FirmwareInventoryStateInformation::Other => OTHER.to_string(),
+        FirmwareInventoryStateInformation::Unknown => UNKNOWN.to_string(),
+        FirmwareInventoryStateInformation::Disabled => "Disabled".to_string(),
+        FirmwareInventoryStateInformation::Enabled => "Enabled".to_string(),
+        FirmwareInventoryStateInformation::Absent => "Absent".to_string(),
+        FirmwareInventoryStateInformation::StandbyOffline => "Standby Offline".to_string(),
+        FirmwareInventoryStateInformation::StandbySpare => "Standby Spare".to_string(),
+        FirmwareInventoryStateInformation::UnavailableOffline => "Unavailable Offline".to_string(),
+        FirmwareInventoryStateInformation::None => format!("{} ({})", OUT_OF_SPEC, state.raw),
+    }
+}
+
+pub fn dmi_firmware_inventory_characteristics(
+    characteristics: &FirmwareInventoryCharacteristics,
+) {
+    if characteristics.updatable() {
+        println!("\t\tUpdatable");
+    }
+    if characteristics.write_protect() {
+        println!("\t\tWrite-protect");
+    }
+}
+
+pub fn dmi_string_property_id(string_property_id: StringPropertyIdData) -> String {
+    match string_property_id.value {
+        StringPropertyId::UefiDevicePath => "UEFI Device Path".to_string(),
+        StringPropertyId::VendorSpecific => "Vendor Specific".to_string(),
+        StringPropertyId::OemSpecific => "OEM Specific".to_string(),
+        StringPropertyId::None => format!("{} ({:#06X})", OUT_OF_SPEC, string_property_id.raw),
     }
 }
 
@@ -1389,16 +1465,16 @@ pub fn dmi_memory_operating_mode_capability(mode: MemoryOperatingModeCapabilitie
 }
 pub fn dmi_memory_manufacturer_id(attr: &str, id: u16) {
     print!("\t{}: ", attr);
-    match id == 0 {
-        true => println!("{}", UNKNOWN),
-        false => println!("Bank {}, Hex {:#04X}", (id & 0x7F) + 1, id >> 8),
+    match id {
+        0x0000 | 0xFFFF => println!("{} ({:#06X})", UNKNOWN, id),
+        _ => println!("Bank {}, Hex {:#04X}", (id & 0x7F) + 1, id >> 8),
     }
 }
 pub fn dmi_memory_product_id(attr: &str, id: u16) {
     print!("\t{}: ", attr);
-    match id == 0 {
-        true => println!("{}", UNKNOWN),
-        false => println!("{:#06X}", id),
+    match id {
+        0x0000 | 0xFFFF => println!("{} ({:#06X})", UNKNOWN, id),
+        _ => println!("{:#06X}", id),
     }
 }
 pub fn dmi_memory_size(attr: &str, size: MemoryIndicatedSize) {
@@ -2018,6 +2094,41 @@ pub fn dmi_slot_length(slot_length: &SlotLengthData) -> String {
     match print == "" {
         true => format!("{} ({})", OUT_OF_SPEC, slot_length.raw),
         false => print.to_string(),
+    }
+}
+pub fn dmi_slot_height(slot_height: SlotHeightData) -> String {
+    match slot_height.value {
+        SlotHeight::NotApplicable => "Not applicable".to_string(),
+        SlotHeight::Other => OTHER.to_string(),
+        SlotHeight::Unknown => UNKNOWN.to_string(),
+        SlotHeight::FullHeight => "Full height".to_string(),
+        SlotHeight::LowProfile => "Low-profile".to_string(),
+        SlotHeight::None => format!("{} ({})", OUT_OF_SPEC, slot_height.raw),
+    }
+}
+pub fn dmi_slot_pitch(slot_pitch: u16) -> String {
+    if slot_pitch == 0 {
+        return UNKNOWN.to_string();
+    }
+    let whole = slot_pitch / 100;
+    let frac = slot_pitch % 100;
+    match frac {
+        0 => format!("{} mm", whole),
+        _ => format!("{}.{:02} mm", whole, frac),
+    }
+}
+pub fn dmi_slot_information(
+    slot_information: u8,
+    system_slot_type: &SystemSlotTypeData,
+) -> Option<String> {
+    if slot_information == 0 {
+        return None;
+    }
+    match system_slot_type.value {
+        SystemSlotType::PciExpress(PciExpressGeneration::PCIExpressGen6, _) => {
+            Some(format!("PCI Express Gen {}", slot_information))
+        }
+        _ => Some(format!("0x{:02X}", slot_information)),
     }
 }
 pub fn dmi_slot_characteristics(
@@ -2736,7 +2847,7 @@ pub fn dmi_ipmi_base_address(
                 AddressBit::One => address_stripped | 1,
             };
 
-            println!("{:#18X} ({})", actual_address, memory_type);
+            println!("{:#X} ({})", actual_address, memory_type);
         }
     }
 }

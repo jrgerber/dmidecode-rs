@@ -234,6 +234,23 @@ pub fn dump_undefined_struct(
                 }
             }
 
+            if let Some(bios_vendor_reserved_characteristics) =
+                data.bios_vendor_reserved_characteristics()
+            {
+                println!(
+                    "\tBIOS Vendor Reserved Characteristics: {:#06X}",
+                    bios_vendor_reserved_characteristics
+                );
+            }
+            if let Some(system_vendor_reserved_characteristics) =
+                data.system_vendor_reserved_characteristics()
+            {
+                println!(
+                    "\tSystem Vendor Reserved Characteristics: {:#06X}",
+                    system_vendor_reserved_characteristics
+                );
+            }
+
             match (
                 data.system_bios_major_release(),
                 data.system_bios_minor_release(),
@@ -1077,6 +1094,34 @@ pub fn dump_undefined_struct(
                     slot_peer_group.1.data_bus_width().unwrap_or_default()
                 );
             }
+            if let Some(slot_information) = data.slot_information() {
+                match data.system_slot_type() {
+                    Some(system_slot_type) => {
+                        if let Some(info) =
+                            dmi_slot_information(slot_information, &system_slot_type)
+                        {
+                            println!("\tSlot Information: {}", info);
+                        }
+                    }
+                    None => {
+                        if slot_information != 0 {
+                            println!("\tSlot Information: 0x{:02X}", slot_information);
+                        }
+                    }
+                }
+            }
+            if let Some(slot_physical_width) = data.slot_physical_width() {
+                println!(
+                    "\tPhysical Width: {}",
+                    dmi_slot_bus_width(&slot_physical_width)
+                );
+            }
+            if let Some(slot_pitch) = data.slot_pitch() {
+                println!("\tSlot Pitch: {}", dmi_slot_pitch(slot_pitch));
+            }
+            if let Some(slot_height) = data.slot_height() {
+                println!("\tSlot Height: {}", dmi_slot_height(slot_height));
+            }
         }
         DefinedStruct::OnBoardDeviceInformation(data) => {
             let count = data.number_of_devices();
@@ -1313,6 +1358,7 @@ pub fn dump_undefined_struct(
         }
         DefinedStruct::MemoryDevice(data) => {
             println!("Memory Device");
+            let parts = data.parts();
             if !quiet {
                 if let Some(physical_memory_array_handle) = data.physical_memory_array_handle() {
                     println!("\tArray Handle: {:#06X}", *physical_memory_array_handle);
@@ -1366,10 +1412,15 @@ pub fn dump_undefined_struct(
             if let Some(device_set) = data.device_set() {
                 dmi_memory_device_set(device_set);
             }
-            if let Some(device_locator) = dmidecode_string_val(&data.device_locator()) {
+            if let Some(device_locator) = dmidecode_string_val_with_index(
+                &data.device_locator(),
+                parts.get_field_byte(0x10),
+            ) {
                 println!("\tLocator: {}", device_locator);
             }
-            if let Some(bank_locator) = dmidecode_string_val(&data.bank_locator()) {
+            if let Some(bank_locator) =
+                dmidecode_string_val_with_index(&data.bank_locator(), parts.get_field_byte(0x11))
+            {
                 println!("\tBank Locator: {}", bank_locator);
             }
             if let Some(memory_type) = data.memory_type() {
@@ -1381,16 +1432,28 @@ pub fn dump_undefined_struct(
             // If a module is present, the remaining fields are relevant
             if module_present {
                 dmi_memory_device_speed("Speed", data.speed(), data.extended_speed());
-                if let Some(manufacturer) = dmidecode_string_val(&data.manufacturer()) {
+                if let Some(manufacturer) = dmidecode_string_val_with_index(
+                    &data.manufacturer(),
+                    parts.get_field_byte(0x17),
+                ) {
                     println!("\tManufacturer: {}", manufacturer);
                 }
-                if let Some(serial_number) = dmidecode_string_val(&data.serial_number()) {
+                if let Some(serial_number) = dmidecode_string_val_with_index(
+                    &data.serial_number(),
+                    parts.get_field_byte(0x18),
+                ) {
                     println!("\tSerial Number: {}", serial_number);
                 }
-                if let Some(asset_tag) = dmidecode_string_val(&data.asset_tag()) {
+                if let Some(asset_tag) = dmidecode_string_val_with_index(
+                    &data.asset_tag(),
+                    parts.get_field_byte(0x19),
+                ) {
                     println!("\tAsset Tag: {}", asset_tag)
                 }
-                if let Some(part_number) = dmidecode_string_val(&data.part_number()) {
+                if let Some(part_number) = dmidecode_string_val_with_index(
+                    &data.part_number(),
+                    parts.get_field_byte(0x1A),
+                ) {
                     println!("\tPart Number: {}", part_number);
                 }
                 if let Some(attributes) = data.attributes() {
@@ -1422,7 +1485,10 @@ pub fn dump_undefined_struct(
                 {
                     dmi_memory_operating_mode_capability(memory_operating_mode_capability);
                 }
-                if let Some(firmware_version) = dmidecode_string_val(&data.firmware_version()) {
+                if let Some(firmware_version) = dmidecode_string_val_with_index(
+                    &data.firmware_version(),
+                    parts.get_field_byte(0x2B),
+                ) {
                     println!("\tFirmware Version: {}", firmware_version);
                 }
                 if let Some(module_manufacturer_id) = data.module_manufacturer_id() {
@@ -2334,6 +2400,20 @@ pub fn dump_undefined_struct(
                         }
                     }
                 } else {
+                    if let Some(interface_type_specific_data_length) =
+                        data.interface_type_specific_data_length()
+                    {
+                        println!(
+                            "\tInterface Type Specific Data Length: {}",
+                            interface_type_specific_data_length
+                        );
+                    }
+                    if let Some(number_of_protocol_records) = data.number_of_protocol_records() {
+                        println!(
+                            "\tNumber Of Protocol Records: {}",
+                            number_of_protocol_records
+                        );
+                    }
                     dmi_parse_controller_structure(&data);
                 }
             }
@@ -2389,11 +2469,119 @@ pub fn dump_undefined_struct(
                 println!("\tOEM-specific Information: {:#10X}", oem_defined);
             }
         }
-        DefinedStruct::ProcessorAdditionalInformation(_) => {
+        DefinedStruct::ProcessorAdditionalInformation(data) => {
             println!("Processor Additional Information");
+            if let Some(referenced_handle) = data.referenced_handle() {
+                println!("\tReferenced Handle: {:#06X}", *referenced_handle);
+            }
+            if let Some(processor_specific_block) = data.processor_specific_block() {
+                println!("\tProcessor Specific Block:");
+                println!(
+                    "\t\tBlock Length: {}",
+                    processor_specific_block.block_length()
+                );
+                println!(
+                    "\t\tProcessor Architecture: {}",
+                    dmi_processor_architecture_type(processor_specific_block.processor_type())
+                );
+                let processor_specific_data = processor_specific_block.processor_specific_data();
+                let data_len = processor_specific_block.block_length() as usize;
+                let processor_specific_data = if processor_specific_data.len() > data_len {
+                    &processor_specific_data[..data_len]
+                } else {
+                    processor_specific_data
+                };
+                if !processor_specific_data.is_empty() {
+                    print!("\t\tProcessor Specific Data:");
+                    for byte in processor_specific_data {
+                        print!(" 0x{:02X}", byte);
+                    }
+                    println!();
+                }
+            }
         }
-        DefinedStruct::FirmwareInventoryInformation(_) => (),
-        DefinedStruct::StringProperty(_) => (),
+        DefinedStruct::FirmwareInventoryInformation(data) => {
+            println!("Firmware Inventory Information");
+            if let Some(component_name) = dmidecode_string_val(&data.firmware_component_name()) {
+                println!("\tComponent Name: {}", component_name);
+            }
+            if let Some(version) = dmidecode_string_val(&data.firmware_version()) {
+                println!("\tVersion: {}", version);
+            }
+            if let Some(version_format) = data.version_format() {
+                println!(
+                    "\tVersion Format: {}",
+                    dmi_firmware_version_format(version_format)
+                );
+            }
+            if let Some(firmware_id) = dmidecode_string_val(&data.firmware_id()) {
+                println!("\tID: {}", firmware_id);
+            }
+            if let Some(firmware_id_format) = data.firmware_id_format() {
+                println!(
+                    "\tID Format: {}",
+                    dmi_firmware_id_format(firmware_id_format)
+                );
+            }
+            if let Some(release_date) = dmidecode_string_val(&data.release_date()) {
+                println!("\tRelease Date: {}", release_date);
+            }
+            if let Some(manufacturer) = dmidecode_string_val(&data.manufacturer()) {
+                println!("\tManufacturer: {}", manufacturer);
+            }
+            if let Some(lowest_supported_version) =
+                dmidecode_string_val(&data.lowest_supported_firmware_version())
+            {
+                println!(
+                    "\tLowest Supported Version: {}",
+                    lowest_supported_version
+                );
+            }
+            if let Some(image_size) = data.image_size() {
+                match image_size {
+                    FirmwareImageSize::Unknown => println!("\tImage Size: Unknown"),
+                    FirmwareImageSize::Bytes(bytes) => {
+                        dmi_print_memory_size("Image Size", bytes, false)
+                    }
+                }
+            }
+            if let Some(characteristics) = data.characteristics() {
+                println!("\tCharacteristics:");
+                dmi_firmware_inventory_characteristics(&characteristics);
+            }
+            if let Some(state) = data.state() {
+                println!("\tState: {}", dmi_firmware_inventory_state(state));
+            }
+            if let Some(number_of_associated_components) = data.number_of_associated_components() {
+                println!(
+                    "\tAssociated Components: {}",
+                    number_of_associated_components
+                );
+                if number_of_associated_components > 0 {
+                    println!("\tAssociated Component Handles:");
+                    for handle in data.associated_component_handle_iterator() {
+                        println!("\t\t{:#06X}", *handle);
+                    }
+                }
+            }
+        }
+        DefinedStruct::StringProperty(data) => {
+            println!("String Property");
+            if let Some(string_property_id) = data.string_property_id() {
+                println!(
+                    "\tString Property ID: {}",
+                    dmi_string_property_id(string_property_id)
+                );
+            }
+            if let Some(string_property_value) =
+                dmidecode_string_val(&data.string_property_value())
+            {
+                println!("\tString Property Value: {}", string_property_value);
+            }
+            if let Some(parent_handle) = data.parent_handle() {
+                println!("\tParent Handle: {:#06X}", *parent_handle);
+            }
+        }
         DefinedStruct::Inactive(_) => {
             println!("Inactive");
         }
@@ -2403,6 +2591,12 @@ pub fn dump_undefined_struct(
         DefinedStruct::Undefined(data) => {
             if data.parts().header.struct_type() >= 128 {
                 println!("OEM-specific");
+                if !data.parts().fields.is_empty() {
+                    println!(
+                        "\tRaw Data: {}",
+                        format_hex_bytes(&data.parts().fields)
+                    );
+                }
             } else {
                 println!("{}", UNKNOWN);
             }
@@ -2421,4 +2615,25 @@ fn dmidecode_string_val(s: &SMBiosString) -> Option<String> {
             Some(String::from_utf8_lossy(&val.clone().into_bytes()).to_string())
         }
     }
+}
+
+fn dmidecode_string_val_with_index(s: &SMBiosString, index: Option<u8>) -> Option<String> {
+    match dmidecode_string_val(s) {
+        Some(val) if val == UNKNOWN => match index {
+            Some(idx) => Some(format!("{} (String {:#04X})", val, idx)),
+            None => Some(val),
+        },
+        other => other,
+    }
+}
+
+fn format_hex_bytes(bytes: &[u8]) -> String {
+    let mut out = String::new();
+    for (i, byte) in bytes.iter().enumerate() {
+        if i > 0 {
+            out.push(' ');
+        }
+        out.push_str(&format!("{:02X}", byte));
+    }
+    out
 }
